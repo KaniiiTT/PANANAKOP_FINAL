@@ -1,0 +1,1303 @@
+{
+ "tile_size": 32,
+ "blocks": {
+  "dirt": {
+   "label": "Dirt",
+   "variants": [
+    "blocks/dirt/dirt_blob47_v0.png",
+    "blocks/dirt/dirt_blob47_v1.png",
+    "blocks/dirt/dirt_blob47_v2.png"
+   ],
+   "animation_frames": 0,
+   "anim_sheets": [],
+   "anim_fps": 0,
+   "tsx": "tiled/dirt.tsx"
+  },
+  "grass": {
+   "label": "Grass (sways)",
+   "variants": [
+    "blocks/grass/grass_blob47_v0.png",
+    "blocks/grass/grass_blob47_v1.png",
+    "blocks/grass/grass_blob47_v2.png"
+   ],
+   "animation_frames": 8,
+   "anim_sheets": [
+    "blocks/grass/anim/grass_blob47_f0.png",
+    "blocks/grass/anim/grass_blob47_f1.png",
+    "blocks/grass/anim/grass_blob47_f2.png",
+    "blocks/grass/anim/grass_blob47_f3.png",
+    "blocks/grass/anim/grass_blob47_f4.png",
+    "blocks/grass/anim/grass_blob47_f5.png",
+    "blocks/grass/anim/grass_blob47_f6.png",
+    "blocks/grass/anim/grass_blob47_f7.png"
+   ],
+   "anim_fps": 10,
+   "tsx": "tiled/grass.tsx"
+  },
+  "stone": {
+   "label": "Cobble stone",
+   "variants": [
+    "blocks/stone/stone_blob47_v0.png",
+    "blocks/stone/stone_blob47_v1.png",
+    "blocks/stone/stone_blob47_v2.png"
+   ],
+   "animation_frames": 0,
+   "anim_sheets": [],
+   "anim_fps": 0,
+   "tsx": "tiled/stone.tsx"
+  },
+  "sand": {
+   "label": "Sand",
+   "variants": [
+    "blocks/sand/sand_blob47_v0.png",
+    "blocks/sand/sand_blob47_v1.png",
+    "blocks/sand/sand_blob47_v2.png"
+   ],
+   "animation_frames": 0,
+   "anim_sheets": [],
+   "anim_fps": 0,
+   "tsx": "tiled/sand.tsx"
+  },
+  "sandstone": {
+   "label": "Sandstone",
+   "variants": [
+    "blocks/sandstone/sandstone_blob47_v0.png",
+    "blocks/sandstone/sandstone_blob47_v1.png",
+    "blocks/sandstone/sandstone_blob47_v2.png"
+   ],
+   "animation_frames": 0,
+   "anim_sheets": [],
+   "anim_fps": 0,
+   "tsx": "tiled/sandstone.tsx"
+  },
+  "clay": {
+   "label": "Clay",
+   "variants": [
+    "blocks/clay/clay_blob47_v0.png",
+    "blocks/clay/clay_blob47_v1.png",
+    "blocks/clay/clay_blob47_v2.png"
+   ],
+   "animation_frames": 0,
+   "anim_sheets": [],
+   "anim_fps": 0,
+   "tsx": "tiled/clay.tsx"
+  },
+  "mud": {
+   "label": "Mud",
+   "variants": [
+    "blocks/mud/mud_blob47_v0.png",
+    "blocks/mud/mud_blob47_v1.png",
+    "blocks/mud/mud_blob47_v2.png"
+   ],
+   "animation_frames": 0,
+   "anim_sheets": [],
+   "anim_fps": 0,
+   "tsx": "tiled/mud.tsx"
+  },
+  "jungle_grass": {
+   "label": "Jungle grass (sways)",
+   "variants": [
+    "blocks/jungle_grass/jungle_grass_blob47_v0.png",
+    "blocks/jungle_grass/jungle_grass_blob47_v1.png",
+    "blocks/jungle_grass/jungle_grass_blob47_v2.png"
+   ],
+   "animation_frames": 8,
+   "anim_sheets": [
+    "blocks/jungle_grass/anim/jungle_grass_blob47_f0.png",
+    "blocks/jungle_grass/anim/jungle_grass_blob47_f1.png",
+    "blocks/jungle_grass/anim/jungle_grass_blob47_f2.png",
+    "blocks/jungle_grass/anim/jungle_grass_blob47_f3.png",
+    "blocks/jungle_grass/anim/jungle_grass_blob47_f4.png",
+    "blocks/jungle_grass/anim/jungle_grass_blob47_f5.png",
+    "blocks/jungle_grass/anim/jungle_grass_blob47_f6.png",
+    "blocks/jungle_grass/anim/jungle_grass_blob47_f7.png"
+   ],
+   "anim_fps": 10,
+   "tsx": "tiled/jungle_grass.tsx"
+  },
+  "coral_limestone": {
+   "label": "Coral limestone",
+   "variants": [
+    "blocks/coral_limestone/coral_limestone_blob47_v0.png",
+    "blocks/coral_limestone/coral_limestone_blob47_v1.png",
+    "blocks/coral_limestone/coral_limestone_blob47_v2.png"
+   ],
+   "animation_frames": 0,
+   "anim_sheets": [],
+   "anim_fps": 0,
+   "tsx": "tiled/coral_limestone.tsx"
+  },
+  "volcanic_ash": {
+   "label": "Volcanic ash",
+   "variants": [
+    "blocks/volcanic_ash/volcanic_ash_blob47_v0.png",
+    "blocks/volcanic_ash/volcanic_ash_blob47_v1.png",
+    "blocks/volcanic_ash/volcanic_ash_blob47_v2.png"
+   ],
+   "animation_frames": 0,
+   "anim_sheets": [],
+   "anim_fps": 0,
+   "tsx": "tiled/volcanic_ash.tsx"
+  },
+  "obsidian": {
+   "label": "Obsidian",
+   "variants": [
+    "blocks/obsidian/obsidian_blob47_v0.png",
+    "blocks/obsidian/obsidian_blob47_v1.png",
+    "blocks/obsidian/obsidian_blob47_v2.png"
+   ],
+   "animation_frames": 0,
+   "anim_sheets": [],
+   "anim_fps": 0,
+   "tsx": "tiled/obsidian.tsx"
+  },
+  "magma_rock": {
+   "label": "Magma rock (glowing cracks, animated)",
+   "variants": [
+    "blocks/magma_rock/magma_rock_blob47_v0.png",
+    "blocks/magma_rock/magma_rock_blob47_v1.png",
+    "blocks/magma_rock/magma_rock_blob47_v2.png"
+   ],
+   "animation_frames": 6,
+   "anim_sheets": [
+    "blocks/magma_rock/anim/magma_rock_blob47_f0.png",
+    "blocks/magma_rock/anim/magma_rock_blob47_f1.png",
+    "blocks/magma_rock/anim/magma_rock_blob47_f2.png",
+    "blocks/magma_rock/anim/magma_rock_blob47_f3.png",
+    "blocks/magma_rock/anim/magma_rock_blob47_f4.png",
+    "blocks/magma_rock/anim/magma_rock_blob47_f5.png"
+   ],
+   "anim_fps": 10,
+   "tsx": "tiled/magma_rock.tsx"
+  },
+  "wood_planks": {
+   "label": "Wood planks",
+   "variants": [
+    "blocks/wood_planks/wood_planks_blob47_v0.png",
+    "blocks/wood_planks/wood_planks_blob47_v1.png",
+    "blocks/wood_planks/wood_planks_blob47_v2.png"
+   ],
+   "animation_frames": 0,
+   "anim_sheets": [],
+   "anim_fps": 0,
+   "tsx": "tiled/wood_planks.tsx"
+  },
+  "bamboo_block": {
+   "label": "Bamboo",
+   "variants": [
+    "blocks/bamboo_block/bamboo_block_blob47_v0.png",
+    "blocks/bamboo_block/bamboo_block_blob47_v1.png",
+    "blocks/bamboo_block/bamboo_block_blob47_v2.png"
+   ],
+   "animation_frames": 0,
+   "anim_sheets": [],
+   "anim_fps": 0,
+   "tsx": "tiled/bamboo_block.tsx"
+  },
+  "nipa_thatch": {
+   "label": "Nipa thatch",
+   "variants": [
+    "blocks/nipa_thatch/nipa_thatch_blob47_v0.png",
+    "blocks/nipa_thatch/nipa_thatch_blob47_v1.png",
+    "blocks/nipa_thatch/nipa_thatch_blob47_v2.png"
+   ],
+   "animation_frames": 0,
+   "anim_sheets": [],
+   "anim_fps": 0,
+   "tsx": "tiled/nipa_thatch.tsx"
+  },
+  "stone_brick": {
+   "label": "Spanish stone brick",
+   "variants": [
+    "blocks/stone_brick/stone_brick_blob47_v0.png",
+    "blocks/stone_brick/stone_brick_blob47_v1.png",
+    "blocks/stone_brick/stone_brick_blob47_v2.png"
+   ],
+   "animation_frames": 0,
+   "anim_sheets": [],
+   "anim_fps": 0,
+   "tsx": "tiled/stone_brick.tsx"
+  },
+  "crystal_block": {
+   "label": "Crystal block (glow pulse)",
+   "variants": [
+    "blocks/crystal_block/crystal_block_blob47_v0.png",
+    "blocks/crystal_block/crystal_block_blob47_v1.png",
+    "blocks/crystal_block/crystal_block_blob47_v2.png"
+   ],
+   "animation_frames": 4,
+   "anim_sheets": [
+    "blocks/crystal_block/anim/crystal_block_blob47_f0.png",
+    "blocks/crystal_block/anim/crystal_block_blob47_f1.png",
+    "blocks/crystal_block/anim/crystal_block_blob47_f2.png",
+    "blocks/crystal_block/anim/crystal_block_blob47_f3.png"
+   ],
+   "anim_fps": 10,
+   "tsx": "tiled/crystal_block.tsx"
+  },
+  "ore_copper": {
+   "label": "Copper ore (sparkle)",
+   "variants": [
+    "blocks/ore_copper/ore_copper_blob47_v0.png",
+    "blocks/ore_copper/ore_copper_blob47_v1.png",
+    "blocks/ore_copper/ore_copper_blob47_v2.png"
+   ],
+   "animation_frames": 4,
+   "anim_sheets": [
+    "blocks/ore_copper/anim/ore_copper_blob47_f0.png",
+    "blocks/ore_copper/anim/ore_copper_blob47_f1.png",
+    "blocks/ore_copper/anim/ore_copper_blob47_f2.png",
+    "blocks/ore_copper/anim/ore_copper_blob47_f3.png"
+   ],
+   "anim_fps": 10,
+   "tsx": "tiled/ore_copper.tsx"
+  },
+  "ore_iron": {
+   "label": "Iron ore (sparkle)",
+   "variants": [
+    "blocks/ore_iron/ore_iron_blob47_v0.png",
+    "blocks/ore_iron/ore_iron_blob47_v1.png",
+    "blocks/ore_iron/ore_iron_blob47_v2.png"
+   ],
+   "animation_frames": 4,
+   "anim_sheets": [
+    "blocks/ore_iron/anim/ore_iron_blob47_f0.png",
+    "blocks/ore_iron/anim/ore_iron_blob47_f1.png",
+    "blocks/ore_iron/anim/ore_iron_blob47_f2.png",
+    "blocks/ore_iron/anim/ore_iron_blob47_f3.png"
+   ],
+   "anim_fps": 10,
+   "tsx": "tiled/ore_iron.tsx"
+  },
+  "ore_gold": {
+   "label": "Gold ore (sparkle)",
+   "variants": [
+    "blocks/ore_gold/ore_gold_blob47_v0.png",
+    "blocks/ore_gold/ore_gold_blob47_v1.png",
+    "blocks/ore_gold/ore_gold_blob47_v2.png"
+   ],
+   "animation_frames": 4,
+   "anim_sheets": [
+    "blocks/ore_gold/anim/ore_gold_blob47_f0.png",
+    "blocks/ore_gold/anim/ore_gold_blob47_f1.png",
+    "blocks/ore_gold/anim/ore_gold_blob47_f2.png",
+    "blocks/ore_gold/anim/ore_gold_blob47_f3.png"
+   ],
+   "anim_fps": 10,
+   "tsx": "tiled/ore_gold.tsx"
+  },
+  "ore_jade": {
+   "label": "Jade ore (sparkle)",
+   "variants": [
+    "blocks/ore_jade/ore_jade_blob47_v0.png",
+    "blocks/ore_jade/ore_jade_blob47_v1.png",
+    "blocks/ore_jade/ore_jade_blob47_v2.png"
+   ],
+   "animation_frames": 4,
+   "anim_sheets": [
+    "blocks/ore_jade/anim/ore_jade_blob47_f0.png",
+    "blocks/ore_jade/anim/ore_jade_blob47_f1.png",
+    "blocks/ore_jade/anim/ore_jade_blob47_f2.png",
+    "blocks/ore_jade/anim/ore_jade_blob47_f3.png"
+   ],
+   "anim_fps": 10,
+   "tsx": "tiled/ore_jade.tsx"
+  },
+  "ore_sapphire": {
+   "label": "Sapphire ore (sparkle)",
+   "variants": [
+    "blocks/ore_sapphire/ore_sapphire_blob47_v0.png",
+    "blocks/ore_sapphire/ore_sapphire_blob47_v1.png",
+    "blocks/ore_sapphire/ore_sapphire_blob47_v2.png"
+   ],
+   "animation_frames": 4,
+   "anim_sheets": [
+    "blocks/ore_sapphire/anim/ore_sapphire_blob47_f0.png",
+    "blocks/ore_sapphire/anim/ore_sapphire_blob47_f1.png",
+    "blocks/ore_sapphire/anim/ore_sapphire_blob47_f2.png",
+    "blocks/ore_sapphire/anim/ore_sapphire_blob47_f3.png"
+   ],
+   "anim_fps": 10,
+   "tsx": "tiled/ore_sapphire.tsx"
+  },
+  "ore_ruby": {
+   "label": "Ruby ore (sparkle)",
+   "variants": [
+    "blocks/ore_ruby/ore_ruby_blob47_v0.png",
+    "blocks/ore_ruby/ore_ruby_blob47_v1.png",
+    "blocks/ore_ruby/ore_ruby_blob47_v2.png"
+   ],
+   "animation_frames": 4,
+   "anim_sheets": [
+    "blocks/ore_ruby/anim/ore_ruby_blob47_f0.png",
+    "blocks/ore_ruby/anim/ore_ruby_blob47_f1.png",
+    "blocks/ore_ruby/anim/ore_ruby_blob47_f2.png",
+    "blocks/ore_ruby/anim/ore_ruby_blob47_f3.png"
+   ],
+   "anim_fps": 10,
+   "tsx": "tiled/ore_ruby.tsx"
+  }
+ },
+ "walls": {
+  "dirt_wall": {
+   "sheet": "walls/dirt_wall/dirt_wall_blob47.png",
+   "tsx": "tiled/dirt_wall.tsx"
+  },
+  "stone_wall": {
+   "sheet": "walls/stone_wall/stone_wall_blob47.png",
+   "tsx": "tiled/stone_wall.tsx"
+  },
+  "sandstone_wall": {
+   "sheet": "walls/sandstone_wall/sandstone_wall_blob47.png",
+   "tsx": "tiled/sandstone_wall.tsx"
+  },
+  "mud_wall": {
+   "sheet": "walls/mud_wall/mud_wall_blob47.png",
+   "tsx": "tiled/mud_wall.tsx"
+  },
+  "coral_limestone_wall": {
+   "sheet": "walls/coral_limestone_wall/coral_limestone_wall_blob47.png",
+   "tsx": "tiled/coral_limestone_wall.tsx"
+  },
+  "wood_planks_wall": {
+   "sheet": "walls/wood_planks_wall/wood_planks_wall_blob47.png",
+   "tsx": "tiled/wood_planks_wall.tsx"
+  },
+  "bamboo_block_wall": {
+   "sheet": "walls/bamboo_block_wall/bamboo_block_wall_blob47.png",
+   "tsx": "tiled/bamboo_block_wall.tsx"
+  },
+  "stone_brick_wall": {
+   "sheet": "walls/stone_brick_wall/stone_brick_wall_blob47.png",
+   "tsx": "tiled/stone_brick_wall.tsx"
+  },
+  "clay_wall": {
+   "sheet": "walls/clay_wall/clay_wall_blob47.png",
+   "tsx": "tiled/clay_wall.tsx"
+  },
+  "nipa_thatch_wall": {
+   "sheet": "walls/nipa_thatch_wall/nipa_thatch_wall_blob47.png",
+   "tsx": "tiled/nipa_thatch_wall.tsx"
+  }
+ },
+ "traps": {
+  "bamboo_spike_trap": {
+   "strip": "traps/bamboo_spike_trap_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    32,
+    32
+   ],
+   "note": "frames: 0 hidden, 1 warning glint, 2-3 rising, 4-5 fully extended (DAMAGING), 6-7 retracting"
+  },
+  "bamboo_spike_trap_down": {
+   "strip": "traps/bamboo_spike_trap_down_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    32,
+    32
+   ],
+   "note": "ceiling version"
+  },
+  "bamboo_spike_trap_left": {
+   "strip": "traps/bamboo_spike_trap_left_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    32,
+    32
+   ],
+   "note": "wall version facing left"
+  },
+  "bamboo_spike_trap_right": {
+   "strip": "traps/bamboo_spike_trap_right_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    32,
+    32
+   ],
+   "note": "wall version facing right"
+  },
+  "saw_blade": {
+   "strip": "traps/saw_blade_strip.png",
+   "frames": 8,
+   "fps": 16,
+   "frame_size": [
+    32,
+    32
+   ],
+   "note": "spinning saw 32x32; slide it along the rail tiles. always damaging"
+  },
+  "saw_rail": {
+   "strip": "traps/saw_rail_strip.png",
+   "frames": 3,
+   "fps": 1,
+   "frame_size": [
+    32,
+    32
+   ],
+   "note": "rail tiles: start, mid, end"
+  },
+  "kampilan_pendulum": {
+   "strip": "traps/kampilan_pendulum_strip.png",
+   "frames": 12,
+   "fps": 12,
+   "frame_size": [
+    128,
+    128
+   ],
+   "note": "swinging blade 128x128, pivot at (64,6). damaging while the blade is low (frames 11,0,1,5,6,7)"
+  },
+  "volcanic_fire_jet": {
+   "strip": "traps/volcanic_fire_jet_strip.png",
+   "frames": 11,
+   "fps": 12,
+   "frame_size": [
+    32,
+    112
+   ],
+   "note": "frames: 0 dormant, 1 warning sparks, 2-3 ignite, 4-8 full flame (DAMAGING), 9-10 fade"
+  },
+  "blowgun_dart_trap": {
+   "strip": "traps/blowgun_dart_trap_strip.png",
+   "frames": 6,
+   "fps": 10,
+   "frame_size": [
+    48,
+    32
+   ],
+   "note": "frames: 0-1 idle, 2 charge, 3 FIRE (spawn dart), 4-5 smoke; facing right, flip for left"
+  },
+  "poison_dart": {
+   "strip": "traps/poison_dart_strip.png",
+   "frames": 2,
+   "fps": 12,
+   "frame_size": [
+    20,
+    8
+   ],
+   "note": "projectile 20x8 (2-frame drip loop)"
+  },
+  "spanish_cannon_trap": {
+   "strip": "traps/spanish_cannon_trap_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    96,
+    48
+   ],
+   "note": "frames: 0 idle, 1-2 fuse, 3 FIRE (spawn cannonball at muzzle), 4-7 recoil + smoke"
+  },
+  "cannonball": {
+   "strip": "traps/cannonball_strip.png",
+   "frames": 1,
+   "fps": 1,
+   "frame_size": [
+    16,
+    16
+   ],
+   "note": "projectile 16x16"
+  },
+  "cannon_explosion": {
+   "strip": "traps/cannon_explosion_strip.png",
+   "frames": 8,
+   "fps": 14,
+   "frame_size": [
+    48,
+    48
+   ],
+   "note": "impact effect 48x48, 8 frames"
+  },
+  "falling_boulder": {
+   "strip": "traps/falling_boulder_strip.png",
+   "frames": 9,
+   "fps": 10,
+   "frame_size": [
+    40,
+    40
+   ],
+   "note": "frames: 0 idle, 1-3 shake/crack warning, 4 falling, 5-8 shatter + dust"
+  },
+  "crumbling_platform": {
+   "strip": "traps/crumbling_platform_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    40,
+    28
+   ],
+   "note": "frames: 0 solid, 1-2 cracking, 3-4 shaking, 5-7 crumbling (remove collider at 5)"
+  },
+  "bamboo_bounce_pad": {
+   "strip": "traps/bamboo_bounce_pad_strip.png",
+   "frames": 8,
+   "fps": 14,
+   "frame_size": [
+    32,
+    32
+   ],
+   "note": "frames: 0 idle, 1-2 compress, 3-5 launch, 6-7 settle"
+  },
+  "rolling_boulder": {
+   "strip": "traps/rolling_boulder_strip.png",
+   "frames": 8,
+   "fps": 14,
+   "frame_size": [
+    48,
+    48
+   ],
+   "note": "48x48, loop; move it along the floor, always damaging"
+  },
+  "carnivorous_flower": {
+   "strip": "traps/carnivorous_flower_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    48,
+    56
+   ],
+   "note": "frames 0-3 idle sway, 4-7 bite (frame 6 DAMAGING)"
+  }
+ },
+ "animated": {
+  "palm_tree_a": {
+   "strip": "environment/animated/palm_tree_a_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    88,
+    136
+   ]
+  },
+  "palm_tree_b": {
+   "strip": "environment/animated/palm_tree_b_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    88,
+    136
+   ]
+  },
+  "palm_tree_c": {
+   "strip": "environment/animated/palm_tree_c_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    88,
+    136
+   ]
+  },
+  "banana_plant": {
+   "strip": "environment/animated/banana_plant_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    64,
+    72
+   ]
+  },
+  "bamboo_clump": {
+   "strip": "environment/animated/bamboo_clump_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    56,
+    104
+   ]
+  },
+  "parol_lantern_swing": {
+   "strip": "environment/animated/parol_lantern_swing_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    48,
+    56
+   ]
+  },
+  "torch": {
+   "strip": "environment/animated/torch_strip.png",
+   "frames": 6,
+   "fps": 10,
+   "frame_size": [
+    20,
+    44
+   ]
+  },
+  "campfire": {
+   "strip": "environment/animated/campfire_strip.png",
+   "frames": 6,
+   "fps": 10,
+   "frame_size": [
+    48,
+    40
+   ]
+  },
+  "brazier": {
+   "strip": "environment/animated/brazier_strip.png",
+   "frames": 6,
+   "fps": 10,
+   "frame_size": [
+    32,
+    52
+   ]
+  },
+  "banner_checkpoint": {
+   "strip": "environment/animated/banner_checkpoint_strip.png",
+   "frames": 6,
+   "fps": 8,
+   "frame_size": [
+    48,
+    72
+   ]
+  },
+  "tall_grass_a": {
+   "strip": "environment/animated/tall_grass_a_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    20,
+    14
+   ]
+  },
+  "tall_grass_b": {
+   "strip": "environment/animated/tall_grass_b_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    28,
+    16
+   ]
+  },
+  "tall_grass_c": {
+   "strip": "environment/animated/tall_grass_c_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    16,
+    12
+   ]
+  },
+  "flower_hibiscus": {
+   "strip": "environment/animated/flower_hibiscus_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    24,
+    40
+   ]
+  },
+  "flower_sampaguita": {
+   "strip": "environment/animated/flower_sampaguita_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    24,
+    32
+   ]
+  },
+  "flower_ylang": {
+   "strip": "environment/animated/flower_ylang_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    24,
+    32
+   ]
+  },
+  "vine_a": {
+   "strip": "environment/animated/vine_a_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    20,
+    56
+   ]
+  },
+  "vine_b": {
+   "strip": "environment/animated/vine_b_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    20,
+    72
+   ]
+  },
+  "bush_breeze": {
+   "strip": "environment/animated/bush_breeze_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    64,
+    36
+   ]
+  },
+  "chest_open": {
+   "strip": "environment/animated/chest_open_strip.png",
+   "frames": 3,
+   "fps": 6,
+   "frame_size": [
+    36,
+    32
+   ]
+  },
+  "coin_spin": {
+   "strip": "environment/animated/coin_spin_strip.png",
+   "frames": 8,
+   "fps": 14,
+   "frame_size": [
+    18,
+    18
+   ]
+  },
+  "crystal_big_glow": {
+   "strip": "environment/animated/crystal_big_glow_strip.png",
+   "frames": 4,
+   "fps": 6,
+   "frame_size": [
+    72,
+    88
+   ]
+  },
+  "glow_warm_112": {
+   "strip": "environment/particles/glow_warm_112_strip.png",
+   "frames": 4,
+   "fps": 8,
+   "frame_size": [
+    112,
+    112
+   ]
+  },
+  "glow_cool_96": {
+   "strip": "environment/particles/glow_cool_96_strip.png",
+   "frames": 4,
+   "fps": 6,
+   "frame_size": [
+    96,
+    96
+   ]
+  },
+  "glow_lava_96": {
+   "strip": "environment/particles/glow_lava_96_strip.png",
+   "frames": 4,
+   "fps": 8,
+   "frame_size": [
+    96,
+    96
+   ]
+  },
+  "glow_green_96": {
+   "strip": "environment/particles/glow_green_96_strip.png",
+   "frames": 4,
+   "fps": 6,
+   "frame_size": [
+    96,
+    96
+   ]
+  },
+  "fireflies_96": {
+   "strip": "environment/particles/fireflies_96_strip.png",
+   "frames": 8,
+   "fps": 8,
+   "frame_size": [
+    96,
+    96
+   ]
+  },
+  "leaf_green": {
+   "strip": "environment/particles/leaf_green_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    14,
+    14
+   ]
+  },
+  "leaf_orange": {
+   "strip": "environment/particles/leaf_orange_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    14,
+    14
+   ]
+  },
+  "leaf_red": {
+   "strip": "environment/particles/leaf_red_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    14,
+    14
+   ]
+  },
+  "rain_drop": {
+   "strip": "environment/particles/rain_drop_strip.png",
+   "frames": 4,
+   "fps": 12,
+   "frame_size": [
+    8,
+    24
+   ]
+  },
+  "rain_splash": {
+   "strip": "environment/particles/rain_splash_strip.png",
+   "frames": 4,
+   "fps": 12,
+   "frame_size": [
+    16,
+    8
+   ]
+  },
+  "embers": {
+   "strip": "environment/particles/embers_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    32,
+    64
+   ]
+  },
+  "bubbles": {
+   "strip": "environment/particles/bubbles_strip.png",
+   "frames": 6,
+   "fps": 8,
+   "frame_size": [
+    16,
+    32
+   ]
+  },
+  "dust_puff": {
+   "strip": "environment/particles/dust_puff_strip.png",
+   "frames": 6,
+   "fps": 14,
+   "frame_size": [
+    32,
+    24
+   ]
+  },
+  "smoke_puff": {
+   "strip": "environment/particles/smoke_puff_strip.png",
+   "frames": 6,
+   "fps": 10,
+   "frame_size": [
+    32,
+    40
+   ]
+  },
+  "glint_sparkle": {
+   "strip": "environment/particles/glint_sparkle_strip.png",
+   "frames": 6,
+   "fps": 12,
+   "frame_size": [
+    16,
+    16
+   ]
+  },
+  "god_rays_640x360": {
+   "strip": "environment/particles/god_rays_640x360_strip.png",
+   "frames": 4,
+   "fps": 3,
+   "frame_size": [
+    640,
+    360
+   ]
+  }
+ },
+ "static": {
+  "bahay_kubo_hut": {
+   "file": "environment/static/bahay_kubo_hut.png",
+   "size": [
+    112,
+    112
+   ]
+  },
+  "signboard": {
+   "file": "environment/static/signboard.png",
+   "size": [
+    40,
+    40
+   ]
+  },
+  "crate": {
+   "file": "environment/static/crate.png",
+   "size": [
+    32,
+    32
+   ]
+  },
+  "barrel": {
+   "file": "environment/static/barrel.png",
+   "size": [
+    28,
+    34
+   ]
+  },
+  "cannon_right": {
+   "file": "environment/static/cannon_right.png",
+   "size": [
+    56,
+    36
+   ]
+  },
+  "cannon_left": {
+   "file": "environment/static/cannon_left.png",
+   "size": [
+    56,
+    36
+   ]
+  },
+  "bush_small": {
+   "file": "environment/static/bush_small.png",
+   "size": [
+    40,
+    28
+   ]
+  },
+  "bush_flowers_red": {
+   "file": "environment/static/bush_flowers_red.png",
+   "size": [
+    64,
+    36
+   ]
+  },
+  "bush_flowers_white": {
+   "file": "environment/static/bush_flowers_white.png",
+   "size": [
+    52,
+    32
+   ]
+  },
+  "bush_large": {
+   "file": "environment/static/bush_large.png",
+   "size": [
+    88,
+    44
+   ]
+  },
+  "rock_small": {
+   "file": "environment/static/rock_small.png",
+   "size": [
+    28,
+    20
+   ]
+  },
+  "rock_mossy": {
+   "file": "environment/static/rock_mossy.png",
+   "size": [
+    44,
+    30
+   ]
+  },
+  "rock_large": {
+   "file": "environment/static/rock_large.png",
+   "size": [
+    68,
+    46
+   ]
+  },
+  "coral_cluster": {
+   "file": "environment/static/coral_cluster.png",
+   "size": [
+    40,
+    36
+   ]
+  },
+  "coral_cluster_b": {
+   "file": "environment/static/coral_cluster_b.png",
+   "size": [
+    48,
+    40
+   ]
+  },
+  "shell_conch": {
+   "file": "environment/static/shell_conch.png",
+   "size": [
+    20,
+    16
+   ]
+  },
+  "shell_clam": {
+   "file": "environment/static/shell_clam.png",
+   "size": [
+    22,
+    14
+   ]
+  },
+  "starfish": {
+   "file": "environment/static/starfish.png",
+   "size": [
+    18,
+    18
+   ]
+  },
+  "bamboo_pole_tile": {
+   "file": "environment/static/bamboo_pole_tile.png",
+   "size": [
+    32,
+    32
+   ]
+  },
+  "platform_bamboo_L": {
+   "file": "platforms/platform_bamboo_L.png",
+   "size": [
+    32,
+    16
+   ]
+  },
+  "platform_bamboo_M": {
+   "file": "platforms/platform_bamboo_M.png",
+   "size": [
+    32,
+    16
+   ]
+  },
+  "platform_bamboo_R": {
+   "file": "platforms/platform_bamboo_R.png",
+   "size": [
+    32,
+    16
+   ]
+  },
+  "rope_bridge": {
+   "file": "platforms/rope_bridge.png",
+   "size": [
+    32,
+    24
+   ]
+  },
+  "key": {
+   "file": "environment/static/key.png",
+   "size": [
+    20,
+    20
+   ]
+  },
+  "heart_full": {
+   "file": "environment/static/heart_full.png",
+   "size": [
+    18,
+    18
+   ]
+  },
+  "heart_empty": {
+   "file": "environment/static/heart_empty.png",
+   "size": [
+    18,
+    18
+   ]
+  },
+  "crystal_small_a": {
+   "file": "environment/static/crystal_small_a.png",
+   "size": [
+    24,
+    32
+   ]
+  },
+  "crystal_small_b": {
+   "file": "environment/static/crystal_small_b.png",
+   "size": [
+    24,
+    32
+   ]
+  },
+  "cloud_large": {
+   "file": "environment/static/cloud_large.png",
+   "size": [
+    96,
+    40
+   ]
+  },
+  "cloud_medium": {
+   "file": "environment/static/cloud_medium.png",
+   "size": [
+    72,
+    32
+   ]
+  },
+  "cloud_small": {
+   "file": "environment/static/cloud_small.png",
+   "size": [
+    48,
+    24
+   ]
+  },
+  "mist_band_640x128": {
+   "file": "environment/static/mist_band_640x128.png",
+   "size": [
+    640,
+    128
+   ]
+  }
+ },
+ "backgrounds": {
+  "day": {
+   "size": [
+    640,
+    360
+   ],
+   "tileable_horizontally": true,
+   "layers": {
+    "1_sky": "backgrounds/day/1_sky.png",
+    "3_mid_jungle": "backgrounds/day/3_mid_jungle.png",
+    "4_near_jungle": "backgrounds/day/4_near_jungle.png",
+    "5_front_mist": "backgrounds/day/5_front_mist.png",
+    "2_far_sea (6 frames, 8fps)": "backgrounds/day/2_far_sea_anim/"
+   },
+   "parallax_hint": {
+    "1_sky": 0.0,
+    "2_far_sea": 0.1,
+    "3_mid_jungle": 0.3,
+    "4_near_jungle": 0.6,
+    "5_front_mist": 0.85
+   }
+  },
+  "sunset": {
+   "size": [
+    640,
+    360
+   ],
+   "tileable_horizontally": true,
+   "layers": {
+    "1_sky": "backgrounds/sunset/1_sky.png",
+    "3_mid_jungle": "backgrounds/sunset/3_mid_jungle.png",
+    "4_near_jungle": "backgrounds/sunset/4_near_jungle.png",
+    "5_front_mist": "backgrounds/sunset/5_front_mist.png",
+    "2_far_sea (6 frames, 8fps)": "backgrounds/sunset/2_far_sea_anim/"
+   },
+   "parallax_hint": {
+    "1_sky": 0.0,
+    "2_far_sea": 0.1,
+    "3_mid_jungle": 0.3,
+    "4_near_jungle": 0.6,
+    "5_front_mist": 0.85
+   }
+  },
+  "night": {
+   "size": [
+    640,
+    360
+   ],
+   "tileable_horizontally": true,
+   "layers": {
+    "1_sky": "backgrounds/night/1_sky.png",
+    "3_mid_jungle": "backgrounds/night/3_mid_jungle.png",
+    "4_near_jungle": "backgrounds/night/4_near_jungle.png",
+    "5_front_mist": "backgrounds/night/5_front_mist.png",
+    "2_far_sea (6 frames, 8fps)": "backgrounds/night/2_far_sea_anim/",
+    "1b_stars (4 frames, twinkle 4fps)": "backgrounds/night/1b_stars_anim/"
+   },
+   "parallax_hint": {
+    "1_sky": 0.0,
+    "2_far_sea": 0.1,
+    "3_mid_jungle": 0.3,
+    "4_near_jungle": 0.6,
+    "5_front_mist": 0.85
+   }
+  }
+ },
+ "liquids": {
+  "water_surface": {
+   "strip": "liquids/water_surface_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    32,
+    32
+   ]
+  },
+  "water_deep": {
+   "strip": "liquids/water_deep_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    32,
+    32
+   ]
+  },
+  "lava_surface": {
+   "strip": "liquids/lava_surface_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    32,
+    32
+   ]
+  },
+  "lava_deep": {
+   "strip": "liquids/lava_deep_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    32,
+    32
+   ]
+  },
+  "toxic_surface": {
+   "strip": "liquids/toxic_surface_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    32,
+    32
+   ]
+  },
+  "toxic_deep": {
+   "strip": "liquids/toxic_deep_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    32,
+    32
+   ]
+  },
+  "waterfall": {
+   "strip": "liquids/waterfall_strip.png",
+   "frames": 8,
+   "fps": 12,
+   "frame_size": [
+    32,
+    32
+   ]
+  },
+  "waterfall_splash": {
+   "strip": "liquids/waterfall_splash_strip.png",
+   "frames": 6,
+   "fps": 12,
+   "frame_size": [
+    48,
+    24
+   ]
+  }
+ },
+ "blocks_atlas": {
+  "file": "atlas/blocks_atlas_v0.png",
+  "row_offsets_px": {
+   "dirt": 0,
+   "grass": 192,
+   "stone": 384,
+   "sand": 576,
+   "sandstone": 768,
+   "clay": 960,
+   "mud": 1152,
+   "jungle_grass": 1344,
+   "coral_limestone": 1536,
+   "volcanic_ash": 1728,
+   "obsidian": 1920,
+   "magma_rock": 2112,
+   "wood_planks": 2304,
+   "bamboo_block": 2496,
+   "nipa_thatch": 2688,
+   "stone_brick": 2880,
+   "crystal_block": 3072,
+   "ore_copper": 3264,
+   "ore_iron": 3456,
+   "ore_gold": 3648,
+   "ore_jade": 3840,
+   "ore_sapphire": 4032,
+   "ore_ruby": 4224
+  }
+ }
+}
