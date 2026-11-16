@@ -12,9 +12,16 @@ import entities.Player;
 import levels.LevelManager;
 import main.Game;
 import objects.ObjectManager;
+import ui.BossUI;
 import ui.GameOverOverlay;
 import ui.LevelCompletedOverlay;
 import ui.PauseOverlay;
+<<<<<<< Updated upstream
+=======
+import utilz.LoadSave;
+import utilz.SoundManager;
+import static utilz.Constants.Environment.*;
+>>>>>>> Stashed changes
 
 public class Playing extends State implements Statemethods {
 	private Player player;
@@ -24,6 +31,7 @@ public class Playing extends State implements Statemethods {
 	private PauseOverlay pauseOverlay;
 	private GameOverOverlay gameOverOverlay;
 	private LevelCompletedOverlay levelCompletedOverlay;
+	private BossUI bossUI;
 	private boolean paused = false;
 
 	private int xLvlOffset;
@@ -78,6 +86,7 @@ public class Playing extends State implements Statemethods {
 		pauseOverlay = new PauseOverlay(this);
 		gameOverOverlay = new GameOverOverlay(this);
 		levelCompletedOverlay = new LevelCompletedOverlay(this);
+		bossUI = new BossUI();
 	}
 
 	@Override
@@ -96,6 +105,7 @@ public class Playing extends State implements Statemethods {
 			objectManager.update(levelManager.getCurrentLevel().getLevelData(), player);
 			player.update();
 			enemyManager.update(levelManager.getCurrentLevel().getLevelData(), player);
+			bossUI.update(player, enemyManager.getActiveBoss());
 			checkCloseToBorder();
 		}
 	}
@@ -123,6 +133,7 @@ public class Playing extends State implements Statemethods {
 		player.render(g, xLvlOffset);
 		enemyManager.draw(g, xLvlOffset);
 		objectManager.draw(g, xLvlOffset);
+		bossUI.draw(g, enemyManager.getActiveBoss());
 
 		if (paused) {
 			g.setColor(new Color(0, 0, 0, 150));
@@ -142,6 +153,7 @@ public class Playing extends State implements Statemethods {
 		player.resetAll();
 		enemyManager.resetAllEnemies();
 		objectManager.resetAllObjects();
+		bossUI.reset();
 	}
 
 	public void setGameOver(boolean gameOver) {
@@ -232,7 +244,10 @@ public class Playing extends State implements Statemethods {
 	public void mousePressed(MouseEvent e) {
 		if (!gameOver) {
 			if (e.getButton() == MouseEvent.BUTTON1 && !paused && !lvlCompleted)
-				player.setAttacking(true);
+				{
+					player.setAttacking(true);
+					SoundManager.play(SoundManager.Effect.ATTACK);
+				}
 			else if (e.getButton() == MouseEvent.BUTTON3 && !paused && !lvlCompleted)
 				player.setBlocking(true);
 			else if (paused)

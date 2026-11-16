@@ -1,0 +1,306 @@
+{
+ "boss": "Ferdinand Magellan (Fern\u00e3o de Magalh\u00e3es)",
+ "frame_size": [
+  160,
+  128
+ ],
+ "native_facing": "right",
+ "default_export": "left (faces the hero)",
+ "feet_y": 122,
+ "pivot_right_facing_x": 64,
+ "pivot_left_facing_x": 95,
+ "animations": {
+  "idle": {
+   "frames": 8,
+   "fps": 8,
+   "loop": true,
+   "note": "loop"
+  },
+  "walk": {
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "note": "loop"
+  },
+  "run": {
+   "frames": 6,
+   "fps": 14,
+   "loop": true,
+   "note": "loop; dash"
+  },
+  "jump": {
+   "frames": 5,
+   "fps": 10,
+   "loop": false,
+   "note": "crouch, rise, apex, fall, land"
+  },
+  "block_parry": {
+   "frames": 5,
+   "fps": 12,
+   "loop": false,
+   "note": "frame 2 = parry impact (spark)",
+   "parry_frame": 2,
+   "effects": "fx/parry_spark"
+  },
+  "attack_1_slash": {
+   "frames": 8,
+   "fps": 14,
+   "loop": false,
+   "note": "HIT frames 4-5 (diagonal rapier slash; trail in frame)",
+   "hit_frames": [
+    4,
+    5
+   ],
+   "reach_px": "sword tip arc up to x~142 (right-facing)"
+  },
+  "attack_2_lunge": {
+   "frames": 8,
+   "fps": 14,
+   "loop": false,
+   "note": "HIT frames 3-5 (fencing lunge, long reach to x~154)",
+   "hit_frames": [
+    3,
+    4,
+    5
+   ],
+   "reach_px": "rapier tip to x~154 (right-facing) - longest reach"
+  },
+  "attack_3_spin_cut": {
+   "frames": 10,
+   "fps": 14,
+   "loop": false,
+   "note": "HIT frames 2-7 (spinning aerial cut, circular reach r=46 around x=78,y=56)",
+   "hit_frames": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "reach_px": "circle radius 46 around (78,66)"
+  },
+  "skill_pistol_shot": {
+   "frames": 8,
+   "fps": 12,
+   "loop": false,
+   "note": "spawn bullet at frame 3 muzzle flash",
+   "spawn_projectile_frame": 3,
+   "muzzle_offset": [
+    118,
+    52
+   ],
+   "projectile": "fx/bullet"
+  },
+  "skill_cannon_command": {
+   "frames": 10,
+   "fps": 10,
+   "loop": false,
+   "note": "frames 3-6 command pose; trigger cannon barrage (fx_cannon_*)",
+   "trigger_frames": [
+    3,
+    4,
+    5,
+    6
+   ],
+   "effects": "fx/target_marker -> fx/cannon_shell (fall) -> fx/cannon_explosion + fx/shockwave"
+  },
+  "skill_summon_crew": {
+   "frames": 11,
+   "fps": 10,
+   "loop": false,
+   "note": "frames 3-7 sigil active; spawn soldiers at frame 5",
+   "sigil_frames": [
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "spawn_frame": 5,
+   "sigil_center": [
+    100,
+    121
+   ],
+   "effects": "fx/summon_sigil + fx/spawn_flash"
+  },
+  "skill_rage": {
+   "frames": 8,
+   "fps": 12,
+   "loop": false,
+   "note": "phase 2 transition, aura baked in; also fx/rage_aura overlay",
+   "invulnerable_frames": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ]
+  },
+  "hurt": {
+   "frames": 4,
+   "fps": 12,
+   "loop": false,
+   "note": ""
+  },
+  "die": {
+   "frames": 12,
+   "fps": 9,
+   "loop": false,
+   "note": "hold last frame; beret + rapier left on the ground"
+  }
+ },
+ "fx": {
+  "slash_wave": {
+   "strip": "fx/slash_wave_strip.png",
+   "frames": 5,
+   "fps": 14,
+   "frame_size": [
+    88,
+    72
+   ],
+   "note": "ranged sword-wave projectile 88x72"
+  },
+  "bullet": {
+   "strip": "fx/bullet_strip.png",
+   "frames": 2,
+   "fps": 12,
+   "frame_size": [
+    24,
+    10
+   ],
+   "note": "pistol bullet 24x10"
+  },
+  "muzzle_flash": {
+   "strip": "fx/muzzle_flash_strip.png",
+   "frames": 4,
+   "fps": 16,
+   "frame_size": [
+    56,
+    40
+   ],
+   "note": ""
+  },
+  "smoke_puff": {
+   "strip": "fx/smoke_puff_strip.png",
+   "frames": 6,
+   "fps": 10,
+   "frame_size": [
+    48,
+    48
+   ],
+   "note": ""
+  },
+  "cannon_shell": {
+   "strip": "fx/cannon_shell_strip.png",
+   "frames": 2,
+   "fps": 12,
+   "frame_size": [
+    28,
+    56
+   ],
+   "note": "falling cannonball 28x56"
+  },
+  "target_marker": {
+   "strip": "fx/target_marker_strip.png",
+   "frames": 8,
+   "fps": 10,
+   "frame_size": [
+    96,
+    30
+   ],
+   "note": "ground warning ring 96x30; last 2 frames = impact flash"
+  },
+  "cannon_explosion": {
+   "strip": "fx/cannon_explosion_strip.png",
+   "frames": 8,
+   "fps": 14,
+   "frame_size": [
+    112,
+    112
+   ],
+   "note": "impact 112x112 (ground at y=78)"
+  },
+  "shockwave": {
+   "strip": "fx/shockwave_strip.png",
+   "frames": 6,
+   "fps": 14,
+   "frame_size": [
+    144,
+    36
+   ],
+   "note": "ground ring 144x36"
+  },
+  "summon_sigil": {
+   "strip": "fx/summon_sigil_strip.png",
+   "frames": 10,
+   "fps": 12,
+   "frame_size": [
+    144,
+    48
+   ],
+   "note": "ground sigil 144x48 (grows frames 0-4)"
+  },
+  "spawn_flash": {
+   "strip": "fx/spawn_flash_strip.png",
+   "frames": 6,
+   "fps": 12,
+   "frame_size": [
+    72,
+    72
+   ],
+   "note": "soldier spawn pillar 72x72"
+  },
+  "rage_aura": {
+   "strip": "fx/rage_aura_strip.png",
+   "frames": 8,
+   "fps": 12,
+   "frame_size": [
+    160,
+    128
+   ],
+   "note": "overlay 160x128 aligned with the boss frame"
+  },
+  "thrust_streak": {
+   "strip": "fx/thrust_streak_strip.png",
+   "frames": 6,
+   "fps": 14,
+   "frame_size": [
+    120,
+    28
+   ],
+   "note": "speed lines 120x28"
+  },
+  "parry_spark": {
+   "strip": "fx/parry_spark_strip.png",
+   "frames": 4,
+   "fps": 14,
+   "frame_size": [
+    44,
+    44
+   ],
+   "note": "44x44"
+  }
+ },
+ "combined_sheet": {
+  "columns": 12,
+  "rows": [
+   "idle",
+   "walk",
+   "run",
+   "jump",
+   "block_parry",
+   "attack_1_slash",
+   "attack_2_lunge",
+   "attack_3_spin_cut",
+   "skill_pistol_shot",
+   "skill_cannon_command",
+   "skill_summon_crew",
+   "skill_rage",
+   "hurt",
+   "die"
+  ]
+ }
+}

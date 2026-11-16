@@ -12,6 +12,7 @@ import gamestates.Playing;
 import levels.Level;
 import main.Game;
 import utilz.LoadSave;
+import utilz.SoundManager;
 import static utilz.Constants.ObjectConstants.*;
 import static utilz.HelpMethods.CanCannonSeePlayer;
 import static utilz.HelpMethods.IsProjectileHittingLevel;
@@ -47,6 +48,7 @@ public class ObjectManager {
 			if (p.isActive()) {
 				if (hitbox.intersects(p.getHitbox())) {
 					p.setActive(false);
+					SoundManager.play(SoundManager.Effect.PICKUP);
 					applyEffectToPlayer(p);
 				}
 			}

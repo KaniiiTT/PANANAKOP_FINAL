@@ -51,7 +51,7 @@ public class GameEditor {
 			new StageOption(2, "Stage 2"),
 			new StageOption(3, "Stage 3"),
 			new StageOption(4, "Stage 4"),
-			new StageOption(5, "Stage 5: Boss Fight (placeholder)")
+			new StageOption(5, "Stage 5: Magellan Boss Arena")
 	};
 
 	private final Path projectRoot = LoadSave.GetProjectRoot();
@@ -121,6 +121,8 @@ public class GameEditor {
 		JButton saveButton = new JButton("Save");
 		JButton saveAsButton = new JButton("Save as...");
 		JButton testButton = new JButton("Test map");
+		JButton arenaPreviewButton = new JButton("Boss arena view");
+		JButton buildArenaButton = new JButton("Build boss arena");
 		stagePicker = new JComboBox<>(STAGES);
 		stagePicker.addActionListener(event -> {
 			if (!updatingStagePicker)
@@ -134,12 +136,16 @@ public class GameEditor {
 		saveAsButton.addActionListener(event -> saveMapAs());
 		testButton.setToolTipText("Play the current map, including unsaved edits.");
 		testButton.addActionListener(event -> testCurrentMap());
+		arenaPreviewButton.addActionListener(event -> showBossArenaPreview());
+		buildArenaButton.addActionListener(event -> buildBossArena());
 
 		toolbar.add(newButton);
 		toolbar.add(openButton);
 		toolbar.add(saveButton);
 		toolbar.add(saveAsButton);
 		toolbar.add(testButton);
+		toolbar.add(arenaPreviewButton);
+		toolbar.add(buildArenaButton);
 		toolbar.add(stagePicker);
 		toolbar.add(currentMapLabel);
 		return toolbar;
@@ -171,19 +177,69 @@ public class GameEditor {
 		int width = 50;
 		mapImage = new BufferedImage(width, Game.TILES_IN_HEIGHT, BufferedImage.TYPE_INT_RGB);
 		modernTilePaths = new String[Game.TILES_IN_HEIGHT][width];
+		String sandstoneFloor = "pananakop_modern_assets/blocks/sandstone/tiles/255.png";
 		for (int y = 0; y < mapImage.getHeight(); y++)
 			for (int x = 0; x < mapImage.getWidth(); x++)
 				setPixel(x, y, y == Game.TILES_IN_HEIGHT - 1 ? 13 : EMPTY_TILE, NO_MARKER, NO_MARKER);
 
-		setPixel(2, Game.TILES_IN_HEIGHT - 2, EMPTY_TILE, 100, NO_MARKER);
-		if (stage.number == 5)
-			setPixel(width - 7, Game.TILES_IN_HEIGHT - 2, EMPTY_TILE, 0, NO_MARKER);
+		if (stage.number == 5) {
+			// The decorative sandstone floor is also the collision surface.
+			for (int y = Game.TILES_IN_HEIGHT - 3; y < Game.TILES_IN_HEIGHT - 1; y++)
+				for (int x = 0; x < width; x++) {
+					setPixel(x, y, 13, NO_MARKER, NO_MARKER);
+					modernTilePaths[y][x] = sandstoneFloor;
+				}
+			setPixel(2, Game.TILES_IN_HEIGHT - 4, EMPTY_TILE, 100, NO_MARKER);
+			// Magellan's hitbox is taller than a normal mob, so its top-left
+			// spawn marker starts three tiles above the floor.
+			setPixel(width - 7, Game.TILES_IN_HEIGHT - 6, EMPTY_TILE, 1, NO_MARKER);
+		} else {
+			setPixel(2, Game.TILES_IN_HEIGHT - 2, EMPTY_TILE, 100, NO_MARKER);
+		}
 
 		currentMapPath = levelsDirectory.resolve(stage.number + ".png");
 		unsavedChanges = true;
 		updateStageDisplay();
 		updateCanvas();
-		status.setText(stage.label + " placeholder created. Place your boss, then save as " + stage.number + ".png.");
+		status.setText(stage.label + " created with Magellan and the final arena layout. Save to use it.");
+	}
+
+	private void showBossArenaPreview() {
+		try {
+			BufferedImage preview = LoadSave.GetSpriteAtlas("pananakop_boss_magellan/previews/boss_arena_preview.png");
+			JLabel image = new JLabel(new javax.swing.ImageIcon(preview));
+			JOptionPane.showMessageDialog(frame, image, "Magellan Boss Arena", JOptionPane.PLAIN_MESSAGE);
+		} catch (RuntimeException e) {
+			showError("Unable to open boss arena preview", e);
+		}
+	}
+
+	private void buildBossArena() {
+		if (!isCurrentStage(5)) {
+			selectStage(STAGES[4]);
+			return;
+		}
+		int answer = JOptionPane.showConfirmDialog(frame,
+				"Build the 50-tile Magellan arena and replace the current Stage 5 layout?",
+				"Build boss arena", JOptionPane.YES_NO_OPTION);
+		if (answer != JOptionPane.YES_OPTION)
+			return;
+
+		String sandstoneFloor = "pananakop_modern_assets/blocks/sandstone/tiles/255.png";
+		for (int y = 0; y < mapImage.getHeight(); y++)
+			for (int x = 0; x < mapImage.getWidth(); x++) {
+				setPixel(x, y, EMPTY_TILE, NO_MARKER, NO_MARKER);
+				modernTilePaths[y][x] = null;
+				if (y >= Game.TILES_IN_HEIGHT - 3)
+					setPixel(x, y, 13, NO_MARKER, NO_MARKER);
+				if (y == Game.TILES_IN_HEIGHT - 3 || y == Game.TILES_IN_HEIGHT - 2)
+					modernTilePaths[y][x] = sandstoneFloor;
+			}
+		setPixel(2, Game.TILES_IN_HEIGHT - 4, EMPTY_TILE, 100, NO_MARKER);
+		setPixel(mapImage.getWidth() - 7, Game.TILES_IN_HEIGHT - 6, EMPTY_TILE, 1, NO_MARKER);
+		unsavedChanges = true;
+		updateCanvas();
+		status.setText("Magellan arena built with sandstone floor, player start, and boss start. Save Stage 5.");
 	}
 
 	private void syncStagePicker() {
@@ -305,6 +361,14 @@ public class GameEditor {
 		buttons.setLayout(new javax.swing.BoxLayout(buttons, javax.swing.BoxLayout.Y_AXIS));
 		addToolButton(buttons, "Player start", Tool.marker(100, NO_MARKER), "Player start");
 		addToolButton(buttons, "Crabby mob", Tool.marker(0, NO_MARKER), "Crabby mob");
+		try {
+			BufferedImage portrait = LoadSave.GetSpriteAtlas("pananakop_boss_magellan/portrait/magellan_portrait_64.png");
+			addToolButton(buttons, "Magellan boss (all skills)", Tool.marker(1, NO_MARKER),
+					"Magellan boss (all skills)", portrait);
+		} catch (RuntimeException e) {
+			addToolButton(buttons, "Magellan boss (all skills)", Tool.marker(1, NO_MARKER),
+					"Magellan boss (all skills)");
+		}
 		addToolButton(buttons, "Red potion", Tool.object(0), "Red potion");
 		addToolButton(buttons, "Blue potion", Tool.object(1), "Blue potion");
 		addToolButton(buttons, "Barrel", Tool.object(2), "Barrel");
@@ -338,7 +402,13 @@ public class GameEditor {
 	}
 
 	private void addToolButton(JPanel panel, String label, Tool tool, String description) {
+		addToolButton(panel, label, tool, description, null);
+	}
+
+	private void addToolButton(JPanel panel, String label, Tool tool, String description, BufferedImage icon) {
 		JButton button = new JButton(label);
+		if (icon != null)
+			button.setIcon(new javax.swing.ImageIcon(icon.getScaledInstance(36, 36, java.awt.Image.SCALE_FAST)));
 		button.setAlignmentX(JButton.LEFT_ALIGNMENT);
 		button.addActionListener(event -> {
 			selectedTool = tool;
@@ -582,7 +652,11 @@ public class GameEditor {
 		case MARKER:
 			if (selectedTool.green == 100)
 				clearPlayerMarkers();
-			setPixel(x, y, pixel.getRed(), selectedTool.green, pixel.getBlue());
+			if (selectedTool.green == 1)
+				clearBossMarkers();
+			int surfaceY = getSurfaceMarkerY(x, selectedTool.green == 1);
+			Color surfacePixel = new Color(mapImage.getRGB(x, surfaceY));
+			setPixel(x, surfaceY, surfacePixel.getRed(), selectedTool.green, surfacePixel.getBlue());
 			break;
 		case OBJECT:
 			setPixel(x, y, pixel.getRed(), pixel.getGreen(), selectedTool.blue);
@@ -590,6 +664,16 @@ public class GameEditor {
 		}
 		unsavedChanges = true;
 		canvas.repaint();
+	}
+
+	/** Returns the first solid row in this column, then puts a marker above it. */
+	private int getSurfaceMarkerY(int x, boolean bossMarker) {
+		for (int y = 0; y < mapImage.getHeight(); y++) {
+			Color pixel = new Color(mapImage.getRGB(x, y));
+			if (pixel.getRed() >= 48 || modernTilePaths[y][x] != null)
+				return Math.max(0, y - (bossMarker ? 3 : 1));
+		}
+		return Math.max(0, mapImage.getHeight() - (bossMarker ? 4 : 2));
 	}
 
 	private void clearCell(int x, int y) {
@@ -602,6 +686,15 @@ public class GameEditor {
 			for (int x = 0; x < mapImage.getWidth(); x++) {
 				Color pixel = new Color(mapImage.getRGB(x, y));
 				if (pixel.getGreen() == 100)
+					setPixel(x, y, pixel.getRed(), NO_MARKER, pixel.getBlue());
+			}
+	}
+
+	private void clearBossMarkers() {
+		for (int y = 0; y < mapImage.getHeight(); y++)
+			for (int x = 0; x < mapImage.getWidth(); x++) {
+				Color pixel = new Color(mapImage.getRGB(x, y));
+				if (pixel.getGreen() == 1)
 					setPixel(x, y, pixel.getRed(), NO_MARKER, pixel.getBlue());
 			}
 	}
@@ -721,6 +814,9 @@ public class GameEditor {
 			} else if (green == 0) {
 				label = "M";
 				color = new Color(255, 95, 95);
+			} else if (green == 1) {
+				label = "B";
+				color = new Color(255, 145, 35);
 			} else if (blue <= 6) {
 				String[] labels = { "R", "B", "B", "C", "S", "L", "R" };
 				label = labels[blue];
