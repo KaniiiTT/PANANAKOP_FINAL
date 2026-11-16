@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import entities.Crabby;
+import entities.Magellan;
 import main.Game;
 import objects.Cannon;
 import objects.GameContainer;
@@ -23,6 +24,7 @@ public class Level {
 	private BufferedImage[][] modernTiles;
 	private int[][] lvlData;
 	private ArrayList<Crabby> crabs;
+	private ArrayList<Magellan> magellans;
 	private ArrayList<Potion> potions;
 	private ArrayList<Spike> spikes;
 	private ArrayList<Trap> traps;
@@ -88,10 +90,17 @@ public class Level {
 
 	private void createEnemies() {
 		crabs = GetCrabs(img);
+		magellans = HelpMethods.GetMagellans(img);
 	}
 
 	private void createLevelData() {
 		lvlData = GetLevelData(img);
+		// Modern block tiles are stored in the sidecar file, so they must also
+		// become solid collision cells just like classic ground tiles.
+		for (int y = 0; y < modernTiles.length; y++)
+			for (int x = 0; x < modernTiles[y].length; x++)
+				if (modernTiles[y][x] != null)
+					lvlData[y][x] = 0;
 	}
 
 	public int getSpriteIndex(int x, int y) {
@@ -112,6 +121,10 @@ public class Level {
 
 	public ArrayList<Crabby> getCrabs() {
 		return crabs;
+	}
+
+	public ArrayList<Magellan> getMagellans() {
+		return magellans;
 	}
 
 	public Point getPlayerSpawn() {

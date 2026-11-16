@@ -15,6 +15,7 @@ public class EnemyManager {
 	private Playing playing;
 	private BufferedImage[][] crabbyArr;
 	private ArrayList<Crabby> crabbies = new ArrayList<>();
+	private ArrayList<Magellan> magellans = new ArrayList<>();
 
 	public EnemyManager(Playing playing) {
 		this.playing = playing;
@@ -23,6 +24,7 @@ public class EnemyManager {
 
 	public void loadEnemies(Level level) {
 		crabbies = level.getCrabs();
+		magellans = level.getMagellans();
 	}
 
 	public void update(int[][] lvlData, Player player) {
@@ -32,12 +34,27 @@ public class EnemyManager {
 				c.update(lvlData, player);
 				isAnyActive = true;
 			}
+		for (Magellan boss : magellans)
+			if (boss.isActive()) {
+				boss.update(lvlData, player);
+				isAnyActive = true;
+			}
 		if (!isAnyActive)
 			playing.setLevelCompleted(true);
 	}
 
 	public void draw(Graphics g, int xLvlOffset) {
 		drawCrabs(g, xLvlOffset);
+		for (Magellan boss : magellans)
+			if (boss.isActive())
+				boss.draw(g, xLvlOffset);
+	}
+
+	public Magellan getActiveBoss() {
+		for (Magellan boss : magellans)
+			if (boss.isActive())
+				return boss;
+		return null;
 	}
 
 	private void drawCrabs(Graphics g, int xLvlOffset) {
@@ -60,6 +77,11 @@ public class EnemyManager {
 					c.hurt(10);
 					return;
 				}
+		for (Magellan boss : magellans)
+			if (boss.isActive() && attackBox.intersects(boss.getHitbox())) {
+				boss.hurt(10);
+				return;
+			}
 	}
 
 	private void loadEnemyImgs() {
@@ -73,6 +95,8 @@ public class EnemyManager {
 	public void resetAllEnemies() {
 		for (Crabby c : crabbies)
 			c.resetEnemy();
+		for (Magellan boss : magellans)
+			boss.resetEnemy();
 	}
 
 }

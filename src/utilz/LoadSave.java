@@ -58,6 +58,33 @@ public class LoadSave {
 		}
 	}
 
+	/** Loads one animation from the standalone Magellan asset package. */
+	public static BufferedImage[] GetMagellanAnimation(String facing, String animation) {
+		Path directory = GetProjectRoot().resolve("res").resolve("pananakop_boss_magellan")
+				.resolve("frames_" + facing).resolve(animation).normalize();
+		if (!Files.isDirectory(directory))
+			throw new IllegalStateException("Missing Magellan animation: " + directory);
+		try (Stream<Path> paths = Files.list(directory)) {
+			List<Path> frames = paths.filter(Files::isRegularFile)
+					.filter(path -> path.getFileName().toString().endsWith(".png"))
+					.sorted(Comparator.comparing(path -> path.getFileName().toString(),
+							Comparator.naturalOrder())).toList();
+			BufferedImage[] result = new BufferedImage[frames.size()];
+			for (int i = 0; i < frames.size(); i++) {
+				result[i] = ImageIO.read(frames.get(i).toFile());
+				if (result[i] == null) throw new IOException("Unsupported image: " + frames.get(i));
+			}
+			return result;
+		} catch (IOException e) {
+			throw new IllegalStateException("Unable to load Magellan animation " + animation, e);
+		}
+	}
+
+	/** Loads one effect strip from the standalone Magellan boss package. */
+	public static BufferedImage GetMagellanEffect(String effect) {
+		return GetSpriteAtlas("pananakop_boss_magellan/fx/" + effect + "_strip.png");
+	}
+
 	private static InputStream openResource(String fileName) throws IOException {
 		InputStream classpathStream = LoadSave.class.getResourceAsStream("/" + fileName);
 		if (classpathStream != null)

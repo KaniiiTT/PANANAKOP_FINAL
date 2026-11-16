@@ -17,6 +17,9 @@ public abstract class Trap extends GameObject {
 	private BufferedImage[] frames;
 	private int frameTick;
 	private boolean touchingPlayer;
+	private boolean triggered;
+	private boolean wasNearby;
+	private int damageCooldown;
 
 	protected Trap(int x, int y, int objType) {
 		super(x, y, objType);
@@ -82,11 +85,20 @@ public abstract class Trap extends GameObject {
 				hitbox.width + Game.TILES_SIZE * 2,
 				hitbox.height + Game.TILES_SIZE * 2);
 		boolean nearby = activationArea.intersects(playerHitbox);
-		if (nearby) {
+		if (damageCooldown > 0)
+			damageCooldown--;
+
+		// Rotating and swinging hazards are live continuously. Triggered hazards
+		// play their animation only when a player approaches them.
+		if (type.alwaysActive || !type.oneShot && nearby || triggered) {
 			frameTick++;
 			if (frameTick >= ANIMATION_SPEED) {
 				frameTick = 0;
-				aniIndex = (aniIndex + 1) % frames.length;
+				if (type.oneShot && aniIndex == frames.length - 1) {
+					triggered = false;
+					aniIndex = 0;
+				} else
+					aniIndex = (aniIndex + 1) % frames.length;
 			}
 		} else {
 			frameTick = 0;
@@ -94,13 +106,18 @@ public abstract class Trap extends GameObject {
 		}
 
 		boolean touching = hitbox.intersects(playerHitbox);
-		if (touching && !touchingPlayer) {
-			if (type.bouncePad) {
+		if (nearby && !wasNearby && type.oneShot)
+			triggered = true;
+		wasNearby = nearby;
+		boolean dangerousFrame = type.alwaysActive || type.damageFrames[aniIndex];
+		if (touching && dangerousFrame && damageCooldown == 0) {
+			if (type.bouncePad && (!touchingPlayer || aniIndex >= 3 && aniIndex <= 5)) {
 				int playerFeet = (int) (playerHitbox.y + playerHitbox.height);
 				if (playerFeet <= y + (int) (8 * Game.SCALE))
 					player.bounceFromTrap();
-			} else
+			} else if (!type.bouncePad)
 				player.changeHealth(-12);
+			damageCooldown = type.alwaysActive ? 20 : 30;
 		}
 		touchingPlayer = touching;
 	}
@@ -121,6 +138,9 @@ public abstract class Trap extends GameObject {
 		super.reset();
 		frameTick = 0;
 		touchingPlayer = false;
+		triggered = false;
+		wasNearby = false;
+		damageCooldown = 0;
 	}
 
 	public static Type[] getTypes() {
@@ -144,21 +164,21 @@ public abstract class Trap extends GameObject {
 	}
 
 	public enum Type {
-		BOUNCE_PAD(TRAP_BOUNCE_PAD, "Bamboo bounce pad", "bamboo_bounce_pad_strip.png", 32, 32, true),
-		BAMBOO_SPIKES(TRAP_BAMBOO_SPIKES, "Bamboo spikes", "bamboo_spike_trap_strip.png", 32, 32),
-		BAMBOO_SPIKES_DOWN(TRAP_BAMBOO_SPIKES_DOWN, "Bamboo spikes down", "bamboo_spike_trap_down_strip.png", 32, 32),
-		BAMBOO_SPIKES_LEFT(TRAP_BAMBOO_SPIKES_LEFT, "Bamboo spikes left", "bamboo_spike_trap_left_strip.png", 32, 32),
-		BAMBOO_SPIKES_RIGHT(TRAP_BAMBOO_SPIKES_RIGHT, "Bamboo spikes right", "bamboo_spike_trap_right_strip.png", 32, 32),
-		BLOWGUN(TRAP_BLOWGUN, "Blowgun dart trap", "blowgun_dart_trap_strip.png", 32, 32),
-		CARNIVOROUS_FLOWER(TRAP_CARNIVOROUS_FLOWER, "Carnivorous flower", "carnivorous_flower_strip.png", 64, 56),
-		CRUMBLING_PLATFORM(TRAP_CRUMBLING_PLATFORM, "Crumbling platform", "crumbling_platform_strip.png", 32, 28),
-		FALLING_BOULDER(TRAP_FALLING_BOULDER, "Falling boulder", "falling_boulder_strip.png", 40, 40),
-		KAMPILAN_PENDULUM(TRAP_KAMPILAN_PENDULUM, "Kampilan pendulum", "kampilan_pendulum_strip.png", 128, 128),
-		ROLLING_BOULDER(TRAP_ROLLING_BOULDER, "Rolling boulder", "rolling_boulder_strip.png", 48, 48),
-		SAW_BLADE(TRAP_SAW_BLADE, "Saw blade", "saw_blade_strip.png", 32, 32),
-		SAW_RAIL(TRAP_SAW_RAIL, "Saw rail", "saw_rail_strip.png", 32, 32),
-		SPANISH_CANNON(TRAP_SPANISH_CANNON, "Spanish cannon trap", "spanish_cannon_trap_strip.png", 48, 48),
-		VOLCANIC_FIRE_JET(TRAP_VOLCANIC_FIRE_JET, "Volcanic fire jet", "volcanic_fire_jet_strip.png", 32, 112);
+		BOUNCE_PAD(TRAP_BOUNCE_PAD, "Bamboo bounce pad", "bamboo_bounce_pad_strip.png", 32, 32, true, false, false, frames(3, 4, 5)),
+		BAMBOO_SPIKES(TRAP_BAMBOO_SPIKES, "Bamboo spikes", "bamboo_spike_trap_strip.png", 32, 32, false, false, false, frames(4, 5)),
+		BAMBOO_SPIKES_DOWN(TRAP_BAMBOO_SPIKES_DOWN, "Bamboo spikes down", "bamboo_spike_trap_down_strip.png", 32, 32, false, false, false, frames(4, 5)),
+		BAMBOO_SPIKES_LEFT(TRAP_BAMBOO_SPIKES_LEFT, "Bamboo spikes left", "bamboo_spike_trap_left_strip.png", 32, 32, false, false, false, frames(4, 5)),
+		BAMBOO_SPIKES_RIGHT(TRAP_BAMBOO_SPIKES_RIGHT, "Bamboo spikes right", "bamboo_spike_trap_right_strip.png", 32, 32, false, false, false, frames(4, 5)),
+		BLOWGUN(TRAP_BLOWGUN, "Blowgun dart trap", "blowgun_dart_trap_strip.png", 48, 32, false, true, false, frames(3)),
+		CARNIVOROUS_FLOWER(TRAP_CARNIVOROUS_FLOWER, "Carnivorous flower", "carnivorous_flower_strip.png", 48, 56, false, false, false, frames(6)),
+		CRUMBLING_PLATFORM(TRAP_CRUMBLING_PLATFORM, "Crumbling platform", "crumbling_platform_strip.png", 40, 28, false, true, false, frames()),
+		FALLING_BOULDER(TRAP_FALLING_BOULDER, "Falling boulder", "falling_boulder_strip.png", 40, 40, false, true, false, frames(4)),
+		KAMPILAN_PENDULUM(TRAP_KAMPILAN_PENDULUM, "Kampilan pendulum", "kampilan_pendulum_strip.png", 128, 128, false, false, true, frames(11, 0, 1, 5, 6, 7)),
+		ROLLING_BOULDER(TRAP_ROLLING_BOULDER, "Rolling boulder", "rolling_boulder_strip.png", 48, 48, false, false, true, frames()),
+		SAW_BLADE(TRAP_SAW_BLADE, "Saw blade", "saw_blade_strip.png", 32, 32, false, false, true, frames()),
+		SAW_RAIL(TRAP_SAW_RAIL, "Saw rail", "saw_rail_strip.png", 32, 32, false, false, false, frames()),
+		SPANISH_CANNON(TRAP_SPANISH_CANNON, "Spanish cannon trap", "spanish_cannon_trap_strip.png", 96, 48, false, true, false, frames(3)),
+		VOLCANIC_FIRE_JET(TRAP_VOLCANIC_FIRE_JET, "Volcanic fire jet", "volcanic_fire_jet_strip.png", 32, 112, false, false, false, frames(4, 5, 6, 7, 8));
 
 		public final int objectId;
 		public final String label;
@@ -166,19 +186,33 @@ public abstract class Trap extends GameObject {
 		public final int frameWidth;
 		public final int frameHeight;
 		public final boolean bouncePad;
+		public final boolean oneShot;
+		public final boolean alwaysActive;
+		public final boolean[] damageFrames;
 		private static final Type[] TYPES = values();
 
 		Type(int objectId, String label, String stripFile, int frameWidth, int frameHeight) {
-			this(objectId, label, stripFile, frameWidth, frameHeight, false);
+			this(objectId, label, stripFile, frameWidth, frameHeight, false, false, false, frames());
 		}
 
-		Type(int objectId, String label, String stripFile, int frameWidth, int frameHeight, boolean bouncePad) {
+		Type(int objectId, String label, String stripFile, int frameWidth, int frameHeight, boolean bouncePad,
+				boolean oneShot, boolean alwaysActive, boolean[] damageFrames) {
 			this.objectId = objectId;
 			this.label = label;
 			this.stripFile = stripFile;
 			this.frameWidth = frameWidth;
 			this.frameHeight = frameHeight;
 			this.bouncePad = bouncePad;
+			this.oneShot = oneShot;
+			this.alwaysActive = alwaysActive;
+			this.damageFrames = damageFrames;
+		}
+
+		private static boolean[] frames(int... indices) {
+			boolean[] result = new boolean[12];
+			for (int index : indices)
+				result[index] = true;
+			return result;
 		}
 
 		private static Optional<Type> forObjectId(int objectId) {

@@ -8,6 +8,7 @@ import java.awt.image.BufferedImage;
 import main.Game;
 import ui.MenuButton;
 import utilz.LoadSave;
+import utilz.SoundManager;
 
 public class Menu extends State implements Statemethods {
 
@@ -74,8 +75,10 @@ public class Menu extends State implements Statemethods {
 	public void mouseReleased(MouseEvent e) {
 		for (MenuButton mb : buttons) {
 			if (isIn(e, mb)) {
-				if (mb.isMousePressed())
+				if (mb.isMousePressed()) {
+					SoundManager.play(SoundManager.Effect.MENU);
 					mb.applyGamestate();
+				}
 				break;
 			}
 		}

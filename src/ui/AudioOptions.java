@@ -8,6 +8,7 @@ import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 
 import main.Game;
+import utilz.SoundManager;
 
 public class AudioOptions {
 
@@ -70,8 +71,10 @@ public class AudioOptions {
 				musicButton.setMuted(!musicButton.isMuted());
 
 		} else if (isIn(e, sfxButton)) {
-			if (sfxButton.isMousePressed())
+			if (sfxButton.isMousePressed()) {
 				sfxButton.setMuted(!sfxButton.isMuted());
+				SoundManager.setMuted(sfxButton.isMuted());
+			}
 		}
 
 		musicButton.resetBools();

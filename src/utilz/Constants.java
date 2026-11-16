@@ -79,12 +79,23 @@ public class Constants {
 
 	public static class EnemyConstants {
 		public static final int CRABBY = 0;
+		/** Green channel marker used by the editor and level loader for Magellan. */
+		public static final int MAGELLAN = 1;
 
 		public static final int IDLE = 0;
 		public static final int RUNNING = 1;
 		public static final int ATTACK = 2;
 		public static final int HIT = 3;
 		public static final int DEAD = 4;
+		public static final int MAGELLAN_SLASH = 5;
+		public static final int MAGELLAN_LUNGE = 6;
+		public static final int MAGELLAN_SPIN_CUT = 7;
+		public static final int MAGELLAN_PISTOL = 8;
+		public static final int MAGELLAN_CANNON = 9;
+		public static final int MAGELLAN_SUMMON = 10;
+		public static final int MAGELLAN_RAGE = 11;
+		public static final int MAGELLAN_BLOCK = 12;
+		public static final int MAGELLAN_JUMP = 13;
 
 		public static final int CRABBY_WIDTH_DEFAULT = 72;
 		public static final int CRABBY_HEIGHT_DEFAULT = 32;
@@ -94,6 +105,10 @@ public class Constants {
 
 		public static final int CRABBY_DRAWOFFSET_X = (int) (26 * Game.SCALE);
 		public static final int CRABBY_DRAWOFFSET_Y = (int) (9 * Game.SCALE);
+		public static final int MAGELLAN_WIDTH_DEFAULT = 160;
+		public static final int MAGELLAN_HEIGHT_DEFAULT = 128;
+		public static final int MAGELLAN_WIDTH = (int) (MAGELLAN_WIDTH_DEFAULT * Game.SCALE);
+		public static final int MAGELLAN_HEIGHT = (int) (MAGELLAN_HEIGHT_DEFAULT * Game.SCALE);
 
 		public static int GetSpriteAmount(int enemy_type, int enemy_state) {
 
@@ -111,6 +126,25 @@ public class Constants {
 				case DEAD:
 					return 5;
 				}
+				return 0;
+			case MAGELLAN:
+				return switch (enemy_state) {
+				case IDLE -> 8;
+				case RUNNING -> 8;
+				case ATTACK -> 8;
+				case HIT -> 4;
+				case DEAD -> 12;
+				case MAGELLAN_SLASH -> 8;
+				case MAGELLAN_LUNGE -> 8;
+				case MAGELLAN_SPIN_CUT -> 10;
+				case MAGELLAN_PISTOL -> 8;
+				case MAGELLAN_CANNON -> 10;
+				case MAGELLAN_SUMMON -> 11;
+				case MAGELLAN_RAGE -> 8;
+				case MAGELLAN_BLOCK -> 5;
+				case MAGELLAN_JUMP -> 5;
+				default -> 1;
+				};
 			}
 
 			return 0;
@@ -121,6 +155,8 @@ public class Constants {
 			switch (enemy_type) {
 			case CRABBY:
 				return 10;
+			case MAGELLAN:
+				return 300;
 			default:
 				return 1;
 			}
@@ -130,6 +166,8 @@ public class Constants {
 			switch (enemy_type) {
 			case CRABBY:
 				return 15;
+			case MAGELLAN:
+				return 30;
 			default:
 				return 0;
 			}

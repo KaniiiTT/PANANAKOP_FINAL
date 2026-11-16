@@ -4,6 +4,7 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 import utilz.LoadSave;
+import utilz.SoundManager;
 import static utilz.Constants.UI.VolumeButtons.*;
 
 public class VolumeButton extends PauseButton {
@@ -23,6 +24,7 @@ public class VolumeButton extends PauseButton {
 		minX = x + VOLUME_WIDTH / 2;
 		maxX = x + width - VOLUME_WIDTH / 2;
 		loadImgs();
+		SoundManager.setVolume(0.5f);
 	}
 
 	private void loadImgs() {
@@ -60,6 +62,7 @@ public class VolumeButton extends PauseButton {
 			buttonX = x;
 
 		bounds.x = buttonX - VOLUME_WIDTH / 2;
+		SoundManager.setVolume((buttonX - minX) / (float) (maxX - minX));
 
 	}
 

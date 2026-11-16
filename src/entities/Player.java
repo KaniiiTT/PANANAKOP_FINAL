@@ -13,6 +13,7 @@ import java.awt.image.BufferedImage;
 import gamestates.Playing;
 import main.Game;
 import utilz.LoadSave;
+import utilz.SoundManager;
 
 public class Player extends Entity {
 
@@ -78,6 +79,11 @@ public class Player extends Entity {
 		this.y = spawn.y;
 		hitbox.x = x;
 		hitbox.y = y;
+		// Spawn markers are tile positions, not the final hitbox floor position.
+		// Let gravity settle the player onto the first solid tile before walking.
+		inAir = true;
+		airSpeed = 0;
+		jumpsUsed = 0;
 	}
 
 	private void initAttackBox() {
@@ -327,6 +333,7 @@ public class Player extends Entity {
 	private void jump() {
 		if (jumpsUsed >= 2)
 			return;
+		SoundManager.play(SoundManager.Effect.JUMP);
 		inAir = true;
 		airSpeed = jumpSpeed;
 		jumpsUsed++;
@@ -335,6 +342,7 @@ public class Player extends Entity {
 	public void bounceFromTrap() {
 		if (inAir && airSpeed < 0)
 			return;
+		SoundManager.play(SoundManager.Effect.BOUNCE);
 		inAir = true;
 		airSpeed = jumpSpeed * 1.5f;
 		jumpsUsed = 0;
@@ -357,6 +365,8 @@ public class Player extends Entity {
 	public void changeHealth(int value) {
 		if (blocking && value < 0)
 			return;
+		if (value < 0)
+			SoundManager.play(SoundManager.Effect.HIT);
 		currentHealth += value;
 		if (value < 0)
 			hitTicks = ANI_SPEED * 2;
