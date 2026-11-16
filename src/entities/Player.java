@@ -28,6 +28,17 @@ public class Player extends Entity {
 	private float jumpSpeed = -2.25f * Game.SCALE;
 	private float fallSpeedAfterCollision = 0.5f * Game.SCALE;
 
+	// Dash (Hollow Knight style: fixed distance, fixed direction, no gravity)
+	// === DASH TUNING ===
+	private float dashSpeed = 2.8f * Game.SCALE; // pixels per tick (lower = slower)
+	private float dashDistance = 125f * Game.SCALE; // total travel distance
+	private int dashAniSpeed = ANI_SPEED; // computed per dash so the animation fits it
+	private float dashRemaining = 0;
+	private int dashDir = 1;
+	private int dashCooldownTicks = 0;
+	private static final int DASH_COOLDOWN = 25;
+	private boolean airDashUsed = false; // one dash per airtime, reset on landing
+
 	// StatusBarUI
 	private BufferedImage statusBarImg;
 
@@ -100,6 +111,8 @@ public class Player extends Entity {
 			landingTicks--;
 		if (hitTicks > 0)
 			hitTicks--;
+		if (dashCooldownTicks > 0)
+			dashCooldownTicks--;
 		if (moving) {
 			checkPotionTouched();
 			checkSpikesTouched();
@@ -130,7 +143,13 @@ public class Player extends Entity {
 	}
 
 	private void updateAttackBox() {
-		if (right)
+		if (dashing) {
+			// Follow the dash direction rather than the held keys.
+			if (dashDir > 0)
+				attackBox.x = hitbox.x + hitbox.width + (int) (Game.SCALE * 10);
+			else
+				attackBox.x = hitbox.x - hitbox.width - (int) (Game.SCALE * 10);
+		} else if (right)
 			attackBox.x = hitbox.x + hitbox.width + (int) (Game.SCALE * 10);
 		else if (left)
 			attackBox.x = hitbox.x - hitbox.width - (int) (Game.SCALE * 10);
@@ -163,15 +182,17 @@ public class Player extends Entity {
 
 	private void updateAnimationTick() {
 		aniTick++;
-		if (aniTick >= ANI_SPEED) {
+		int speed = (state == DASH && dashing) ? dashAniSpeed : ANI_SPEED;
+		if (aniTick >= speed) {
 			aniTick = 0;
 			aniIndex++;
-			if (aniIndex >= GetSpriteAmount(state)) {
+			if (state == DASH && dashing && aniIndex >= GetSpriteAmount(DASH)) {
+				aniIndex = GetSpriteAmount(DASH) - 1; // hold last frame, don't loop
+			} else if (aniIndex >= GetSpriteAmount(state)) {
 				aniIndex = 0;
 				attacking = false;
 				attackChecked = false;
-				if (state == DASH)
-					dashing = false;
+				// Dash now ends by distance (see updateDash), not by animation length.
 				if (state == ULTIMATE)
 					usingUltimate = false;
 			}
@@ -221,6 +242,12 @@ public class Player extends Entity {
 	private void updatePos() {
 		moving = false;
 
+		// Dash overrides everything: fixed direction, fixed distance, no gravity.
+		if (dashing) {
+			updateDash();
+			return;
+		}
+
 		if (jump && !jumpConsumed) {
 			jump();
 			jumpConsumed = true;
@@ -232,7 +259,7 @@ public class Player extends Entity {
 				return;
 
 		float xSpeed = 0;
-		float speed = dashing ? walkSpeed * 4 : running ? walkSpeed * 1.7f : walkSpeed;
+		float speed = running ? walkSpeed * 1.7f : walkSpeed;
 
 		if (left) {
 			xSpeed -= speed;
@@ -266,6 +293,37 @@ public class Player extends Entity {
 		moving = true;
 	}
 
+	private void updateDash() {
+		float step = Math.min(dashSpeed, dashRemaining);
+		float xSpeed = step * dashDir;
+
+		if (CanMoveHere(hitbox.x + xSpeed, hitbox.y, hitbox.width, hitbox.height, lvlData)) {
+			hitbox.x += xSpeed;
+			dashRemaining -= step;
+		} else {
+			// Hit a wall: snap next to it and end the dash early.
+			hitbox.x = GetEntityXPosNextToWall(hitbox, xSpeed);
+			dashRemaining = 0;
+		}
+
+		airSpeed = 0; // no gravity while dashing
+		moving = true;
+
+		if (dashRemaining <= 0)
+			endDash();
+	}
+
+	private void endDash() {
+		dashing = false;
+		dashRemaining = 0;
+		dashCooldownTicks = DASH_COOLDOWN;
+		airSpeed = 0;
+
+		// If the dash carried us off a ledge, start falling.
+		if (!IsEntityOnFloor(hitbox, lvlData))
+			inAir = true;
+	}
+
 	private void jump() {
 		if (jumpsUsed >= 2)
 			return;
@@ -286,6 +344,7 @@ public class Player extends Entity {
 		inAir = false;
 		airSpeed = 0;
 		jumpsUsed = 0;
+		airDashUsed = false;
 	}
 
 	private void updateXPos(float xSpeed) {
@@ -372,12 +431,26 @@ public class Player extends Entity {
 		this.running = running;
 	}
 
+	// Call this once per key press. The direction is locked to where the
+	// player is facing when the dash starts, no matter what keys are held.
 	public void setDash(boolean dash) {
-		if (dash && !dashing) {
-			dashing = true;
-			aniTick = 0;
-			aniIndex = 0;
-		}
+		if (!dash || dashing || dashCooldownTicks > 0)
+			return;
+		if (inAir && airDashUsed)
+			return;
+
+		dashing = true;
+		dashDir = flipW;
+		dashRemaining = dashDistance;
+		// Stretch the dash animation so it spans the whole dash.
+		int dashTicks = Math.round(dashDistance / dashSpeed);
+		dashAniSpeed = Math.max(1, Math.round(dashTicks / (float) GetSpriteAmount(DASH)));
+		if (inAir)
+			airDashUsed = true;
+		attacking = false;
+		attackChecked = false;
+		aniTick = 0;
+		aniIndex = 0;
 	}
 
 	public void setUltimate(boolean ultimate) {
@@ -418,6 +491,9 @@ public class Player extends Entity {
 		attacking = false;
 		blocking = false;
 		dashing = false;
+		dashRemaining = 0;
+		dashCooldownTicks = 0;
+		airDashUsed = false;
 		usingUltimate = false;
 		victory = false;
 		moving = false;
