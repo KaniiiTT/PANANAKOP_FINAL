@@ -29,6 +29,12 @@ public abstract class Trap extends GameObject {
 		hitbox.y -= Game.TILES_SIZE - (int) (8 * Game.SCALE);
 	}
 
+	/** Trap-specific timing and hit behavior is supplied by each concrete trap. */
+	protected boolean isOneShot() { return false; }
+	protected boolean isAlwaysActive() { return false; }
+	protected boolean isDangerousFrame(int frame) { return false; }
+	protected boolean isBouncePad() { return false; }
+
 	public static Trap create(int x, int y, int objType) {
 		Type type = Type.forObjectId(objType)
 				.orElseThrow(() -> new IllegalArgumentException("Unknown trap type: " + objType));
@@ -74,6 +80,10 @@ public abstract class Trap extends GameObject {
 		this.frames = Arrays.copyOf(frames, frames.length);
 	}
 
+	protected int getAnimationFrameCount() {
+		return frames == null ? 0 : frames.length;
+	}
+
 	public void update(Player player) {
 		if (frames == null)
 			throw new IllegalStateException("Trap animation has not been loaded: " + type.label);
@@ -90,11 +100,11 @@ public abstract class Trap extends GameObject {
 
 		// Rotating and swinging hazards are live continuously. Triggered hazards
 		// play their animation only when a player approaches them.
-		if (type.alwaysActive || !type.oneShot && nearby || triggered) {
+		if (isAlwaysActive() || !isOneShot() && nearby || triggered) {
 			frameTick++;
 			if (frameTick >= ANIMATION_SPEED) {
 				frameTick = 0;
-				if (type.oneShot && aniIndex == frames.length - 1) {
+				if (isOneShot() && aniIndex == frames.length - 1) {
 					triggered = false;
 					aniIndex = 0;
 				} else
@@ -106,18 +116,18 @@ public abstract class Trap extends GameObject {
 		}
 
 		boolean touching = hitbox.intersects(playerHitbox);
-		if (nearby && !wasNearby && type.oneShot)
+		if (nearby && !wasNearby && isOneShot())
 			triggered = true;
 		wasNearby = nearby;
-		boolean dangerousFrame = type.alwaysActive || type.damageFrames[aniIndex];
+		boolean dangerousFrame = isAlwaysActive() || isDangerousFrame(aniIndex);
 		if (touching && dangerousFrame && damageCooldown == 0) {
-			if (type.bouncePad && (!touchingPlayer || aniIndex >= 3 && aniIndex <= 5)) {
+			if (isBouncePad() && (!touchingPlayer || aniIndex >= 3 && aniIndex <= 5)) {
 				int playerFeet = (int) (playerHitbox.y + playerHitbox.height);
 				if (playerFeet <= y + (int) (8 * Game.SCALE))
 					player.bounceFromTrap();
-			} else if (!type.bouncePad)
+			} else if (!isBouncePad())
 				player.changeHealth(-12);
-			damageCooldown = type.alwaysActive ? 20 : 30;
+			damageCooldown = isAlwaysActive() ? 20 : 30;
 		}
 		touchingPlayer = touching;
 	}

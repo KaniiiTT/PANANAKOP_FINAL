@@ -6,4 +6,6 @@ public class SawBladeTrap extends Trap {
 	public SawBladeTrap(int x, int y) {
 		super(x, y, TRAP_SAW_BLADE);
 	}
+	@Override protected boolean isAlwaysActive() { return true; }
+	@Override protected boolean isDangerousFrame(int frame) { return true; }
 }
