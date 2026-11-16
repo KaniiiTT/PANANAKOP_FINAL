@@ -16,12 +16,9 @@ import ui.BossUI;
 import ui.GameOverOverlay;
 import ui.LevelCompletedOverlay;
 import ui.PauseOverlay;
-<<<<<<< Updated upstream
-=======
 import utilz.LoadSave;
 import utilz.SoundManager;
 import static utilz.Constants.Environment.*;
->>>>>>> Stashed changes
 
 public class Playing extends State implements Statemethods {
 	private Player player;
