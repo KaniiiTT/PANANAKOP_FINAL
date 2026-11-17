@@ -277,11 +277,16 @@ public class Player extends Entity {
 		}
 
 		if (!inAir)
-			if (!IsEntityOnFloor(hitbox, lvlData))
+			if (!IsEntityOnFloor(hitbox, lvlData) && !isOnCrumblingPlatform())
 				inAir = true;
 
 		if (inAir) {
-			if (CanMoveHere(hitbox.x, hitbox.y + airSpeed, hitbox.width, hitbox.height, lvlData)) {
+			float platformTop = getCrumblingPlatformLandingY(hitbox.y + hitbox.height + airSpeed);
+			if (platformTop >= 0 && airSpeed >= 0) {
+				hitbox.y = platformTop - hitbox.height;
+				resetInAir();
+				updateXPos(xSpeed);
+			} else if (CanMoveHere(hitbox.x, hitbox.y + airSpeed, hitbox.width, hitbox.height, lvlData)) {
 				hitbox.y += airSpeed;
 				airSpeed += GRAVITY;
 				updateXPos(xSpeed);
@@ -297,6 +302,29 @@ public class Player extends Entity {
 		} else
 			updateXPos(xSpeed);
 		moving = true;
+	}
+
+	private boolean isOnCrumblingPlatform() {
+		return getCrumblingPlatformLandingY(hitbox.y + hitbox.height + 1) >= 0;
+	}
+
+	private float getCrumblingPlatformLandingY(float nextFeetY) {
+		if (playing.getObjectManager() == null)
+			return -1;
+		float currentFeetY = hitbox.y + hitbox.height;
+		for (objects.Trap trap : playing.getObjectManager().getTraps()) {
+			if (!(trap instanceof objects.CrumblingPlatformTrap))
+				continue;
+			objects.CrumblingPlatformTrap platform = (objects.CrumblingPlatformTrap) trap;
+			if (!platform.isPlatformSolid())
+				continue;
+			boolean horizontalOverlap = hitbox.x < platform.getPlatformRight()
+					&& hitbox.x + hitbox.width > platform.getPlatformLeft();
+			float platformTop = platform.getPlatformTop();
+			if (horizontalOverlap && currentFeetY <= platformTop + 2 && nextFeetY >= platformTop)
+				return platformTop;
+		}
+		return -1;
 	}
 
 	private void updateDash() {

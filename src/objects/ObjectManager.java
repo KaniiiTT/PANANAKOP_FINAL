@@ -229,8 +229,13 @@ public class ObjectManager {
 		for (Spike s : spikes)
 			g.drawImage(spikeImg, (int) (s.getHitbox().x - xLvlOffset), (int) (s.getHitbox().y - s.getyDrawOffset()), SPIKE_WIDTH, SPIKE_HEIGHT, null);
 		for (Trap trap : traps)
-			trap.draw(g, xLvlOffset);
+			if (trap.isActive())
+				trap.draw(g, xLvlOffset);
 
+	}
+
+	public ArrayList<Trap> getTraps() {
+		return traps;
 	}
 
 	private void drawContainers(Graphics g, int xLvlOffset) {

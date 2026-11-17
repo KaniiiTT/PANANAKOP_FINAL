@@ -1,13 +1,13 @@
 
 package gamestates;
-
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.util.Random;
 
-import background.ParallaxBackground;
 import entities.EnemyManager;
 import entities.Player;
 import levels.LevelManager;
@@ -17,6 +17,8 @@ import ui.BossUI;
 import ui.GameOverOverlay;
 import ui.LevelCompletedOverlay;
 import ui.PauseOverlay;
+import utilz.LoadSave;
+import static utilz.Constants.Environment.*;
 import utilz.SoundManager;
 
 public class Playing extends State implements Statemethods {
@@ -26,6 +28,9 @@ public class Playing extends State implements Statemethods {
     private EnemyManager enemyManager;
     private ObjectManager objectManager;
 
+    private BufferedImage backgroundImg, bigCloud, smallCloud;
+    private int[] smallCloudsPos;
+    private Random rnd = new Random();
     private PauseOverlay pauseOverlay;
     private GameOverOverlay gameOverOverlay;
     private LevelCompletedOverlay levelCompletedOverlay;
@@ -40,8 +45,6 @@ public class Playing extends State implements Statemethods {
     // Lower value = slower camera catch-up.
     private float cameraFollowSpeed = 0.06f;
 
-    private ParallaxBackground background;
-
     private boolean gameOver;
     private boolean lvlCompleted;
     private boolean playerDying;
@@ -54,7 +57,12 @@ public class Playing extends State implements Statemethods {
         super(game);
         initClasses(testLevel);
 
-        background = new ParallaxBackground();
+        backgroundImg = LoadSave.GetSpriteAtlas(LoadSave.PLAYING_BG_IMG);
+        bigCloud = LoadSave.GetSpriteAtlas(LoadSave.BIG_CLOUDS);
+        smallCloud = LoadSave.GetSpriteAtlas(LoadSave.SMALL_CLOUDS);
+        smallCloudsPos = new int[8];
+        for (int i = 0; i < smallCloudsPos.length; i++)
+            smallCloudsPos[i] = (int) (90 * Game.SCALE) + rnd.nextInt((int) (100 * Game.SCALE));
 
         calcLvlOffset();
         loadStartLevel();
@@ -101,8 +109,6 @@ public class Playing extends State implements Statemethods {
 
     @Override
     public void update() {
-        background.update();
-
         if (paused) {
             pauseOverlay.update();
 
@@ -166,11 +172,8 @@ public class Playing extends State implements Statemethods {
 
         int cameraX = Math.round(xLvlOffset);
 
-        background.draw(
-                g,
-                cameraX,
-                levelManager.getCurrentLevel().getLevelData()
-        );
+        g.drawImage(backgroundImg, 0, 0, Game.GAME_WIDTH, Game.GAME_HEIGHT, null);
+        drawClouds(g);
 
         levelManager.draw(g, cameraX);
         player.render(g, cameraX);
@@ -190,6 +193,16 @@ public class Playing extends State implements Statemethods {
         } else if (lvlCompleted) {
             levelCompletedOverlay.draw(g);
         }
+    }
+
+    private void drawClouds(Graphics g) {
+        for (int i = 0; i < 3; i++)
+            g.drawImage(bigCloud, i * BIG_CLOUD_WIDTH - (int) (xLvlOffset * 0.3),
+                    (int) (204 * Game.SCALE), BIG_CLOUD_WIDTH, BIG_CLOUD_HEIGHT, null);
+
+        for (int i = 0; i < smallCloudsPos.length; i++)
+            g.drawImage(smallCloud, SMALL_CLOUD_WIDTH * 4 * i - (int) (xLvlOffset * 0.7),
+                    smallCloudsPos[i], SMALL_CLOUD_WIDTH, SMALL_CLOUD_HEIGHT, null);
     }
 
     public void resetAll() {
