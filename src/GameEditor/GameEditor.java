@@ -654,9 +654,7 @@ public class GameEditor {
 				clearPlayerMarkers();
 			if (selectedTool.green == 1)
 				clearBossMarkers();
-			int surfaceY = getSurfaceMarkerY(x, selectedTool.green == 1);
-			Color surfacePixel = new Color(mapImage.getRGB(x, surfaceY));
-			setPixel(x, surfaceY, surfacePixel.getRed(), selectedTool.green, surfacePixel.getBlue());
+			setPixel(x, y, pixel.getRed(), selectedTool.green, pixel.getBlue());
 			break;
 		case OBJECT:
 			setPixel(x, y, pixel.getRed(), pixel.getGreen(), selectedTool.blue);
