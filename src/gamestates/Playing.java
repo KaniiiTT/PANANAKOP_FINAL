@@ -8,6 +8,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Random;
 
+import background.ParallaxBackground;
 import entities.EnemyManager;
 import entities.Player;
 import levels.LevelManager;
@@ -29,6 +30,7 @@ public class Playing extends State implements Statemethods {
     private ObjectManager objectManager;
 
     private BufferedImage backgroundImg, bigCloud, smallCloud;
+    private ParallaxBackground parallaxBackground;
     private int[] smallCloudsPos;
     private Random rnd = new Random();
     private PauseOverlay pauseOverlay;
@@ -56,6 +58,7 @@ public class Playing extends State implements Statemethods {
     public Playing(Game game, levels.Level testLevel) {
         super(game);
         initClasses(testLevel);
+        parallaxBackground = new ParallaxBackground();
 
         backgroundImg = LoadSave.GetSpriteAtlas(LoadSave.PLAYING_BG_IMG);
         bigCloud = LoadSave.GetSpriteAtlas(LoadSave.BIG_CLOUDS);
@@ -172,8 +175,7 @@ public class Playing extends State implements Statemethods {
 
         int cameraX = Math.round(xLvlOffset);
 
-        g.drawImage(backgroundImg, 0, 0, Game.GAME_WIDTH, Game.GAME_HEIGHT, null);
-        drawClouds(g);
+        parallaxBackground.draw(g, cameraX, levelManager.getCurrentLevel().getLevelData());
 
         levelManager.draw(g, cameraX);
         player.render(g, cameraX);
