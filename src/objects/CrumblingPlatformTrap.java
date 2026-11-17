@@ -6,7 +6,7 @@ import main.Game;
 import static utilz.Constants.ObjectConstants.TRAP_CRUMBLING_PLATFORM;
 
 public class CrumblingPlatformTrap extends Trap {
-	private static final long DISAPPEAR_DELAY = 2000;
+	private static final long DISAPPEAR_DELAY = 1000;
 	private static final long RESPAWN_DELAY = 4000;
 	private static final int COLLISION_REMOVAL_FRAME = 5;
 	private long touchTime = -1;
