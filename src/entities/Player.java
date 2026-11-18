@@ -198,11 +198,7 @@ public class Player extends Entity {
 				return;
 			}
 			aniIndex++;
-			if (state == RUNNING && aniIndex >= GetSpriteAmount(RUNNING) - 1) {
-				// The final running-sheet frame is a standing transition frame.
-				// Skip it so a held run loops through the actual run cycle smoothly.
-				aniIndex = 0;
-			} else if (state == DASH && dashing && aniIndex >= GetSpriteAmount(DASH)) {
+			if (state == DASH && dashing && aniIndex >= GetSpriteAmount(DASH)) {
 				aniIndex = GetSpriteAmount(DASH) - 1; // hold last frame, don't loop
 			} else if (aniIndex >= GetSpriteAmount(state)) {
 				aniIndex = 0;
