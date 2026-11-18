@@ -243,7 +243,7 @@ public class Constants {
 		public static final int ULTIMATE = 14;
 
 		public static int GetSpriteAmount(int player_action) {
-			int[] frameCounts = { 6, 8, 8, 6, 4, 4, 6, 4, 6, 3, 4, 8, 6, 5, 8 };
+			int[] frameCounts = { 6, 8, 7, 6, 4, 4, 6, 4, 6, 3, 4, 8, 6, 5, 8 };
 			if (player_action < 0 || player_action >= frameCounts.length)
 				return 1;
 			return frameCounts[player_action];

@@ -191,8 +191,18 @@ public class Player extends Entity {
 		int speed = (state == DASH && dashing) ? dashAniSpeed : ANI_SPEED;
 		if (aniTick >= speed) {
 			aniTick = 0;
+			if (state == BLOCK) {
+				// Blocking is a hold pose: play the transition once, then keep
+				// displaying its final frame while the block button is held.
+				aniIndex = Math.min(aniIndex + 1, GetSpriteAmount(BLOCK) - 1);
+				return;
+			}
 			aniIndex++;
-			if (state == DASH && dashing && aniIndex >= GetSpriteAmount(DASH)) {
+			if (state == RUNNING && aniIndex >= GetSpriteAmount(RUNNING) - 1) {
+				// The final running-sheet frame is a standing transition frame.
+				// Skip it so a held run loops through the actual run cycle smoothly.
+				aniIndex = 0;
+			} else if (state == DASH && dashing && aniIndex >= GetSpriteAmount(DASH)) {
 				aniIndex = GetSpriteAmount(DASH) - 1; // hold last frame, don't loop
 			} else if (aniIndex >= GetSpriteAmount(state)) {
 				aniIndex = 0;
