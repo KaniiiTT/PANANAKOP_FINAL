@@ -3,6 +3,7 @@ package levels;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.List;
 
 import entities.Crabby;
 import entities.Magellan;
@@ -22,6 +23,7 @@ public class Level {
 
 	private BufferedImage img;
 	private BufferedImage[][] modernTiles;
+	private List<LevelDecoration> decorations;
 	private int[][] lvlData;
 	private ArrayList<Crabby> crabs;
 	private ArrayList<Magellan> magellans;
@@ -36,10 +38,15 @@ public class Level {
 	private Point playerSpawn;
 
 	public Level(BufferedImage img, int levelNumber) {
-		this(img, utilz.LoadSave.GetModernLevelTiles(levelNumber, img.getWidth(), img.getHeight()));
+		this(img, utilz.LoadSave.GetModernLevelTiles(levelNumber, img.getWidth(), img.getHeight()),
+				utilz.LoadSave.GetLevelDecorations(levelNumber));
 	}
 
 	public Level(BufferedImage img, BufferedImage[][] modernTiles) {
+		this(img, modernTiles, List.of());
+	}
+
+	public Level(BufferedImage img, BufferedImage[][] modernTiles, List<LevelDecoration> decorations) {
 		this.img = img;
 		if (modernTiles.length != img.getHeight())
 			throw new IllegalArgumentException("Modern tile height must match the level image.");
@@ -47,6 +54,7 @@ public class Level {
 			if (row.length != img.getWidth())
 				throw new IllegalArgumentException("Modern tile width must match the level image.");
 		this.modernTiles = modernTiles;
+		this.decorations = new ArrayList<>(decorations);
 		createLevelData();
 		createEnemies();
 		createPotions();
@@ -104,11 +112,18 @@ public class Level {
 	}
 
 	public int getSpriteIndex(int x, int y) {
+		// A custom tile has its own sprite; keep the classic cell underneath empty.
+		if (modernTiles[y][x] != null)
+			return 11;
 		return lvlData[y][x];
 	}
 
 	public BufferedImage getModernTile(int x, int y) {
 		return modernTiles[y][x];
+	}
+
+	public List<LevelDecoration> getDecorations() {
+		return decorations;
 	}
 
 	public int[][] getLevelData() {

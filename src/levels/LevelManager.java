@@ -62,15 +62,24 @@ public class LevelManager {
 	}
 
 	public void draw(Graphics g, int lvlOffset) {
+		Level currentLevel = levels.get(lvlIndex);
 		for (int j = 0; j < Game.TILES_IN_HEIGHT; j++)
-			for (int i = 0; i < levels.get(lvlIndex).getLevelData()[0].length; i++) {
-				int index = levels.get(lvlIndex).getSpriteIndex(i, j);
+			for (int i = 0; i < currentLevel.getLevelData()[0].length; i++) {
+				int index = currentLevel.getSpriteIndex(i, j);
 				g.drawImage(levelSprite[index], Game.TILES_SIZE * i - lvlOffset, Game.TILES_SIZE * j, Game.TILES_SIZE, Game.TILES_SIZE, null);
-				BufferedImage modernTile = levels.get(lvlIndex).getModernTile(i, j);
+				BufferedImage modernTile = currentLevel.getModernTile(i, j);
 				if (modernTile != null)
 					g.drawImage(modernTile, Game.TILES_SIZE * i - lvlOffset, Game.TILES_SIZE * j,
 							Game.TILES_SIZE, Game.TILES_SIZE, null);
 			}
+		float decorationScale = (float) Game.TILES_SIZE / Game.TILES_DEFAULT_SIZE;
+		for (LevelDecoration decoration : currentLevel.getDecorations()) {
+			int x = Math.round(decoration.getX() * decorationScale) - lvlOffset;
+			int y = Math.round(decoration.getY() * decorationScale);
+			int width = Math.max(1, Math.round(decoration.getWidth() * decorationScale));
+			int height = Math.max(1, Math.round(decoration.getHeight() * decorationScale));
+			g.drawImage(decoration.getImage(), x, y, width, height, null);
+		}
 	}
 
 	public void update() {

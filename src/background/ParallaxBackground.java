@@ -5,6 +5,7 @@ import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import javax.imageio.ImageIO;
@@ -31,19 +32,39 @@ public class ParallaxBackground {
     private final BackgroundLayer sky;
     private final List<BackgroundLayer> sceneryLayers;
     private final BackgroundLayer underground;
+    private final BackgroundLayer fallbackBackground;
     private final TerrainAnalyzer terrainAnalyzer = new TerrainAnalyzer();
 
     private TerrainProfile terrain;
 
     public ParallaxBackground() {
-        Path assets = LoadSave.GetProjectRoot().resolve("pananakop_modern_assets").resolve(ROOT);
-        sky = new ParallaxLayer(load(assets.resolve("1_sky.png")), 0.0);
-        sceneryLayers = List.of(
-                new ParallaxLayer(load(assets.resolve("2_far_mountains.png")), 0.12, -65),
-                new ParallaxLayer(load(assets.resolve("3_mid_jungle.png")), 0.30, -75),
-                new ParallaxLayer(load(assets.resolve("4_near_jungle.png")), 0.58, -85),
-                new ParallaxLayer(load(assets.resolve("5_front_mist.png")), 0.82, -85));
-        underground = new UndergroundLayer(load(assets.resolve("6_underground_soil.png")));
+        Path assetsRoot = LoadSave.GetProjectRoot().resolve("pananakop_modern_assets");
+        Path assets = assetsRoot.resolve(ROOT);
+        Path skyPath = assets.resolve("1_sky.png");
+        Path mountainsPath = assets.resolve("2_far_mountains.png");
+        Path midJunglePath = assets.resolve("3_mid_jungle.png");
+        Path nearJunglePath = assets.resolve("4_near_jungle.png");
+        Path mistPath = assets.resolve("5_front_mist.png");
+        Path soilPath = assets.resolve("6_underground_soil.png");
+
+        if (Files.isRegularFile(skyPath) && Files.isRegularFile(mountainsPath)
+                && Files.isRegularFile(midJunglePath) && Files.isRegularFile(nearJunglePath)
+                && Files.isRegularFile(mistPath) && Files.isRegularFile(soilPath)) {
+            sky = new ParallaxLayer(load(skyPath), 0.0);
+            sceneryLayers = List.of(
+                    new ParallaxLayer(load(mountainsPath), 0.12, -65),
+                    new ParallaxLayer(load(midJunglePath), 0.30, -75),
+                    new ParallaxLayer(load(nearJunglePath), 0.58, -85),
+                    new ParallaxLayer(load(mistPath), 0.82, -85));
+            underground = new UndergroundLayer(load(soilPath));
+            fallbackBackground = null;
+        } else {
+            sky = null;
+            sceneryLayers = List.of();
+            underground = null;
+            fallbackBackground = new ParallaxLayer(
+                    load(assetsRoot.resolve("Background/x32/Full_bgx32.png")), 0.0);
+        }
     }
 
     private BufferedImage load(Path path) {
@@ -63,6 +84,10 @@ public class ParallaxBackground {
 
     public void draw(Graphics g, int cameraX, int[][] levelData) {
         Graphics2D g2 = (Graphics2D) g;
+        if (fallbackBackground != null) {
+            fallbackBackground.draw(g2, cameraX);
+            return;
+        }
         TerrainProfile profile = terrainFor(levelData);
         int tile = Game.TILES_SIZE;
 

@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -32,6 +33,7 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
 import javax.swing.JTabbedPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
@@ -39,6 +41,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import main.Game;
 import levels.Level;
+import levels.LevelDecoration;
 import objects.Trap;
 import utilz.LoadSave;
 
@@ -59,6 +62,8 @@ public class GameEditor {
 	private final BufferedImage[] classicTiles = loadClassicTiles();
 	private final JFrame frame = new JFrame("Pananakop Map Editor");
 	private final Map<String, BufferedImage> previewCache = new TreeMap<>();
+	private final List<BackgroundOption> backgroundOptions = new ArrayList<>();
+	private final List<LevelDecoration> placedDecorations = new ArrayList<>();
 	private final EditorCanvas canvas = new EditorCanvas();
 	private final JLabel status = new JLabel("Select a block, then click or drag on the map.");
 	private final JLabel currentMapLabel = new JLabel();
@@ -69,9 +74,18 @@ public class GameEditor {
 	private JComboBox<String> materialPicker;
 	private JComboBox<StageOption> stagePicker;
 	private JList<TileOption> tileList;
+	private JList<BackgroundOption> backgroundList;
+	private JComboBox<String> decorationCategoryPicker;
+	private JList<DecorationOption> decorationList;
+	private JLabel decorationSizeLabel;
+	private BackgroundOption selectedBackground;
+	private DecorationOption selectedDecoration;
+	private int decorationScale = 100;
+	private Point decorationPreviewPosition;
 	private boolean unsavedChanges;
 	private boolean testGameRunning;
 	private boolean updatingStagePicker;
+	private boolean updatingBackgroundList;
 
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(() -> {
@@ -177,7 +191,7 @@ public class GameEditor {
 		int width = 50;
 		mapImage = new BufferedImage(width, Game.TILES_IN_HEIGHT, BufferedImage.TYPE_INT_RGB);
 		modernTilePaths = new String[Game.TILES_IN_HEIGHT][width];
-		String sandstoneFloor = "pananakop_modern_assets/blocks/sandstone/tiles/255.png";
+		placedDecorations.clear();
 		for (int y = 0; y < mapImage.getHeight(); y++)
 			for (int x = 0; x < mapImage.getWidth(); x++)
 				setPixel(x, y, y == Game.TILES_IN_HEIGHT - 1 ? 13 : EMPTY_TILE, NO_MARKER, NO_MARKER);
@@ -187,7 +201,6 @@ public class GameEditor {
 			for (int y = Game.TILES_IN_HEIGHT - 3; y < Game.TILES_IN_HEIGHT - 1; y++)
 				for (int x = 0; x < width; x++) {
 					setPixel(x, y, 13, NO_MARKER, NO_MARKER);
-					modernTilePaths[y][x] = sandstoneFloor;
 				}
 			setPixel(2, Game.TILES_IN_HEIGHT - 4, EMPTY_TILE, 100, NO_MARKER);
 			// Magellan's hitbox is taller than a normal mob, so its top-left
@@ -197,9 +210,11 @@ public class GameEditor {
 			setPixel(2, Game.TILES_IN_HEIGHT - 2, EMPTY_TILE, 100, NO_MARKER);
 		}
 
+		selectedBackground = null;
 		currentMapPath = levelsDirectory.resolve(stage.number + ".png");
 		unsavedChanges = true;
 		updateStageDisplay();
+		syncBackgroundSelection();
 		updateCanvas();
 		status.setText(stage.label + " created with Magellan and the final arena layout. Save to use it.");
 	}
@@ -225,15 +240,12 @@ public class GameEditor {
 		if (answer != JOptionPane.YES_OPTION)
 			return;
 
-		String sandstoneFloor = "pananakop_modern_assets/blocks/sandstone/tiles/255.png";
 		for (int y = 0; y < mapImage.getHeight(); y++)
 			for (int x = 0; x < mapImage.getWidth(); x++) {
 				setPixel(x, y, EMPTY_TILE, NO_MARKER, NO_MARKER);
 				modernTilePaths[y][x] = null;
 				if (y >= Game.TILES_IN_HEIGHT - 3)
 					setPixel(x, y, 13, NO_MARKER, NO_MARKER);
-				if (y == Game.TILES_IN_HEIGHT - 3 || y == Game.TILES_IN_HEIGHT - 2)
-					modernTilePaths[y][x] = sandstoneFloor;
 			}
 		setPixel(2, Game.TILES_IN_HEIGHT - 4, EMPTY_TILE, 100, NO_MARKER);
 		setPixel(mapImage.getWidth() - 7, Game.TILES_IN_HEIGHT - 6, EMPTY_TILE, 1, NO_MARKER);
@@ -284,7 +296,7 @@ public class GameEditor {
 			Graphics2D graphics = snapshot.createGraphics();
 			graphics.drawImage(mapImage, 0, 0, null);
 			graphics.dispose();
-			Level testLevel = new Level(snapshot, loadModernTileImages());
+			Level testLevel = new Level(snapshot, loadModernTileImages(), placedDecorations);
 			testGameRunning = true;
 			new Game(testLevel, () -> {
 				testGameRunning = false;
@@ -299,23 +311,17 @@ public class GameEditor {
 
 	private BufferedImage[][] loadModernTileImages() throws IOException {
 		BufferedImage[][] tiles = new BufferedImage[modernTilePaths.length][modernTilePaths[0].length];
-		Path assetsRoot = projectRoot.resolve("pananakop_modern_assets").normalize();
 		Map<String, BufferedImage> imageCache = new TreeMap<>();
 		for (int y = 0; y < modernTilePaths.length; y++)
 			for (int x = 0; x < modernTilePaths[y].length; x++) {
 				String relativePath = modernTilePaths[y][x];
 				if (relativePath == null)
 					continue;
-
-				Path imagePath = projectRoot.resolve(relativePath).normalize();
-				if (!imagePath.startsWith(assetsRoot) || !Files.isRegularFile(imagePath))
-					throw new IOException("Invalid modern tile asset at map cell " + x + ", " + y + ": "
-							+ relativePath);
 				BufferedImage image = imageCache.get(relativePath);
 				if (image == null) {
-					image = ImageIO.read(imagePath.toFile());
+					image = ImageIO.read(projectRoot.resolve(relativePath).toFile());
 					if (image == null)
-						throw new IOException("Unsupported or empty image: " + imagePath);
+						throw new IOException("Unsupported or empty image: " + relativePath);
 					imageCache.put(relativePath, image);
 				}
 				tiles[y][x] = image;
@@ -329,8 +335,7 @@ public class GameEditor {
 		palette.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 2));
 		materialPicker = new JComboBox<>();
 		materialPicker.addItem("Classic tiles");
-		for (String material : LoadSave.GetModernBlockMaterials())
-			materialPicker.addItem(material);
+		materialPicker.addItem("Platformer");
 		materialPicker.addActionListener(event -> refreshTilePalette());
 
 		tileList = new JList<>();
@@ -351,9 +356,173 @@ public class GameEditor {
 
 		JTabbedPane tabs = new JTabbedPane();
 		tabs.addTab("Blocks", blockPanel);
+		tabs.addTab("Decorations", createDecorationPalette());
 		tabs.addTab("Mobs & objects", createEntityPalette());
+		tabs.addTab("Background", createBackgroundPalette());
 		palette.add(tabs, BorderLayout.CENTER);
 		return palette;
+	}
+
+	private JPanel createBackgroundPalette() {
+		backgroundList = new JList<>();
+		backgroundList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		backgroundList.setCellRenderer(new BackgroundRenderer());
+		backgroundList.addListSelectionListener(event -> {
+			if (event.getValueIsAdjusting() || updatingBackgroundList)
+				return;
+			BackgroundOption option = backgroundList.getSelectedValue();
+			if (option == null)
+				return;
+			selectedBackground = option;
+			unsavedChanges = true;
+			canvas.repaint();
+			status.setText(option.image == null ? "Background cleared." : "Background set to " + option.label + ".");
+		});
+
+		JPanel panel = new JPanel(new BorderLayout(4, 4));
+		panel.add(new JLabel("Choose a backdrop for this map:"), BorderLayout.NORTH);
+		panel.add(new JScrollPane(backgroundList), BorderLayout.CENTER);
+		loadBackgroundOptions();
+		syncBackgroundSelection();
+		return panel;
+	}
+
+	private JPanel createDecorationPalette() {
+		decorationCategoryPicker = new JComboBox<>(new String[] { "Building", "Environment" });
+		decorationCategoryPicker.addActionListener(event -> loadDecorationOptions());
+		decorationList = new JList<>();
+		decorationList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		decorationList.setCellRenderer(new DecorationRenderer());
+		decorationList.addListSelectionListener(event -> {
+			if (event.getValueIsAdjusting())
+				return;
+			DecorationOption option = decorationList.getSelectedValue();
+			if (option == null)
+				return;
+			try {
+				option.image = ImageIO.read(option.path.toFile());
+				if (option.image == null)
+					throw new IOException("Unsupported or empty image: " + option.path);
+			} catch (IOException e) {
+				showError("Unable to load decoration " + option.label, e);
+				return;
+			}
+			selectedDecoration = option;
+			selectedTool = Tool.decoration();
+			status.setText("Selected " + option.label + " — click the map to place it.");
+		});
+
+		JSlider sizeSlider = new JSlider(25, 200, 100);
+		sizeSlider.setMajorTickSpacing(25);
+		sizeSlider.setPaintTicks(true);
+		decorationSizeLabel = new JLabel("Size: 100%");
+		sizeSlider.addChangeListener(event -> {
+			decorationScale = sizeSlider.getValue();
+			decorationSizeLabel.setText("Size: " + decorationScale + "%");
+		});
+		JPanel sizePanel = new JPanel(new BorderLayout());
+		sizePanel.add(decorationSizeLabel, BorderLayout.NORTH);
+		sizePanel.add(sizeSlider, BorderLayout.CENTER);
+
+		JPanel panel = new JPanel(new BorderLayout(4, 4));
+		panel.add(decorationCategoryPicker, BorderLayout.NORTH);
+		panel.add(new JScrollPane(decorationList), BorderLayout.CENTER);
+		panel.add(sizePanel, BorderLayout.SOUTH);
+		loadDecorationOptions();
+		return panel;
+	}
+
+	private void loadDecorationOptions() {
+		if (decorationList == null)
+			return;
+		String category = (String) decorationCategoryPicker.getSelectedItem();
+		List<DecorationOption> options = new ArrayList<>();
+		if (category != null) {
+			Path directory = projectRoot.resolve("pananakop_modern_assets").resolve(category).normalize();
+			if (Files.isDirectory(directory)) {
+				try (var paths = Files.list(directory)) {
+					paths.filter(Files::isRegularFile)
+							.filter(path -> path.getFileName().toString().toLowerCase().endsWith(".png"))
+							.sorted()
+							.forEach(path -> {
+								try {
+									BufferedImage image = ImageIO.read(path.toFile());
+									if (image == null)
+										return;
+									String label = path.getFileName().toString().replaceFirst("(?i)\\.png$", "");
+									int separator = label.lastIndexOf(" - ");
+									if (separator >= 0)
+										label = label.substring(separator + 3);
+									options.add(new DecorationOption(label, path, createDecorationThumbnail(image)));
+								} catch (IOException ignored) {
+									// Skip files that cannot be read as images.
+								}
+							});
+				} catch (IOException e) {
+					showError("Unable to list " + category + " decorations", e);
+				}
+			}
+		}
+		decorationList.setListData(options.toArray(new DecorationOption[0]));
+	}
+
+	private BufferedImage createDecorationThumbnail(BufferedImage source) {
+		BufferedImage thumbnail = new BufferedImage(48, 48, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = thumbnail.createGraphics();
+		float scale = Math.min(48f / source.getWidth(), 48f / source.getHeight());
+		int width = Math.max(1, Math.round(source.getWidth() * scale));
+		int height = Math.max(1, Math.round(source.getHeight() * scale));
+		g.drawImage(source, (48 - width) / 2, (48 - height) / 2, width, height, null);
+		g.dispose();
+		return thumbnail;
+	}
+
+	private void loadBackgroundOptions() {
+		backgroundOptions.clear();
+		backgroundOptions.add(new BackgroundOption("No background", null, null));
+		Path backgroundRoot = projectRoot.resolve("pananakop_modern_assets").resolve("Background").normalize();
+		if (!Files.isDirectory(backgroundRoot)) {
+			backgroundList.setListData(backgroundOptions.toArray(new BackgroundOption[0]));
+			return;
+		}
+
+		try (var paths = Files.walk(backgroundRoot)) {
+			paths.filter(Files::isRegularFile)
+					.filter(path -> path.getFileName().toString().toLowerCase().startsWith("full_bg")
+							&& path.getFileName().toString().toLowerCase().endsWith(".png"))
+					.sorted()
+					.forEach(path -> {
+						try {
+							BufferedImage image = ImageIO.read(path.toFile());
+							if (image == null)
+								return;
+						String label = backgroundRoot.relativize(path).toString().replace('\\', '/');
+						backgroundOptions.add(new BackgroundOption(label, path, image));
+						} catch (IOException ignored) {
+							// Skip broken background images and keep the editor usable.
+						}
+					});
+		} catch (IOException e) {
+			showError("Unable to list background images", e);
+		}
+		backgroundList.setListData(backgroundOptions.toArray(new BackgroundOption[0]));
+	}
+
+	private void syncBackgroundSelection() {
+		if (backgroundList == null)
+			return;
+		updatingBackgroundList = true;
+		for (int i = 0; i < backgroundOptions.size(); i++) {
+			BackgroundOption option = backgroundOptions.get(i);
+			if (selectedBackground == null ? option.image == null
+					: option.path != null && option.path.equals(selectedBackground.path)) {
+				backgroundList.setSelectedIndex(i);
+				updatingBackgroundList = false;
+				return;
+			}
+		}
+		backgroundList.clearSelection();
+		updatingBackgroundList = false;
 	}
 
 	private JPanel createEntityPalette() {
@@ -432,17 +601,30 @@ public class GameEditor {
 			for (int i = 0; i < classicTiles.length; i++)
 				options.add(new TileOption("Classic tile " + i, classicTiles[i], i, null));
 		} else {
-			for (Path tilePath : LoadSave.GetModernBlockTiles(material)) {
-				try {
-					BufferedImage image = ImageIO.read(tilePath.toFile());
-					if (image == null)
-						throw new IOException("Unsupported or empty image: " + tilePath);
-					String relativePath = projectRoot.relativize(tilePath).toString().replace('\\', '/');
-					options.add(new TileOption(material + " " + tilePath.getFileName().toString().replace(".png", ""),
-							image, 0, relativePath));
+			Path categoryDirectory = projectRoot.resolve("pananakop_modern_assets").resolve(material).normalize();
+			if (Files.isDirectory(categoryDirectory)) {
+				try (var paths = Files.list(categoryDirectory)) {
+					paths.filter(Files::isRegularFile)
+							.filter(path -> path.getFileName().toString().toLowerCase().endsWith(".png"))
+							.sorted()
+							.forEach(path -> {
+								try {
+									BufferedImage image = ImageIO.read(path.toFile());
+									if (image == null)
+										return;
+									String relativePath = projectRoot.relativize(path).toString().replace('\\', '/');
+									String label = path.getFileName().toString().replaceFirst("(?i)\\.png$", "");
+									int separator = label.lastIndexOf(" - ");
+									if (separator >= 0)
+										label = label.substring(separator + 3);
+									// Keep the cell clear beneath transparent pixels, like an empty classic tile.
+								options.add(new TileOption(label, image, EMPTY_TILE, relativePath));
+								} catch (IOException ignored) {
+									// Skip image files that cannot be decoded.
+								}
+							});
 				} catch (IOException e) {
-					showError("Unable to load block tile " + tilePath, e);
-					return;
+					showError("Unable to list " + material + " block tiles", e);
 				}
 			}
 		}
@@ -481,12 +663,15 @@ public class GameEditor {
 			}
 			mapImage = new BufferedImage(width, Game.TILES_IN_HEIGHT, BufferedImage.TYPE_INT_RGB);
 			modernTilePaths = new String[Game.TILES_IN_HEIGHT][width];
+			placedDecorations.clear();
 			for (int y = 0; y < mapImage.getHeight(); y++)
 				for (int x = 0; x < mapImage.getWidth(); x++)
 					setPixel(x, y, EMPTY_TILE, NO_MARKER, NO_MARKER);
+			selectedBackground = null;
 			currentMapPath = newMapPath;
 			unsavedChanges = true;
 			syncStagePicker();
+			syncBackgroundSelection();
 			updateCanvas();
 			status.setText("New " + width + " × " + Game.TILES_IN_HEIGHT + " map.");
 		} catch (NumberFormatException e) {
@@ -532,11 +717,17 @@ public class GameEditor {
 			graphics.dispose();
 			Path absolutePath = path.toAbsolutePath().normalize();
 			String[][] loadedModernPaths = loadModernTilePaths(absolutePath, normalized);
+			BackgroundOption loadedBackground = loadBackground(absolutePath);
+			List<LevelDecoration> loadedDecorations = loadDecorations(absolutePath, normalized);
 			mapImage = normalized;
 			currentMapPath = absolutePath;
 			modernTilePaths = loadedModernPaths;
+			selectedBackground = loadedBackground;
+			placedDecorations.clear();
+			placedDecorations.addAll(loadedDecorations);
 			unsavedChanges = false;
 			syncStagePicker();
+			syncBackgroundSelection();
 			updateCanvas();
 			status.setText(path.getFileName() + " — " + mapImage.getWidth() + " × " + mapImage.getHeight()
 					+ " tiles.");
@@ -549,35 +740,93 @@ public class GameEditor {
 
 	private String[][] loadModernTilePaths(Path mapPath, BufferedImage image) throws IOException {
 		String[][] paths = new String[image.getHeight()][image.getWidth()];
-		String fileName = mapPath.getFileName().toString();
-		Path sidecar = mapPath.resolveSibling(fileName.substring(0, fileName.length() - 4) + ".tiles");
-		if (!Files.exists(sidecar))
+		Path sidecar = mapPath.resolveSibling(mapPath.getFileName().toString().replaceFirst("(?i)\\.png$", ".tiles"));
+		if (!Files.isRegularFile(sidecar))
 			return paths;
-
 		Path assetsRoot = projectRoot.resolve("pananakop_modern_assets").normalize();
-		List<String> lines = Files.readAllLines(sidecar);
-		for (int i = 0; i < lines.size(); i++) {
-			String line = lines.get(i).trim();
-			if (line.isEmpty())
+		for (String line : Files.readAllLines(sidecar)) {
+			if (line.isBlank())
 				continue;
-			String[] fields = line.split("\t", 3);
+			String[] fields = line.split("\\t", 3);
 			if (fields.length != 3)
-				throw new IOException("Malformed tile entry on line " + (i + 1));
-			int x;
-			int y;
+				continue;
 			try {
-				x = Integer.parseInt(fields[0]);
-				y = Integer.parseInt(fields[1]);
-			} catch (NumberFormatException e) {
-				throw new IOException("Invalid tile position on line " + (i + 1), e);
+				int x = Integer.parseInt(fields[0]);
+				int y = Integer.parseInt(fields[1]);
+				Path asset = projectRoot.resolve(fields[2]).normalize();
+				boolean validCategory = asset.startsWith(assetsRoot.resolve("Building"))
+						|| asset.startsWith(assetsRoot.resolve("Environment"))
+						|| asset.startsWith(assetsRoot.resolve("Platformer"));
+				if (x >= 0 && x < image.getWidth() && y >= 0 && y < image.getHeight()
+						&& validCategory && Files.isRegularFile(asset))
+					paths[y][x] = fields[2];
+			} catch (NumberFormatException ignored) {
+				// Ignore malformed or stale entries from removed asset packs.
 			}
-			Path asset = projectRoot.resolve(fields[2]).normalize();
-			if (x < 0 || x >= image.getWidth() || y < 0 || y >= image.getHeight()
-					|| !asset.startsWith(assetsRoot) || !Files.isRegularFile(asset))
-				throw new IOException("Invalid modern tile entry on line " + (i + 1));
-			paths[y][x] = fields[2];
 		}
 		return paths;
+	}
+
+	private List<LevelDecoration> loadDecorations(Path mapPath, BufferedImage image) throws IOException {
+		List<LevelDecoration> decorations = new ArrayList<>();
+		Path sidecar = getDecorationsSidecar(mapPath);
+		if (!Files.isRegularFile(sidecar))
+			return decorations;
+		Path assetsRoot = projectRoot.resolve("pananakop_modern_assets").normalize();
+		for (String line : Files.readAllLines(sidecar)) {
+			if (line.isBlank())
+				continue;
+			String[] fields = line.split("\\t", 5);
+			if (fields.length != 5)
+				continue;
+			try {
+				int x = Integer.parseInt(fields[0]);
+				int y = Integer.parseInt(fields[1]);
+				int width = Integer.parseInt(fields[2]);
+				int height = Integer.parseInt(fields[3]);
+				Path asset = projectRoot.resolve(fields[4]).normalize();
+				boolean validCategory = asset.startsWith(assetsRoot.resolve("Building"))
+						|| asset.startsWith(assetsRoot.resolve("Environment"));
+				if (x < 0 || y < 0 || x >= image.getWidth() * TILE_SIZE || y >= image.getHeight() * TILE_SIZE
+						|| width < 1 || height < 1 || !validCategory || !Files.isRegularFile(asset))
+					continue;
+				BufferedImage decorationImage = ImageIO.read(asset.toFile());
+				if (decorationImage != null)
+					decorations.add(new LevelDecoration(x, y, width, height, asset, decorationImage));
+			} catch (NumberFormatException ignored) {
+				// Skip malformed entries and continue opening the map.
+			}
+		}
+		return decorations;
+	}
+
+	private Path getDecorationsSidecar(Path mapPath) {
+		String fileName = mapPath.getFileName().toString();
+		return mapPath.resolveSibling(fileName.replaceFirst("(?i)\\.png$", ".decorations"));
+	}
+
+	private BackgroundOption loadBackground(Path mapPath) throws IOException {
+		Path sidecar = getBackgroundSidecar(mapPath);
+		if (!Files.isRegularFile(sidecar))
+			return null;
+
+		String relativePath = Files.readString(sidecar).trim();
+		if (relativePath.isEmpty())
+			return null;
+		Path backgroundRoot = projectRoot.resolve("pananakop_modern_assets").resolve("Background").normalize();
+		Path imagePath = projectRoot.resolve(relativePath).normalize();
+		if (!imagePath.startsWith(backgroundRoot) || !Files.isRegularFile(imagePath))
+			throw new IOException("Invalid background image in " + sidecar + ": " + relativePath);
+		BufferedImage image = ImageIO.read(imagePath.toFile());
+		if (image == null)
+			throw new IOException("Unsupported or empty background image: " + imagePath);
+		return new BackgroundOption(backgroundRoot.relativize(imagePath).toString().replace('\\', '/'),
+				imagePath, image);
+	}
+
+	private Path getBackgroundSidecar(Path mapPath) {
+		String fileName = mapPath.getFileName().toString();
+		return mapPath.resolveSibling(fileName.substring(0, fileName.length() - 4) + ".background");
 	}
 
 	private void saveMapAs() {
@@ -619,6 +868,34 @@ public class GameEditor {
 			else
 				Files.write(sidecar, lines);
 
+			Path backgroundSidecar = getBackgroundSidecar(absolutePath);
+			if (selectedBackground == null || selectedBackground.image == null)
+				Files.deleteIfExists(backgroundSidecar);
+			else {
+				Path backgroundRoot = projectRoot.resolve("pananakop_modern_assets").resolve("Background").normalize();
+				Path backgroundPath = selectedBackground.path.toAbsolutePath().normalize();
+				if (!backgroundPath.startsWith(backgroundRoot) || !Files.isRegularFile(backgroundPath))
+					throw new IOException("Selected background is outside the project's Background assets.");
+				Files.writeString(backgroundSidecar,
+						projectRoot.relativize(backgroundPath).toString().replace('\\', '/') + System.lineSeparator());
+			}
+
+			Path decorationsSidecar = getDecorationsSidecar(absolutePath);
+			if (placedDecorations.isEmpty())
+				Files.deleteIfExists(decorationsSidecar);
+			else {
+				List<String> decorationLines = new ArrayList<>();
+				for (LevelDecoration decoration : placedDecorations) {
+					Path asset = decoration.getAssetPath().toAbsolutePath().normalize();
+					if (!Files.isRegularFile(asset))
+						throw new IOException("Decoration image is missing: " + asset);
+					decorationLines.add(decoration.getX() + "\t" + decoration.getY() + "\t"
+							+ decoration.getWidth() + "\t" + decoration.getHeight() + "\t"
+							+ projectRoot.relativize(asset).toString().replace('\\', '/'));
+				}
+				Files.write(decorationsSidecar, decorationLines);
+			}
+
 			currentMapPath = absolutePath;
 			unsavedChanges = false;
 			syncStagePicker();
@@ -633,6 +910,11 @@ public class GameEditor {
 		if (x < 0 || x >= mapImage.getWidth() || y < 0 || y >= mapImage.getHeight())
 			return;
 		if (erase) {
+			if (removeDecorationAt(x * TILE_SIZE, y * TILE_SIZE)) {
+				unsavedChanges = true;
+				canvas.repaint();
+				return;
+			}
 			clearCell(x, y);
 			unsavedChanges = true;
 			canvas.repaint();
@@ -659,6 +941,8 @@ public class GameEditor {
 		case OBJECT:
 			setPixel(x, y, pixel.getRed(), pixel.getGreen(), selectedTool.blue);
 			break;
+		case DECORATION:
+			break;
 		}
 		unsavedChanges = true;
 		canvas.repaint();
@@ -677,6 +961,46 @@ public class GameEditor {
 	private void clearCell(int x, int y) {
 		setPixel(x, y, EMPTY_TILE, NO_MARKER, NO_MARKER);
 		modernTilePaths[y][x] = null;
+	}
+
+	private boolean removeDecorationAt(int x, int y) {
+		for (int i = placedDecorations.size() - 1; i >= 0; i--) {
+			LevelDecoration decoration = placedDecorations.get(i);
+			if (x >= decoration.getX() && x < decoration.getX() + decoration.getWidth()
+					&& y >= decoration.getY() && y < decoration.getY() + decoration.getHeight()) {
+				placedDecorations.remove(i);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private int getSelectedDecorationWidth() {
+		return Math.max(1, selectedDecoration.image.getWidth() * decorationScale / 100);
+	}
+
+	private int getSelectedDecorationHeight() {
+		return Math.max(1, selectedDecoration.image.getHeight() * decorationScale / 100);
+	}
+
+	private void updateDecorationPreview(MouseEvent event) {
+		if (selectedDecoration == null || selectedDecoration.image == null)
+			return;
+		int x = event.getX() - getSelectedDecorationWidth() / 2;
+		int y = event.getY() - getSelectedDecorationHeight() / 2;
+		decorationPreviewPosition = new Point(x, y);
+		canvas.repaint();
+	}
+
+	private void placeSelectedDecoration() {
+		if (selectedDecoration == null || selectedDecoration.image == null || decorationPreviewPosition == null)
+			return;
+		placedDecorations.add(new LevelDecoration(decorationPreviewPosition.x, decorationPreviewPosition.y,
+				getSelectedDecorationWidth(), getSelectedDecorationHeight(), selectedDecoration.path,
+				selectedDecoration.image));
+		decorationPreviewPosition = null;
+		unsavedChanges = true;
+		canvas.repaint();
 	}
 
 	private void clearPlayerMarkers() {
@@ -734,15 +1058,30 @@ public class GameEditor {
 			addMouseListener(new MouseAdapter() {
 				@Override
 				public void mousePressed(MouseEvent event) {
+					if (SwingUtilities.isLeftMouseButton(event) && selectedTool.kind == ToolKind.DECORATION) {
+						updateDecorationPreview(event);
+						return;
+					}
 					if (SwingUtilities.isLeftMouseButton(event))
 						paintAt(event, false);
 					else if (SwingUtilities.isRightMouseButton(event))
 						paintAt(event, true);
 				}
+
+				@Override
+				public void mouseReleased(MouseEvent event) {
+					if (SwingUtilities.isLeftMouseButton(event) && selectedTool.kind == ToolKind.DECORATION)
+						placeSelectedDecoration();
+				}
 			});
 			addMouseMotionListener(new MouseAdapter() {
 				@Override
 				public void mouseDragged(MouseEvent event) {
+					if (selectedTool.kind == ToolKind.DECORATION
+							&& (event.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) != 0) {
+						updateDecorationPreview(event);
+						return;
+					}
 					if ((event.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) != 0)
 						paintAt(event, false);
 					else if ((event.getModifiersEx() & MouseEvent.BUTTON3_DOWN_MASK) != 0)
@@ -762,6 +1101,7 @@ public class GameEditor {
 				return;
 			Graphics2D g = (Graphics2D) graphics.create();
 			g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+			drawBackground(g);
 			for (int y = 0; y < mapImage.getHeight(); y++)
 				for (int x = 0; x < mapImage.getWidth(); x++) {
 					int px = x * TILE_SIZE;
@@ -792,6 +1132,15 @@ public class GameEditor {
 
 					drawMarkers(g, pixel, px, py);
 				}
+			for (LevelDecoration decoration : placedDecorations)
+				g.drawImage(decoration.getImage(), decoration.getX(), decoration.getY(), decoration.getWidth(),
+						decoration.getHeight(), null);
+			if (decorationPreviewPosition != null && selectedDecoration != null && selectedDecoration.image != null) {
+				g.setComposite(java.awt.AlphaComposite.SrcOver.derive(0.65f));
+				g.drawImage(selectedDecoration.image, decorationPreviewPosition.x, decorationPreviewPosition.y,
+						getSelectedDecorationWidth(), getSelectedDecorationHeight(), null);
+				g.setComposite(java.awt.AlphaComposite.SrcOver);
+			}
 
 			g.setColor(new Color(15, 18, 24, 105));
 			for (int x = 0; x <= mapImage.getWidth(); x++)
@@ -799,6 +1148,16 @@ public class GameEditor {
 			for (int y = 0; y <= mapImage.getHeight(); y++)
 				g.drawLine(0, y * TILE_SIZE, mapImage.getWidth() * TILE_SIZE, y * TILE_SIZE);
 			g.dispose();
+		}
+
+		private void drawBackground(Graphics2D g) {
+			if (selectedBackground == null || selectedBackground.image == null)
+				return;
+			int height = mapImage.getHeight() * TILE_SIZE;
+			int width = Math.max(1, selectedBackground.image.getWidth() * height
+					/ selectedBackground.image.getHeight());
+			for (int x = 0; x < mapImage.getWidth() * TILE_SIZE; x += width)
+				g.drawImage(selectedBackground.image, x, 0, width, height, null);
 		}
 
 		private void drawMarkers(Graphics2D g, Color pixel, int x, int y) {
@@ -852,6 +1211,36 @@ public class GameEditor {
 		}
 	}
 
+	private static class BackgroundOption {
+		private final String label;
+		private final Path path;
+		private final BufferedImage image;
+
+		private BackgroundOption(String label, Path path, BufferedImage image) {
+			this.label = label;
+			this.path = path;
+			this.image = image;
+		}
+
+		@Override
+		public String toString() {
+			return label;
+		}
+	}
+
+	private static class DecorationOption {
+		private final String label;
+		private final Path path;
+		private final BufferedImage thumbnail;
+		private BufferedImage image;
+
+		private DecorationOption(String label, Path path, BufferedImage thumbnail) {
+			this.label = label;
+			this.path = path;
+			this.thumbnail = thumbnail;
+		}
+	}
+
 	private static class StageOption {
 		private final int number;
 		private final String label;
@@ -883,8 +1272,41 @@ public class GameEditor {
 		}
 	}
 
+	private static class BackgroundRenderer extends DefaultListCellRenderer {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public java.awt.Component getListCellRendererComponent(JList<?> list, Object value, int index,
+				boolean isSelected, boolean cellHasFocus) {
+			JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+			BackgroundOption option = (BackgroundOption) value;
+			label.setText(option.label);
+			label.setIcon(option.image == null ? null : new javax.swing.ImageIcon(
+					option.image.getScaledInstance(86, 48, java.awt.Image.SCALE_FAST)));
+			label.setIconTextGap(8);
+			label.setPreferredSize(new Dimension(220, 58));
+			return label;
+		}
+	}
+
+	private static class DecorationRenderer extends DefaultListCellRenderer {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public java.awt.Component getListCellRendererComponent(JList<?> list, Object value, int index,
+				boolean isSelected, boolean cellHasFocus) {
+			JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+			DecorationOption option = (DecorationOption) value;
+			label.setText(option.label);
+			label.setIcon(new javax.swing.ImageIcon(option.thumbnail));
+			label.setIconTextGap(8);
+			label.setPreferredSize(new Dimension(220, 54));
+			return label;
+		}
+	}
+
 	private enum ToolKind {
-		TILE, ERASE, MARKER, OBJECT
+		TILE, ERASE, MARKER, OBJECT, DECORATION
 	}
 
 	private static class Tool {
@@ -916,6 +1338,10 @@ public class GameEditor {
 
 		private static Tool object(int blue) {
 			return new Tool(ToolKind.OBJECT, EMPTY_TILE, null, NO_MARKER, blue);
+		}
+
+		private static Tool decoration() {
+			return new Tool(ToolKind.DECORATION, EMPTY_TILE, null, NO_MARKER, NO_MARKER);
 		}
 	}
 }

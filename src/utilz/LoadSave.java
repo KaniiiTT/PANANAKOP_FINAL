@@ -18,6 +18,8 @@ import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 
+import levels.LevelDecoration;
+
 public class LoadSave {
 	private static final String MODERN_ASSETS_DIRECTORY = "pananakop_modern_assets";
 
@@ -252,6 +254,45 @@ public class LoadSave {
 			throw new IllegalStateException("Unable to load modern tiles from " + sidecar, e);
 		}
 		return tiles;
+	}
+
+	public static List<LevelDecoration> GetLevelDecorations(int levelNumber) {
+		Path levelDirectory = findProjectLevelDirectory();
+		if (levelDirectory == null)
+			throw new IllegalStateException("Unable to find level resources under res/lvls.");
+		Path sidecar = levelDirectory.resolve(levelNumber + ".decorations");
+		if (!Files.isRegularFile(sidecar))
+			return List.of();
+
+		Path projectRoot = GetProjectRoot();
+		Path assetsRoot = projectRoot.resolve(MODERN_ASSETS_DIRECTORY).normalize();
+		List<LevelDecoration> decorations = new ArrayList<>();
+		try {
+			for (String line : Files.readAllLines(sidecar)) {
+				if (line.isBlank())
+					continue;
+				String[] fields = line.split("\\t", 5);
+				if (fields.length != 5)
+					throw new IOException("Malformed decoration entry: " + line);
+				int x = Integer.parseInt(fields[0]);
+				int y = Integer.parseInt(fields[1]);
+				int width = Integer.parseInt(fields[2]);
+				int height = Integer.parseInt(fields[3]);
+				Path imagePath = projectRoot.resolve(fields[4]).normalize();
+				boolean allowedCategory = imagePath.startsWith(assetsRoot.resolve("Building"))
+						|| imagePath.startsWith(assetsRoot.resolve("Environment"));
+				if (x < 0 || y < 0 || width < 1 || height < 1 || !allowedCategory
+						|| !Files.isRegularFile(imagePath))
+					throw new IOException("Invalid decoration entry: " + line);
+				BufferedImage image = ImageIO.read(imagePath.toFile());
+				if (image == null)
+					throw new IOException("Unsupported decoration image: " + imagePath);
+				decorations.add(new LevelDecoration(x, y, width, height, imagePath, image));
+			}
+		} catch (IOException | NumberFormatException e) {
+			throw new IllegalStateException("Unable to load decorations from " + sidecar, e);
+		}
+		return decorations;
 	}
 
 	public static BufferedImage[] GetAllLevels() {
