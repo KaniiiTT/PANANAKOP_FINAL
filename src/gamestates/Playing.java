@@ -271,7 +271,7 @@ public class Playing extends State implements Statemethods {
                 player.setDash(true);
                 break;
 
-            case KeyEvent.VK_U:
+            case KeyEvent.VK_R:
                 player.setUltimate(true);
                 break;
 
