@@ -15,8 +15,10 @@ public class EnemyManager {
 	private Playing playing;
 	private BufferedImage[][] crabbyArr;
 	private BufferedImage[][] boarArr;
+	private BufferedImage[][] conquistadorArr;
 	private ArrayList<Crabby> crabbies = new ArrayList<>();
 	private ArrayList<Boar> boars = new ArrayList<>();
+	private ArrayList<Conquistador> conquistadors = new ArrayList<>();
 	private ArrayList<Magellan> magellans = new ArrayList<>();
 
 	public EnemyManager(Playing playing) {
@@ -27,6 +29,7 @@ public class EnemyManager {
 	public void loadEnemies(Level level) {
 		crabbies = level.getCrabs();
 		boars = level.getBoars();
+		conquistadors = level.getConquistadors();
 		magellans = level.getMagellans();
 	}
 
@@ -42,6 +45,11 @@ public class EnemyManager {
 				boar.update(lvlData, player);
 				isAnyActive = true;
 			}
+		for (Conquistador conquistador : conquistadors)
+			if (conquistador.isActive()) {
+				conquistador.update(lvlData, player);
+				isAnyActive = true;
+			}
 		for (Magellan boss : magellans)
 			if (boss.isActive()) {
 				boss.update(lvlData, player);
@@ -54,6 +62,7 @@ public class EnemyManager {
 	public void draw(Graphics g, int xLvlOffset) {
 		drawCrabs(g, xLvlOffset);
 		drawBoars(g, xLvlOffset);
+		drawConquistadors(g, xLvlOffset);
 		for (Magellan boss : magellans)
 			if (boss.isActive())
 				boss.draw(g, xLvlOffset);
@@ -66,6 +75,15 @@ public class EnemyManager {
 						(int) boar.getHitbox().x - xLvlOffset - BOAR_DRAWOFFSET_X + boar.flipX(),
 						(int) boar.getHitbox().y - BOAR_DRAWOFFSET_Y,
 						BOAR_WIDTH * boar.flipW(), BOAR_HEIGHT, null);
+	}
+
+	private void drawConquistadors(Graphics g, int xLvlOffset) {
+		for (Conquistador conquistador : conquistadors)
+			if (conquistador.isActive())
+				g.drawImage(conquistadorArr[conquistador.getState()][conquistador.getAniIndex()],
+						(int) conquistador.getHitbox().x - xLvlOffset - CONQUISTADOR_DRAWOFFSET_X + conquistador.flipX(),
+						(int) conquistador.getHitbox().y - CONQUISTADOR_DRAWOFFSET_Y,
+						CONQUISTADOR_WIDTH * conquistador.flipW(), CONQUISTADOR_HEIGHT, null);
 	}
 
 	public Magellan getActiveBoss() {
@@ -100,6 +118,11 @@ public class EnemyManager {
 				boar.hurt(10);
 				return;
 			}
+		for (Conquistador conquistador : conquistadors)
+			if (conquistador.isActive() && attackBox.intersects(conquistador.getHitbox())) {
+				conquistador.hurt(10);
+				return;
+			}
 		for (Magellan boss : magellans)
 			if (boss.isActive() && attackBox.intersects(boss.getHitbox())) {
 				boss.hurt(10);
@@ -127,6 +150,26 @@ public class EnemyManager {
 				boarArr[DEAD][i] = boarSheet.getSubimage(i * BOAR_WIDTH_DEFAULT,
 						BOAR_HEIGHT_DEFAULT * 3, BOAR_WIDTH_DEFAULT, BOAR_HEIGHT_DEFAULT);
 		}
+		conquistadorArr = new BufferedImage[5][9];
+		BufferedImage conquistadorSheet = LoadSave.GetSpriteAtlas(LoadSave.CONQUISTADOR_SPRITE);
+		for (int i = 0; i < 8; i++) {
+			conquistadorArr[RUNNING][i] = conquistadorSheet.getSubimage(i * CONQUISTADOR_WIDTH_DEFAULT, 0,
+					CONQUISTADOR_WIDTH_DEFAULT, CONQUISTADOR_HEIGHT_DEFAULT);
+			conquistadorArr[IDLE][i] = conquistadorSheet.getSubimage(i * CONQUISTADOR_WIDTH_DEFAULT,
+					CONQUISTADOR_HEIGHT_DEFAULT * 4, CONQUISTADOR_WIDTH_DEFAULT, CONQUISTADOR_HEIGHT_DEFAULT);
+		}
+		for (int i = 0; i < 9; i++) {
+			conquistadorArr[ATTACK][i] = conquistadorSheet.getSubimage(i * CONQUISTADOR_WIDTH_DEFAULT,
+					CONQUISTADOR_HEIGHT_DEFAULT, CONQUISTADOR_WIDTH_DEFAULT, CONQUISTADOR_HEIGHT_DEFAULT);
+		}
+		for (int i = 0; i < 4; i++) {
+			conquistadorArr[HIT][i] = conquistadorSheet.getSubimage(i * CONQUISTADOR_WIDTH_DEFAULT,
+					CONQUISTADOR_HEIGHT_DEFAULT * 2, CONQUISTADOR_WIDTH_DEFAULT, CONQUISTADOR_HEIGHT_DEFAULT);
+		}
+		for (int i = 0; i < 8; i++) {
+			conquistadorArr[DEAD][i] = conquistadorSheet.getSubimage(i * CONQUISTADOR_WIDTH_DEFAULT,
+					CONQUISTADOR_HEIGHT_DEFAULT * 3, CONQUISTADOR_WIDTH_DEFAULT, CONQUISTADOR_HEIGHT_DEFAULT);
+		}
 	}
 
 	public void resetAllEnemies() {
@@ -134,6 +177,8 @@ public class EnemyManager {
 			c.resetEnemy();
 		for (Boar boar : boars)
 			boar.resetEnemy();
+		for (Conquistador conquistador : conquistadors)
+			conquistador.resetEnemy();
 		for (Magellan boss : magellans)
 			boss.resetEnemy();
 	}

@@ -27,6 +27,7 @@ public class Boar extends Enemy {
 	}
 
 	public void update(int[][] lvlData, Player player) {
+		updateAttackCooldown();
 		if (firstUpdate)
 			firstUpdateCheck(lvlData);
 		if (inAir)
@@ -40,8 +41,9 @@ public class Boar extends Enemy {
 				boolean playerVisible = canSeePlayer(lvlData, player);
 				if (playerVisible) {
 					turnTowardsPlayer(player);
-					if (isPlayerCloseForAttack(player)) {
+					if (isPlayerCloseForAttack(player) && canAttack()) {
 						newState(ATTACK);
+						startAttackCooldown();
 						break;
 					}
 				} else {
@@ -53,7 +55,7 @@ public class Boar extends Enemy {
 			case ATTACK:
 				if (aniIndex == 0)
 					attackChecked = false;
-				if (aniIndex == 5 && !attackChecked)
+				if (aniIndex == 4 && !attackChecked)
 					checkPlayerHit(attackBox, player);
 				break;
 			case HIT:

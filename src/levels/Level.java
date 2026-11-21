@@ -8,6 +8,7 @@ import java.util.List;
 import entities.Crabby;
 import entities.Magellan;
 import entities.Boar;
+import entities.Conquistador;
 import main.Game;
 import objects.Cannon;
 import objects.GameContainer;
@@ -29,6 +30,7 @@ public class Level {
 	private ArrayList<Crabby> crabs;
 	private ArrayList<Magellan> magellans;
 	private ArrayList<Boar> boars;
+	private ArrayList<Conquistador> conquistadors;
 	private ArrayList<Potion> potions;
 	private ArrayList<Spike> spikes;
 	private ArrayList<Trap> traps;
@@ -102,6 +104,7 @@ public class Level {
 		crabs = GetCrabs(img);
 		magellans = HelpMethods.GetMagellans(img);
 		boars = HelpMethods.GetBoars(img);
+		conquistadors = HelpMethods.GetConquistadors(img);
 	}
 
 	private void createLevelData() {
@@ -147,6 +150,10 @@ public class Level {
 
 	public ArrayList<Boar> getBoars() {
 		return boars;
+	}
+
+	public ArrayList<Conquistador> getConquistadors() {
+		return conquistadors;
 	}
 
 	public Point getPlayerSpawn() {

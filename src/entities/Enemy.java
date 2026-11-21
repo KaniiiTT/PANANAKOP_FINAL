@@ -18,6 +18,7 @@ public abstract class Enemy extends Entity {
 	protected float attackDistance = Game.TILES_SIZE;
 	protected boolean active = true;
 	protected boolean attackChecked;
+	protected int attackCooldown;
 
 	public Enemy(float x, float y, int width, int height, int enemyType) {
 		super(x, y, width, height);
@@ -92,6 +93,19 @@ public abstract class Enemy extends Entity {
 		return absValue <= attackDistance;
 	}
 
+	protected void updateAttackCooldown() {
+		if (attackCooldown > 0)
+			attackCooldown--;
+	}
+
+	protected boolean canAttack() {
+		return attackCooldown == 0;
+	}
+
+	protected void startAttackCooldown() {
+		attackCooldown = ENEMY_ATTACK_COOLDOWN_TICKS;
+	}
+
 	protected void newState(int enemyState) {
 		this.state = enemyState;
 		aniTick = 0;
@@ -159,6 +173,7 @@ public abstract class Enemy extends Entity {
 		newState(IDLE);
 		active = true;
 		airSpeed = 0;
+		attackCooldown = 0;
 	}
 
 

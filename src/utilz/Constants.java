@@ -8,6 +8,14 @@ public class Constants {
 	public static final int ANI_SPEED = 25;
 	/** Frame interval for the boar's faster movement, attack, and hurt animations. */
 	public static final int BOAR_ANI_SPEED = 15;
+	/** Frame interval for the Conquistador's combat animations. */
+	public static final int CONQUISTADOR_ANI_SPEED = 15;
+	/** Longer interval for holding the first Conquistador animation frame. */
+	public static final int CONQUISTADOR_FIRST_FRAME_ANI_SPEED = 50;
+	/** Zero-based animation index for the Conquistador's held attack frame 4. */
+	public static final int CONQUISTADOR_ATTACK_HOLD_FRAME = 3;
+	/** Longer interval for holding the first Conquistador walk frame. */
+	public static final int CONQUISTADOR_WALK_FIRST_FRAME_ANI_SPEED = 30;
 	
 	public static class Projectiles{
 		public static final int CANNON_BALL_DEFAULT_WIDTH = 15;
@@ -85,6 +93,8 @@ public class Constants {
 		public static final int MAGELLAN = 1;
 		/** Green channel marker used by the editor and level loader for Boar. */
 		public static final int BOAR = 2;
+		/** Green channel marker used by the editor and level loader for Conquistador. */
+		public static final int CONQUISTADOR = 3;
 
 		public static final int IDLE = 0;
 		public static final int RUNNING = 1;
@@ -119,6 +129,19 @@ public class Constants {
 		// The sprite has transparent padding below its feet; align the visible feet
 		// with the bottom of the boar hitbox instead of the marker's top edge.
 		public static final int BOAR_DRAWOFFSET_Y = (int) (31 * Game.SCALE);
+		public static final int CONQUISTADOR_WIDTH_DEFAULT = 96;
+		public static final int CONQUISTADOR_HEIGHT_DEFAULT = 64;
+		public static final int CONQUISTADOR_WIDTH = (int) (CONQUISTADOR_WIDTH_DEFAULT * Game.SCALE);
+		public static final int CONQUISTADOR_HEIGHT = (int) (CONQUISTADOR_HEIGHT_DEFAULT * Game.SCALE);
+		public static final int CONQUISTADOR_DRAWOFFSET_X = (int) (16 * Game.SCALE);
+		public static final int CONQUISTADOR_DRAWOFFSET_Y = (int) (31 * Game.SCALE);
+		public static final int CONQUISTADOR_ATTACK_DISTANCE_DEFAULT = 64;
+		/** Center-to-center distance at which the Conquistador stops and attacks. */
+		public static final int CONQUISTADOR_STOP_DISTANCE_DEFAULT = 84;
+		/** Cooldown between regular enemy attacks, measured in game updates. */
+		public static final int ENEMY_ATTACK_COOLDOWN_TICKS = 320;
+		/** Pause after the Conquistador reaches a patrol boundary, in game updates. */
+		public static final int CONQUISTADOR_PATROL_IDLE_TICKS = 300;
 		public static final int MAGELLAN_WIDTH_DEFAULT = 160;
 		public static final int MAGELLAN_HEIGHT_DEFAULT = 128;
 		public static final int MAGELLAN_WIDTH = (int) (MAGELLAN_WIDTH_DEFAULT * Game.SCALE);
@@ -164,6 +187,14 @@ public class Constants {
 				case ATTACK, HIT, DEAD -> 9;
 				default -> 10;
 				};
+			case CONQUISTADOR:
+				return switch (enemy_state) {
+				case IDLE, RUNNING -> 8;
+				case ATTACK -> 9;
+				case HIT -> 4;
+				case DEAD -> 8;
+				default -> 1;
+				};
 			}
 
 			return 0;
@@ -178,6 +209,8 @@ public class Constants {
 				return 300;
 			case BOAR:
 				return 20;
+			case CONQUISTADOR:
+				return 30;
 			default:
 				return 1;
 			}
@@ -191,6 +224,8 @@ public class Constants {
 				return 30;
 			case BOAR:
 				return 20;
+			case CONQUISTADOR:
+				return 25;
 			default:
 				return 0;
 			}
