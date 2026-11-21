@@ -11,8 +11,14 @@ import main.Game;
 
 /** A charging enemy with running and tusk-attack animations. */
 public class Boar extends Enemy {
+	private static final int PATROL_TILES = 3;
+	private final float patrolLeft;
+	private final float patrolRight;
+
 	public Boar(float x, float y) {
 		super(x, y, BOAR_WIDTH, BOAR_HEIGHT, BOAR);
+		patrolLeft = x - PATROL_TILES * Game.TILES_SIZE;
+		patrolRight = x + PATROL_TILES * Game.TILES_SIZE;
 		// Keep the collision body inside the one-tile-high space used by editor spawn markers.
 		initHitbox(54, 28);
 		// Use a shorter distance than the full hitbox width so the boar does not stop too far away.
@@ -31,12 +37,16 @@ public class Boar extends Enemy {
 				newState(RUNNING);
 				break;
 			case RUNNING:
-				turnTowardsPlayer(player);
-				if (canSeePlayer(lvlData, player)) {
+				boolean playerVisible = canSeePlayer(lvlData, player);
+				if (playerVisible) {
+					turnTowardsPlayer(player);
 					if (isPlayerCloseForAttack(player)) {
 						newState(ATTACK);
 						break;
 					}
+				} else {
+					patrol(lvlData);
+					break;
 				}
 				move(lvlData);
 				break;
@@ -55,6 +65,14 @@ public class Boar extends Enemy {
 				? hitbox.x + hitbox.width - 2 * Game.SCALE
 				: hitbox.x - attackBox.width + 2 * Game.SCALE;
 		attackBox.y = hitbox.y;
+	}
+
+	private void patrol(int[][] lvlData) {
+		if ((walkDir == LEFT && hitbox.x <= patrolLeft)
+				|| (walkDir == RIGHT && hitbox.x >= patrolRight))
+			changeWalkDir();
+
+		move(lvlData);
 	}
 
 	public int flipX() {
