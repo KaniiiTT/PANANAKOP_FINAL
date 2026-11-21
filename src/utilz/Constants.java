@@ -134,7 +134,7 @@ public class Constants {
 		public static final int CONQUISTADOR_WIDTH = (int) (CONQUISTADOR_WIDTH_DEFAULT * Game.SCALE);
 		public static final int CONQUISTADOR_HEIGHT = (int) (CONQUISTADOR_HEIGHT_DEFAULT * Game.SCALE);
 		public static final int CONQUISTADOR_DRAWOFFSET_X = (int) (16 * Game.SCALE);
-		public static final int CONQUISTADOR_DRAWOFFSET_Y = (int) (31 * Game.SCALE);
+		public static final int CONQUISTADOR_DRAWOFFSET_Y = (int) (32 * Game.SCALE);
 		public static final int CONQUISTADOR_ATTACK_DISTANCE_DEFAULT = 64;
 		/** Center-to-center distance at which the Conquistador stops and attacks. */
 		public static final int CONQUISTADOR_STOP_DISTANCE_DEFAULT = 84;
@@ -284,6 +284,8 @@ public class Constants {
 	}
 
 	public static class PlayerConstants {
+		/** Vertical render adjustment for aligning the player's feet with the ground. */
+		public static final int PLAYER_SPRITE_OFFSET_Y = 2;
 		public static final int IDLE = 0;
 		public static final int WALKING = 1;
 		public static final int RUNNING = 2;

@@ -171,7 +171,7 @@ public class Player extends Entity {
 		// Keep the sprite's feet on the bottom of the collision box.
 		// This is important because the new sprite sheet uses 64x64 frames.
 		int drawX = (int) (hitbox.x - (width - hitbox.width) / 2) - lvlOffset;
-		int drawY = (int) (hitbox.y + hitbox.height - height);
+		int drawY = (int) (hitbox.y + hitbox.height - height + PLAYER_SPRITE_OFFSET_Y);
 		if (flipW == -1)
 			drawX += width;
 		g.drawImage(animations[state][aniIndex], drawX, drawY, width * flipW, height, null);
