@@ -2,6 +2,7 @@ package utilz;
 
 import static utilz.Constants.EnemyConstants.CRABBY;
 import static utilz.Constants.EnemyConstants.MAGELLAN;
+import static utilz.Constants.EnemyConstants.BOAR;
 import static utilz.Constants.ObjectConstants.*;
 
 import java.awt.Color;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 
 import entities.Crabby;
 import entities.Magellan;
+import entities.Boar;
 import main.Game;
 import objects.Cannon;
 import objects.GameContainer;
@@ -164,6 +166,15 @@ public class HelpMethods {
 				if (color.getGreen() == MAGELLAN)
 					list.add(new Magellan(i * Game.TILES_SIZE, j * Game.TILES_SIZE));
 			}
+		return list;
+	}
+
+	public static ArrayList<Boar> GetBoars(BufferedImage img) {
+		ArrayList<Boar> list = new ArrayList<>();
+		for (int j = 0; j < img.getHeight(); j++)
+			for (int i = 0; i < img.getWidth(); i++)
+				if (new Color(img.getRGB(i, j)).getGreen() == BOAR)
+					list.add(new Boar(i * Game.TILES_SIZE, j * Game.TILES_SIZE));
 		return list;
 	}
 

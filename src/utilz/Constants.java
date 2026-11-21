@@ -6,6 +6,8 @@ public class Constants {
 
 	public static final float GRAVITY = 0.04f * Game.SCALE;
 	public static final int ANI_SPEED = 25;
+	/** Frame interval for the boar's faster movement, attack, and hurt animations. */
+	public static final int BOAR_ANI_SPEED = 15;
 	
 	public static class Projectiles{
 		public static final int CANNON_BALL_DEFAULT_WIDTH = 15;
@@ -81,6 +83,8 @@ public class Constants {
 		public static final int CRABBY = 0;
 		/** Green channel marker used by the editor and level loader for Magellan. */
 		public static final int MAGELLAN = 1;
+		/** Green channel marker used by the editor and level loader for Boar. */
+		public static final int BOAR = 2;
 
 		public static final int IDLE = 0;
 		public static final int RUNNING = 1;
@@ -105,6 +109,16 @@ public class Constants {
 
 		public static final int CRABBY_DRAWOFFSET_X = (int) (26 * Game.SCALE);
 		public static final int CRABBY_DRAWOFFSET_Y = (int) (9 * Game.SCALE);
+		public static final int BOAR_WIDTH_DEFAULT = 96;
+		public static final int BOAR_HEIGHT_DEFAULT = 64;
+		public static final int BOAR_WIDTH = (int) (BOAR_WIDTH_DEFAULT * Game.SCALE);
+		public static final int BOAR_HEIGHT = (int) (BOAR_HEIGHT_DEFAULT * Game.SCALE);
+		public static final int BOAR_DRAWOFFSET_X = (int) (16 * Game.SCALE);
+		/** Horizontal distance between boar/player hitbox origins when the boar attacks. */
+		public static final int BOAR_ATTACK_DISTANCE_DEFAULT = 34;
+		// The sprite has transparent padding below its feet; align the visible feet
+		// with the bottom of the boar hitbox instead of the marker's top edge.
+		public static final int BOAR_DRAWOFFSET_Y = (int) (31 * Game.SCALE);
 		public static final int MAGELLAN_WIDTH_DEFAULT = 160;
 		public static final int MAGELLAN_HEIGHT_DEFAULT = 128;
 		public static final int MAGELLAN_WIDTH = (int) (MAGELLAN_WIDTH_DEFAULT * Game.SCALE);
@@ -145,6 +159,11 @@ public class Constants {
 				case MAGELLAN_JUMP -> 5;
 				default -> 1;
 				};
+			case BOAR:
+				return switch (enemy_state) {
+				case ATTACK, HIT, DEAD -> 9;
+				default -> 10;
+				};
 			}
 
 			return 0;
@@ -157,6 +176,8 @@ public class Constants {
 				return 10;
 			case MAGELLAN:
 				return 300;
+			case BOAR:
+				return 20;
 			default:
 				return 1;
 			}
@@ -168,6 +189,8 @@ public class Constants {
 				return 15;
 			case MAGELLAN:
 				return 30;
+			case BOAR:
+				return 20;
 			default:
 				return 0;
 			}
@@ -229,6 +252,8 @@ public class Constants {
 		public static final int IDLE = 0;
 		public static final int WALKING = 1;
 		public static final int RUNNING = 2;
+		/** The run cycle starts at frame 1 to skip the first run frame. */
+		public static final int RUN_START_FRAME = 3;
 		public static final int ATTACK = 3;
 		public static final int BLOCK = 4;
 		public static final int HIT = 5;

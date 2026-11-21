@@ -530,6 +530,7 @@ public class GameEditor {
 		buttons.setLayout(new javax.swing.BoxLayout(buttons, javax.swing.BoxLayout.Y_AXIS));
 		addToolButton(buttons, "Player start", Tool.marker(100, NO_MARKER), "Player start");
 		addToolButton(buttons, "Crabby mob", Tool.marker(0, NO_MARKER), "Crabby mob");
+		addToolButton(buttons, "Boar mob", Tool.marker(2, NO_MARKER), "Boar mob");
 		try {
 			BufferedImage portrait = LoadSave.GetSpriteAtlas("pananakop_boss_magellan/portrait/magellan_portrait_64.png");
 			addToolButton(buttons, "Magellan boss (all skills)", Tool.marker(1, NO_MARKER),
@@ -1174,6 +1175,9 @@ public class GameEditor {
 			} else if (green == 1) {
 				label = "B";
 				color = new Color(255, 145, 35);
+			} else if (green == 2) {
+				label = "W";
+				color = new Color(165, 105, 65);
 			} else if (blue <= 6) {
 				String[] labels = { "R", "B", "B", "C", "S", "L", "R" };
 				label = labels[blue];

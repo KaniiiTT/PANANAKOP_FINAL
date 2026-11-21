@@ -14,7 +14,9 @@ public class EnemyManager {
 
 	private Playing playing;
 	private BufferedImage[][] crabbyArr;
+	private BufferedImage[][] boarArr;
 	private ArrayList<Crabby> crabbies = new ArrayList<>();
+	private ArrayList<Boar> boars = new ArrayList<>();
 	private ArrayList<Magellan> magellans = new ArrayList<>();
 
 	public EnemyManager(Playing playing) {
@@ -24,6 +26,7 @@ public class EnemyManager {
 
 	public void loadEnemies(Level level) {
 		crabbies = level.getCrabs();
+		boars = level.getBoars();
 		magellans = level.getMagellans();
 	}
 
@@ -32,6 +35,11 @@ public class EnemyManager {
 		for (Crabby c : crabbies)
 			if (c.isActive()) {
 				c.update(lvlData, player);
+				isAnyActive = true;
+			}
+		for (Boar boar : boars)
+			if (boar.isActive()) {
+				boar.update(lvlData, player);
 				isAnyActive = true;
 			}
 		for (Magellan boss : magellans)
@@ -45,9 +53,19 @@ public class EnemyManager {
 
 	public void draw(Graphics g, int xLvlOffset) {
 		drawCrabs(g, xLvlOffset);
+		drawBoars(g, xLvlOffset);
 		for (Magellan boss : magellans)
 			if (boss.isActive())
 				boss.draw(g, xLvlOffset);
+	}
+
+	private void drawBoars(Graphics g, int xLvlOffset) {
+		for (Boar boar : boars)
+			if (boar.isActive())
+				g.drawImage(boarArr[boar.getState()][boar.getAniIndex()],
+						(int) boar.getHitbox().x - xLvlOffset - BOAR_DRAWOFFSET_X + boar.flipX(),
+						(int) boar.getHitbox().y - BOAR_DRAWOFFSET_Y,
+						BOAR_WIDTH * boar.flipW(), BOAR_HEIGHT, null);
 	}
 
 	public Magellan getActiveBoss() {
@@ -77,6 +95,11 @@ public class EnemyManager {
 					c.hurt(10);
 					return;
 				}
+		for (Boar boar : boars)
+			if (boar.isActive() && attackBox.intersects(boar.getHitbox())) {
+				boar.hurt(10);
+				return;
+			}
 		for (Magellan boss : magellans)
 			if (boss.isActive() && attackBox.intersects(boss.getHitbox())) {
 				boss.hurt(10);
@@ -90,11 +113,27 @@ public class EnemyManager {
 		for (int j = 0; j < crabbyArr.length; j++)
 			for (int i = 0; i < crabbyArr[j].length; i++)
 				crabbyArr[j][i] = temp.getSubimage(i * CRABBY_WIDTH_DEFAULT, j * CRABBY_HEIGHT_DEFAULT, CRABBY_WIDTH_DEFAULT, CRABBY_HEIGHT_DEFAULT);
+		boarArr = new BufferedImage[5][10];
+		BufferedImage boarSheet = LoadSave.GetSpriteAtlas(LoadSave.BOAR_SPRITE);
+		for (int i = 0; i < 10; i++) {
+			boarArr[IDLE][i] = boarSheet.getSubimage(i * BOAR_WIDTH_DEFAULT, 0, BOAR_WIDTH_DEFAULT, BOAR_HEIGHT_DEFAULT);
+			boarArr[RUNNING][i] = boarArr[IDLE][i];
+			if (i < 9)
+				boarArr[ATTACK][i] = boarSheet.getSubimage(i * BOAR_WIDTH_DEFAULT, BOAR_HEIGHT_DEFAULT, BOAR_WIDTH_DEFAULT, BOAR_HEIGHT_DEFAULT);
+			if (i < 9)
+				boarArr[HIT][i] = boarSheet.getSubimage(i * BOAR_WIDTH_DEFAULT,
+						BOAR_HEIGHT_DEFAULT * 2, BOAR_WIDTH_DEFAULT, BOAR_HEIGHT_DEFAULT);
+			if (i < 9)
+				boarArr[DEAD][i] = boarSheet.getSubimage(i * BOAR_WIDTH_DEFAULT,
+						BOAR_HEIGHT_DEFAULT * 3, BOAR_WIDTH_DEFAULT, BOAR_HEIGHT_DEFAULT);
+		}
 	}
 
 	public void resetAllEnemies() {
 		for (Crabby c : crabbies)
 			c.resetEnemy();
+		for (Boar boar : boars)
+			boar.resetEnemy();
 		for (Magellan boss : magellans)
 			boss.resetEnemy();
 	}

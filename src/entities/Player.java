@@ -201,7 +201,7 @@ public class Player extends Entity {
 			if (state == DASH && dashing && aniIndex >= GetSpriteAmount(DASH)) {
 				aniIndex = GetSpriteAmount(DASH) - 1; // hold last frame, don't loop
 			} else if (aniIndex >= GetSpriteAmount(state)) {
-				aniIndex = 0;
+				aniIndex = state == RUNNING ? RUN_START_FRAME : 0;
 				attacking = false;
 				attackChecked = false;
 				// Dash now ends by distance (see updateDash), not by animation length.
@@ -248,7 +248,7 @@ public class Player extends Entity {
 
 	private void resetAniTick() {
 		aniTick = 0;
-		aniIndex = 0;
+		aniIndex = state == RUNNING ? RUN_START_FRAME : 0;
 	}
 
 	private void updatePos() {

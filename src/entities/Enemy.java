@@ -31,6 +31,8 @@ public abstract class Enemy extends Entity {
 	protected void firstUpdateCheck(int[][] lvlData) {
 		if (!IsEntityOnFloor(hitbox, lvlData))
 			inAir = true;
+		else
+			tileY = (int) (hitbox.y / Game.TILES_SIZE);
 		firstUpdate = false;
 	}
 
@@ -124,7 +126,7 @@ public abstract class Enemy extends Entity {
 
 	protected void updateAnimationTick() {
 		aniTick++;
-		if (aniTick >= ANI_SPEED) {
+		if (aniTick >= getAnimationSpeed()) {
 			aniTick = 0;
 			aniIndex++;
 			if (aniIndex >= GetSpriteAmount(enemyType, state)) {
@@ -136,6 +138,10 @@ public abstract class Enemy extends Entity {
 				}
 			}
 		}
+	}
+
+	protected int getAnimationSpeed() {
+		return ANI_SPEED;
 	}
 
 	protected void changeWalkDir() {
