@@ -12,6 +12,13 @@ import java.awt.Graphics2D;
 public interface BackgroundLayer {
 
     /**
+     * Advances any self-driven animation (for example drifting clouds) by one
+     * game update. Layers that only react to the camera keep this no-op default.
+     */
+    default void update() {
+    }
+
+    /**
      * @param g       graphics context, already clipped by the caller if needed
      * @param cameraX horizontal level scroll offset in pixels
      */

@@ -125,6 +125,7 @@ public class Playing extends State implements Statemethods {
             player.update();
 
         } else {
+            parallaxBackground.update();
             levelManager.update();
 
             objectManager.update(
