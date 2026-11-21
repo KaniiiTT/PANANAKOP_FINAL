@@ -24,10 +24,12 @@ public class BirdLayer extends AmbientLayer {
             { ".........", "..aaaaa..", ".aaaaaaa.", "aa.aaa.aa", "a...a...a" } };
 
     private final ArrayList<Bird> birds = new ArrayList<>();
+    private final DayNightCycle cycle;
     private double secondsUntilNextFlock;
 
-    public BirdLayer(double parallaxFactor, double updatesPerSecond) {
+    public BirdLayer(DayNightCycle cycle, double parallaxFactor, double updatesPerSecond) {
         super(updatesPerSecond);
+        this.cycle = cycle;
         int unit = PixelSprites.pixelUnit();
         BufferedImage[] frames = new BufferedImage[FRAMES.length];
         for (int i = 0; i < frames.length; i++)
@@ -41,7 +43,14 @@ public class BirdLayer extends AmbientLayer {
     }
 
     @Override
+    protected double opacity() {
+        return cycle.getDaylight(); // birds still in the sky fade away as it gets dark
+    }
+
+    @Override
     protected void spawn() {
+        if (cycle.getNightness() > 0.3)
+            return; // no new flocks after sunset; the countdown waits for the morning
         secondsUntilNextFlock -= dt();
         if (secondsUntilNextFlock > 0)
             return;

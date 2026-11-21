@@ -43,7 +43,7 @@ public class ForestLifeLayer extends AmbientLayer {
     private final ArrayList<BufferedImage[]> leafSprites = new ArrayList<>();
     private double secondsUntilNextLeaf;
 
-    public ForestLifeLayer(double updatesPerSecond) {
+    public ForestLifeLayer(DayNightCycle cycle, double updatesPerSecond) {
         super(updatesPerSecond);
         int unit = PixelSprites.pixelUnit();
         int small = Math.max(1, unit - 1);
@@ -73,7 +73,7 @@ public class ForestLifeLayer extends AmbientLayer {
             for (int f = 0; f < frames.length; f++)
                 frames[f] = PixelSprites.create(BUTTERFLY_FRAMES[f], unit, wing, BUTTERFLY_BODY);
             double speed = w * (0.020 + 0.015 * random.nextDouble());
-            add(new Butterfly(frames, BUTTERFLY_FACTOR, dt(), random, speed, h * 0.45, h * 0.85));
+            add(new Butterfly(frames, cycle, BUTTERFLY_FACTOR, dt(), random, speed, h * 0.45, h * 0.85));
         }
     }
 

@@ -39,14 +39,17 @@ public class LightShaftLayer implements BackgroundLayer {
     private final ArrayList<Shaft> shafts = new ArrayList<>();
     private final AlphaComposite[] levels = new AlphaComposite[ALPHA_STEPS + 1];
     private final double parallaxFactor;
+    private final DayNightCycle cycle;
 
     /**
      * @param parallaxFactor camera follow speed of the beams
      * @param maxAlpha       opacity of a beam at its brightest, 0..1 (keep it small)
      * @param updatesPerSecond how often update() is called by the game loop
+     * @param cycle          day/night clock; the beams are sunlight, so they fade out at night
      */
-    public LightShaftLayer(double parallaxFactor, float maxAlpha, double updatesPerSecond) {
+    public LightShaftLayer(double parallaxFactor, float maxAlpha, double updatesPerSecond, DayNightCycle cycle) {
         this.parallaxFactor = parallaxFactor;
+        this.cycle = cycle;
         for (int i = 0; i <= ALPHA_STEPS; i++)
             levels[i] = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, maxAlpha * i / ALPHA_STEPS);
 
@@ -90,12 +93,15 @@ public class LightShaftLayer implements BackgroundLayer {
 
     @Override
     public void draw(Graphics2D g, int cameraX) {
+        double daylight = cycle.getDaylight();
+        if (daylight < 0.02)
+            return;
         int viewWidth = Game.GAME_WIDTH;
         Composite original = g.getComposite();
         try {
             for (Shaft shaft : shafts) {
                 double pulse = 0.5 + 0.5 * Math.sin(shaft.phase); // 0..1
-                double brightness = MIN_BRIGHTNESS + (1.0 - MIN_BRIGHTNESS) * pulse;
+                double brightness = (MIN_BRIGHTNESS + (1.0 - MIN_BRIGHTNESS) * pulse) * daylight;
                 g.setComposite(levels[(int) Math.round(brightness * ALPHA_STEPS)]);
 
                 double position = shaft.baseX - cameraX * parallaxFactor;

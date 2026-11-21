@@ -19,16 +19,27 @@ public class CloudLayer extends TiledBackgroundLayer {
     // Pixels closer than this (in x and y) belong to the same cloud group.
     private static final int GROUP_RADIUS = 3;
 
+    // At night the clouds become this much more transparent (0 = unchanged, 1 = invisible).
+    private static final double NIGHT_FADE = 0.55;
+
     private final double driftPerUpdate;
+    private final DayNightCycle cycle;
     private double drift;
 
     /**
      * @param driftPerUpdate pixels the clouds drift to the right on each game
      *                       update (negative values drift left)
+     * @param cycle          day/night clock; clouds turn thin and dark at night
      */
-    public CloudLayer(BufferedImage image, double parallaxFactor, double driftPerUpdate) {
+    public CloudLayer(BufferedImage image, double parallaxFactor, double driftPerUpdate, DayNightCycle cycle) {
         super(image, parallaxFactor, 0);
         this.driftPerUpdate = driftPerUpdate;
+        this.cycle = cycle;
+    }
+
+    @Override
+    protected double opacity() {
+        return 1.0 - NIGHT_FADE * cycle.getNightness();
     }
 
     @Override

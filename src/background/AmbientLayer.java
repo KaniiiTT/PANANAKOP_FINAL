@@ -1,5 +1,6 @@
 package background;
 
+import java.awt.Composite;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Random;
@@ -41,8 +42,23 @@ public abstract class AmbientLayer implements BackgroundLayer {
     @Override
     public final void draw(Graphics2D g, int cameraX) {
         this.cameraX = cameraX;
-        for (AmbientCreature creature : creatures)
-            creature.draw(g, cameraX);
+        double opacity = opacity();
+        if (AlphaSteps.shared().index(opacity) == 0)
+            return;
+        Composite original = g.getComposite();
+        try {
+            if (opacity < 0.99)
+                g.setComposite(AlphaSteps.shared().get(opacity));
+            for (AmbientCreature creature : creatures)
+                creature.draw(g, cameraX);
+        } finally {
+            g.setComposite(original);
+        }
+    }
+
+    /** How visible the whole layer is, 0..1. Layers that fade (for example at night) override this. */
+    protected double opacity() {
+        return 1.0;
     }
 
     /** Camera offset seen by the most recent draw. */

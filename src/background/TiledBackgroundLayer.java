@@ -1,5 +1,6 @@
 package background;
 
+import java.awt.Composite;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
@@ -106,9 +107,22 @@ public abstract class TiledBackgroundLayer implements BackgroundLayer {
         double wrapped = position - Math.floor(position / tileWidth) * tileWidth;
         int x = -(int) wrapped;
         int y = verticalOffset + cropTop;
+        double opacity = opacity();
+        Composite original = null;
+        if (opacity < 0.99) {
+            original = g.getComposite();
+            g.setComposite(AlphaSteps.shared().get(opacity));
+        }
         g.drawImage(image, x, y, null);
         if (x + tileWidth < Game.GAME_WIDTH)
             g.drawImage(image, x + tileWidth, y, null);
+        if (original != null)
+            g.setComposite(original);
+    }
+
+    /** How visible the layer is, 0..1. A layer that fades (clouds at night) overrides this. */
+    protected double opacity() {
+        return 1.0;
     }
 
     public double getParallaxFactor() {

@@ -47,6 +47,10 @@ public class ParallaxBackground {
     private static final double[] CLOUD_DRIFT_PX_PER_SECOND = { 9.0, 6.0, 4.0 };
     private static final double UPDATES_PER_SECOND = 200.0; // Game.UPS_SET
 
+    // Day/night: one whole day lasts this many seconds of play (a new game starts in the morning).
+    private static final double DAY_SECONDS = 360.0;
+    private static final double START_TIME_OF_DAY = 0.0;
+
     // Haze over the far forest and the light beams: both are meant to be subtle.
     private static final Color HAZE_TINT = new Color(185, 196, 230);
     private static final float HAZE_STRENGTH = 0.45f;
@@ -56,8 +60,12 @@ public class ParallaxBackground {
     private final List<BackgroundLayer> sceneryLayers;
     private final BackgroundLayer underground;
     private final BackgroundLayer fallbackBackground;
-    /** Draw order = insertion order: sky, cloud bands, far forest (hazy), light shafts, near forest. */
+    /**
+     * Draw order = insertion order: sky, night sky (stars, moon), cloud bands, birds,
+     * far forest (hazy), light shafts, near forest, forest life, mood tint, fireflies.
+     */
     private final ArrayList<BackgroundLayer> layers = new ArrayList<>();
+    private final DayNightCycle cycle = new DayNightCycle(DAY_SECONDS, START_TIME_OF_DAY, UPDATES_PER_SECOND);
     private final TerrainAnalyzer terrainAnalyzer = new TerrainAnalyzer();
 
     private TerrainProfile terrain;
@@ -96,22 +104,31 @@ public class ParallaxBackground {
                     && Files.isRegularFile(farImg) && Files.isRegularFile(nearImg)) {
                 // The order of insertion is the order of drawing (back to front).
                 layers.add(new SkyLayer(load(skyImg)));
+                layers.add(new NightSkyLayer(cycle, UPDATES_PER_SECOND));
                 // Lowest (farthest) cloud band first, highest (nearest) last.
                 List<BufferedImage> cloudBands = CloudLayer.splitIntoBands(load(cloudImg), CLOUD_FACTORS.length);
                 for (int band = CLOUD_FACTORS.length - 1; band >= 0; band--)
                     layers.add(new CloudLayer(cloudBands.get(band), CLOUD_FACTORS[band],
-                            CLOUD_DRIFT_PX_PER_SECOND[band] / UPDATES_PER_SECOND));
-                layers.add(new BirdLayer(BIRD_FACTOR, UPDATES_PER_SECOND));
+                            CLOUD_DRIFT_PX_PER_SECOND[band] / UPDATES_PER_SECOND, cycle));
+                layers.add(new BirdLayer(cycle, BIRD_FACTOR, UPDATES_PER_SECOND));
                 layers.add(new ForestLayer(load(farImg), FAR_FOREST_FACTOR, HAZE_TINT, HAZE_STRENGTH));
-                layers.add(new LightShaftLayer(LIGHT_SHAFT_FACTOR, LIGHT_SHAFT_ALPHA, UPDATES_PER_SECOND));
+                layers.add(new LightShaftLayer(LIGHT_SHAFT_FACTOR, LIGHT_SHAFT_ALPHA, UPDATES_PER_SECOND, cycle));
                 layers.add(new ForestLayer(load(nearImg), NEAR_FOREST_FACTOR));
-                layers.add(new ForestLifeLayer(UPDATES_PER_SECOND));
+                layers.add(new ForestLifeLayer(cycle, UPDATES_PER_SECOND));
+                layers.add(new MoodTintLayer(cycle));
+                // After the tint, so the glow is not darkened by the night colour.
+                layers.add(new FireflyLayer(cycle, UPDATES_PER_SECOND));
                 fallbackBackground = null;
             } else {
                 fallbackBackground = new ParallaxLayer(
                         load(bg.resolve("Full_bgx32.png")), 0.0);
             }
         }
+    }
+
+    /** The day/night clock, for example to jump to night for a boss fight. */
+    public DayNightCycle getCycle() {
+        return cycle;
     }
 
     private BufferedImage load(Path path) {
@@ -127,6 +144,7 @@ public class ParallaxBackground {
 
     /** Called from the game's update loop; lets self-moving layers (clouds) advance. */
     public void update() {
+        cycle.update();
         for (BackgroundLayer layer : layers)
             layer.update();
     }
