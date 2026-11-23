@@ -396,7 +396,8 @@ public class Player extends Entity {
 			jumpConsumed = false;
 
 		boolean hasHorizontalInput = left != right;
-		boolean attackMovementLocked = LOCK_MOVEMENT_DURING_ATTACK && attackPhase != AttackPhase.NONE;
+		boolean attackMovementLocked = (LOCK_MOVEMENT_DURING_ATTACK && attackPhase != AttackPhase.NONE)
+				|| blocking;
 		boolean attackLungeActive = attackPhase != AttackPhase.NONE && !attackStartedInAir
 				&& attackLungeRemaining > 0;
 		if (!inAir && !hasHorizontalInput)

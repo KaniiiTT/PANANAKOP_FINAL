@@ -26,6 +26,14 @@ public class Boar extends Enemy {
 		attackBox = new Rectangle2D.Float(x, y, 72 * Game.SCALE, 35 * Game.SCALE);
 	}
 
+	@Override
+	public void hurt(int amount) {
+		if (!active || state == DEAD)
+			return;
+		currentHealth -= amount;
+		newState(currentHealth <= 0 ? DEAD : IDLE);
+	}
+
 	public void update(int[][] lvlData, Player player) {
 		updateAttackCooldown();
 		if (firstUpdate)

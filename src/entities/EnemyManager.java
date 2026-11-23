@@ -102,7 +102,7 @@ public class EnemyManager {
 						? conquistadorWhiteArr[conquistador.getState()][conquistador.getAniIndex()]
 						: conquistadorArr[conquistador.getState()][conquistador.getAniIndex()],
 						(int) conquistador.getHitbox().x - xLvlOffset - CONQUISTADOR_DRAWOFFSET_X + conquistador.flipX(),
-						(int) conquistador.getHitbox().y - CONQUISTADOR_DRAWOFFSET_Y,
+						(int) conquistador.getHitbox().y - CONQUISTADOR_DRAWOFFSET_Y - 2,
 						CONQUISTADOR_WIDTH * conquistador.flipW(), CONQUISTADOR_HEIGHT, null);
 	}
 
