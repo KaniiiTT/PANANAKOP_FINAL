@@ -77,12 +77,16 @@ public class Game implements Runnable {
 	}
 
 	public void update() {
+		update(1f / UPS_SET);
+	}
+
+	public void update(float dt) {
 		switch (Gamestate.state) {
 		case MENU:
 			menu.update();
 			break;
 		case PLAYING:
-			playing.update();
+			playing.update(dt);
 			break;
 		case CHARACTER_SELECT:
 			characterSelect.update();
@@ -127,6 +131,7 @@ public class Game implements Runnable {
 		double timePerUpdate = 1000000000.0 / UPS_SET;
 
 		long previousTime = System.nanoTime();
+		long previousUpdateTime = previousTime;
 
 		int frames = 0;
 		int updates = 0;
@@ -143,7 +148,9 @@ public class Game implements Runnable {
 			previousTime = currentTime;
 
 			if (deltaU >= 1) {
-				update();
+				float realDeltaTime = Math.min(0.1f, (currentTime - previousUpdateTime) / 1000000000f);
+				previousUpdateTime = currentTime;
+				update(realDeltaTime);
 				updates++;
 				deltaU--;
 			}

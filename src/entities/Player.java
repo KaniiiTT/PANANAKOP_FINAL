@@ -17,12 +17,14 @@ import java.util.Set;
 
 import gamestates.Playing;
 import main.Game;
+import effects.HitEffects;
 import utilz.LoadSave;
 import utilz.SoundManager;
 
 public class Player extends Entity {
 
 	private BufferedImage[][] animations;
+	private BufferedImage[][] whiteAnimations;
 	private AnimationDefinition[] animationDefinitions;
 	private boolean moving = false, attacking = false, blocking = false;
 	private boolean left, right, jump, running;
@@ -169,7 +171,8 @@ public class Player extends Entity {
 		AttackDefinition attack = getCurrentAttackDefinition();
 		if (aniIndex < attack.hitActiveStart || aniIndex > attack.hitActiveEnd)
 			return;
-		playing.checkEnemyHit(attackBox, attack.damage, attack.knockback, flipW, attackHitTargets);
+		playing.checkEnemyHit(attackBox, attack.damage, attack.knockback, flipW, attackHitTargets,
+				attackPhase == AttackPhase.VERTICAL);
 		playing.checkObjectHit(attackBox);
 	}
 
@@ -217,9 +220,14 @@ public class Player extends Entity {
 		if (flipW == -1)
 			drawX += frameWidth;
 		graphics.drawImage(animations[state][aniIndex], drawX, drawY, frameWidth * flipW, frameHeight, null);
+		if (flashTimer > 0)
+			graphics.drawImage(whiteAnimations[state][aniIndex], drawX, drawY, frameWidth * flipW, frameHeight, null);
 		graphics.dispose();
 //		drawHitbox(g, lvlOffset);
 //		drawAttackBox(g, lvlOffset);
+	}
+
+	public void renderUI(Graphics g) {
 		drawUI(g);
 	}
 
@@ -538,6 +546,10 @@ public class Player extends Entity {
 			return;
 		if (value < 0)
 			SoundManager.play(SoundManager.Effect.HIT);
+		if (value < 0) {
+			setFlashTimer(playing.getHitEffects().flashSeconds());
+			playing.getHitEffects().trigger(false);
+		}
 		currentHealth += value;
 		if (value < 0)
 			hitTicks = ANI_SPEED * 2;
@@ -570,14 +582,18 @@ public class Player extends Entity {
 		boolean splitMaleSheet = LoadSave.MALE_PLAYER_ATLAS.equals(spriteSheet);
 		animationDefinitions = splitMaleSheet ? createMaleAnimationDefinitions() : createLegacyAnimationDefinitions();
 		animations = new BufferedImage[animationDefinitions.length][];
+		whiteAnimations = new BufferedImage[animationDefinitions.length][];
 		for (int state = 0; state < animationDefinitions.length; state++) {
 			AnimationDefinition animation = animationDefinitions[state];
 			BufferedImage sheet = LoadSave.GetSpriteAtlas(animation.sheet);
 			validateSheet(animation, sheet);
 			animations[state] = new BufferedImage[animation.frameCount];
+			whiteAnimations[state] = new BufferedImage[animation.frameCount];
 			for (int frame = 0; frame < animation.frameCount; frame++)
 				animations[state][frame] = sheet.getSubimage(frame * animation.frameWidth,
 						animation.row * animation.frameHeight, animation.frameWidth, animation.frameHeight);
+			for (int frame = 0; frame < animation.frameCount; frame++)
+				whiteAnimations[state][frame] = HitEffects.whiteSilhouette(animations[state][frame]);
 		}
 
 		statusBarImg = LoadSave.GetSpriteAtlas(LoadSave.STATUS_BAR);
