@@ -12,7 +12,9 @@ import java.awt.RenderingHints;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.Set;
 
 import gamestates.Playing;
@@ -71,6 +73,7 @@ public class Player extends Entity {
 	private float horizontalMomentum;
 	private boolean attackStartedInAir;
 	private final Set<Enemy> attackHitTargets = Collections.newSetFromMap(new IdentityHashMap<>());
+	private final Map<Integer, Set<Enemy>> ultimateHitTargets = new HashMap<>();
 	private Playing playing;
 
 	private int tileY = 0;
@@ -158,6 +161,16 @@ public class Player extends Entity {
 	}
 
 	private void checkAttack() {
+		if (usingUltimate) {
+			UltimateHitDefinition hit = getUltimateHitDefinition(aniIndex);
+			if (hit == null)
+				return;
+			Set<Enemy> hitTargets = ultimateHitTargets.computeIfAbsent(hit.frame,
+					frame -> Collections.newSetFromMap(new IdentityHashMap<>()));
+			playing.checkEnemyHit(attackBox, hit.damage, 0, flipW, hitTargets, hit.heavy);
+			playing.checkObjectHit(attackBox);
+			return;
+		}
 		if (attackPhase == AttackPhase.NONE) {
 			int hitFrame = getAttackHitFrame(aniIndex);
 			if (hitFrame < 0 || attackCheckedFrame == hitFrame)
@@ -185,6 +198,14 @@ public class Player extends Entity {
 					? hitbox.x + hitbox.width + attack.hitboxOffsetX * Game.SCALE
 					: hitbox.x - attackBox.width - attack.hitboxOffsetX * Game.SCALE;
 			attackBox.y = hitbox.y + attack.hitboxOffsetY * Game.SCALE;
+			return;
+		}
+		if (usingUltimate) {
+			AnimationDefinition animation = animationDefinitions[ULTIMATE];
+			attackBox.width = animation.frameWidth * Game.SCALE;
+			attackBox.height = animation.frameHeight * Game.SCALE;
+			attackBox.x = hitbox.x + hitbox.width / 2f - attackBox.width / 2f;
+			attackBox.y = hitbox.y + hitbox.height + PLAYER_SPRITE_OFFSET_Y * Game.SCALE - attackBox.height;
 			return;
 		}
 		if (dashing) {
@@ -326,7 +347,7 @@ public class Player extends Entity {
 		attackLungeRemaining = ATTACK_LUNGE_DISTANCE * Game.SCALE;
 		if (inAir && (horizontalMomentum == 0 || left != right)) {
 			float speed = running ? walkSpeed * 1.7f : walkSpeed;
-			horizontalMomentum = right ? speed : left ? -speed : 0;
+			horizontalMomentum = getEffectiveHorizontalDirection() * speed;
 		}
 		if (right)
 			flipW = 1;
@@ -395,9 +416,10 @@ public class Player extends Entity {
 		} else if (!jump)
 			jumpConsumed = false;
 
-		boolean hasHorizontalInput = left != right;
 		boolean attackMovementLocked = (LOCK_MOVEMENT_DURING_ATTACK && attackPhase != AttackPhase.NONE)
 				|| blocking;
+		int horizontalDirection = getEffectiveHorizontalDirection();
+		boolean hasHorizontalInput = horizontalDirection != 0;
 		boolean attackLungeActive = attackPhase != AttackPhase.NONE && !attackStartedInAir
 				&& attackLungeRemaining > 0;
 		if (!inAir && !hasHorizontalInput)
@@ -408,17 +430,11 @@ public class Player extends Entity {
 		float xSpeed = 0;
 		float speed = running ? walkSpeed * 1.7f : walkSpeed;
 
-		if (!attackMovementLocked) {
-			if (left) {
-				xSpeed -= speed;
-				horizontalMomentum = -speed;
-				flipW = -1;
-			}
-			if (right) {
-				xSpeed += speed;
-				horizontalMomentum = speed;
-				flipW = 1;
-			}
+		if (!attackMovementLocked && horizontalDirection != 0) {
+			xSpeed += horizontalDirection * speed;
+			horizontalMomentum = horizontalDirection * speed;
+			if (left != right)
+				flipW = horizontalDirection;
 		}
 		if (attackPhase != AttackPhase.NONE && inAir)
 			xSpeed += horizontalMomentum;
@@ -454,6 +470,12 @@ public class Player extends Entity {
 		} else
 			updateXPos(xSpeed);
 		moving = hasHorizontalInput;
+	}
+
+	private int getEffectiveHorizontalDirection() {
+		if (left != right)
+			return left ? -1 : 1;
+		return running ? flipW : 0;
 	}
 
 	private boolean isOnCrumblingPlatform() {
@@ -652,9 +674,14 @@ public class Player extends Entity {
 	}
 
 	private int getAttackHitFrame(int frame) {
-		if (state == ULTIMATE)
-			return frame == ULTIMATE_HIT_FRAME ? frame : -1;
 		return -1;
+	}
+
+	private UltimateHitDefinition getUltimateHitDefinition(int frame) {
+		for (UltimateHitDefinition hit : ULTIMATE_HITS)
+			if (hit.frame == frame)
+				return hit;
+		return null;
 	}
 
 	private static class AnimationDefinition {
@@ -770,6 +797,7 @@ public class Player extends Entity {
 	public void setUltimate(boolean ultimate) {
 		if (ultimate && !usingUltimate) {
 			usingUltimate = true;
+			ultimateHitTargets.clear();
 			aniTick = 0;
 			aniIndex = 0;
 		}
@@ -818,6 +846,7 @@ public class Player extends Entity {
 		dashCooldownTicks = 0;
 		airDashUsed = false;
 		usingUltimate = false;
+		ultimateHitTargets.clear();
 		victory = false;
 		moving = false;
 		jumpsUsed = 0;

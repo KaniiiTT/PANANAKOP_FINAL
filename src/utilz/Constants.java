@@ -327,13 +327,17 @@ public class Constants {
 			return frameCounts[player_action];
 		}
 
-		public static final int ULTIMATE_HIT_FRAME = 1;
 		public static final int ATTACK_CHAIN_GRACE_TICKS = 80;
 
 		public static final AttackDefinition ATTACK_HORIZONTAL = new AttackDefinition(
 				0, 5, 2, 4, continuationFrameTicks(ATTACK_HORIZONTAL_FRAME_SECONDS), 10, 32, 24, 10, 4, 3);
 		public static final AttackDefinition ATTACK_VERTICAL = new AttackDefinition(
 				6, 12, 8, 10, continuationFrameTicks(ATTACK_VERTICAL_FRAME_SECONDS), 20, 44, 34, 8, 0, 7);
+		public static final UltimateHitDefinition[] ULTIMATE_HITS = {
+				new UltimateHitDefinition(2, 10, 96, 64, 0, 0, false),
+				new UltimateHitDefinition(5, 10, 96, 64, 0, 0, false),
+				new UltimateHitDefinition(8, 20, 96, 64, 0, 0, true)
+		};
 
 		public static class AttackDefinition {
 			public final int startFrame;
@@ -362,6 +366,27 @@ public class Constants {
 				this.hitboxOffsetX = hitboxOffsetX;
 				this.hitboxOffsetY = hitboxOffsetY;
 				this.knockback = knockback;
+			}
+		}
+
+		public static class UltimateHitDefinition {
+			public final int frame;
+			public final int damage;
+			public final int hitboxWidth;
+			public final int hitboxHeight;
+			public final int hitboxOffsetX;
+			public final int hitboxOffsetY;
+			public final boolean heavy;
+
+			private UltimateHitDefinition(int frame, int damage, int hitboxWidth, int hitboxHeight,
+					int hitboxOffsetX, int hitboxOffsetY, boolean heavy) {
+				this.frame = frame;
+				this.damage = damage;
+				this.hitboxWidth = hitboxWidth;
+				this.hitboxHeight = hitboxHeight;
+				this.hitboxOffsetX = hitboxOffsetX;
+				this.hitboxOffsetY = hitboxOffsetY;
+				this.heavy = heavy;
 			}
 		}
 	}
