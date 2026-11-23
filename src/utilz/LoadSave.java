@@ -24,6 +24,7 @@ public class LoadSave {
 	private static final String MODERN_ASSETS_DIRECTORY = "pananakop_modern_assets";
 
 	public static final String MALE_PLAYER_ATLAS = "male_spritesheet.png";
+	public static final String MALE_PLAYER_CONTINUATION_ATLAS = "male_spritesheet_continuation.png";
 	public static final String FEMALE_PLAYER_ATLAS = "female_spritesheet.png";
 	public static final String PLAYER_ATLAS = MALE_PLAYER_ATLAS;
 	public static final String LEVEL_ATLAS = "outside_sprites.png";

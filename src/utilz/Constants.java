@@ -289,8 +289,7 @@ public class Constants {
 		public static final int IDLE = 0;
 		public static final int WALKING = 1;
 		public static final int RUNNING = 2;
-		/** The run cycle starts at frame 1 to skip the first run frame. */
-		public static final int RUN_START_FRAME = 3;
+		public static final int RUN_START_FRAME = 0;
 		public static final int ATTACK = 3;
 		public static final int BLOCK = 4;
 		public static final int HIT = 5;
@@ -303,12 +302,67 @@ public class Constants {
 		public static final int VICTORY = 12;
 		public static final int DASH = 13;
 		public static final int ULTIMATE = 14;
+		/** Game updates per second used to convert continuation animation timings. */
+		public static final int PLAYER_UPDATES_PER_SECOND = 200;
+		public static final boolean LOCK_MOVEMENT_DURING_ATTACK = true;
+		/** Forward movement during each attack phase, in unscaled sprite pixels. */
+		public static final float ATTACK_LUNGE_DISTANCE = 18f;
+		public static final float ATTACK_LUNGE_SPEED = 1.5f;
+		/** Tuning multiplier for continuation-sheet animations only. */
+		public static final float CONTINUATION_SPEED_MULTIPLIER = 1.0f;
+		public static final float ATTACK_HORIZONTAL_FRAME_SECONDS = 0.07f;
+		public static final float ATTACK_VERTICAL_FRAME_SECONDS = 0.08f;
+		public static final float RUNNING_FRAME_SECONDS = 0.08f;
+		public static final float DASH_FRAME_SECONDS = 0.05f;
+		public static final float ULTIMATE_FRAME_SECONDS = 0.09f;
+
+		public static int continuationFrameTicks(float seconds) {
+			return Math.max(1, Math.round(seconds * PLAYER_UPDATES_PER_SECOND / CONTINUATION_SPEED_MULTIPLIER));
+		}
 
 		public static int GetSpriteAmount(int player_action) {
-			int[] frameCounts = { 6, 8, 7, 6, 4, 4, 6, 4, 6, 3, 4, 8, 6, 5, 8 };
+			int[] frameCounts = { 9, 9, 9, 13, 5, 5, 9, 5, 9, 5, 5, 9, 9, 5, 9 };
 			if (player_action < 0 || player_action >= frameCounts.length)
 				return 1;
 			return frameCounts[player_action];
+		}
+
+		public static final int ULTIMATE_HIT_FRAME = 1;
+		public static final int ATTACK_CHAIN_GRACE_TICKS = 80;
+
+		public static final AttackDefinition ATTACK_HORIZONTAL = new AttackDefinition(
+				0, 5, 2, 4, continuationFrameTicks(ATTACK_HORIZONTAL_FRAME_SECONDS), 10, 32, 24, 10, 4, 3);
+		public static final AttackDefinition ATTACK_VERTICAL = new AttackDefinition(
+				6, 12, 8, 10, continuationFrameTicks(ATTACK_VERTICAL_FRAME_SECONDS), 20, 44, 34, 8, 0, 7);
+
+		public static class AttackDefinition {
+			public final int startFrame;
+			public final int endFrame;
+			public final int hitActiveStart;
+			public final int hitActiveEnd;
+			public final int frameDuration;
+			public final int damage;
+			public final int hitboxWidth;
+			public final int hitboxHeight;
+			public final int hitboxOffsetX;
+			public final int hitboxOffsetY;
+			public final int knockback;
+
+			private AttackDefinition(int startFrame, int endFrame, int hitActiveStart, int hitActiveEnd,
+					int frameDuration, int damage, int hitboxWidth, int hitboxHeight, int hitboxOffsetX,
+					int hitboxOffsetY, int knockback) {
+				this.startFrame = startFrame;
+				this.endFrame = endFrame;
+				this.hitActiveStart = hitActiveStart;
+				this.hitActiveEnd = hitActiveEnd;
+				this.frameDuration = frameDuration;
+				this.damage = damage;
+				this.hitboxWidth = hitboxWidth;
+				this.hitboxHeight = hitboxHeight;
+				this.hitboxOffsetX = hitboxOffsetX;
+				this.hitboxOffsetY = hitboxOffsetY;
+				this.knockback = knockback;
+			}
 		}
 	}
 

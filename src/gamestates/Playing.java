@@ -2,19 +2,23 @@
 package gamestates;
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Random;
+import java.util.Set;
 
 import background.ParallaxBackground;
 import entities.EnemyManager;
+import entities.Enemy;
 import entities.Player;
 import levels.LevelManager;
 import main.Game;
 import objects.ObjectManager;
 import ui.BossUI;
+import effects.HitEffects;
 import ui.GameOverOverlay;
 import ui.LevelCompletedOverlay;
 import ui.PauseOverlay;
@@ -37,6 +41,7 @@ public class Playing extends State implements Statemethods {
     private GameOverOverlay gameOverOverlay;
     private LevelCompletedOverlay levelCompletedOverlay;
     private BossUI bossUI;
+    private final HitEffects hitEffects = new HitEffects();
 
     private boolean paused = false;
 
@@ -112,6 +117,15 @@ public class Playing extends State implements Statemethods {
 
     @Override
     public void update() {
+        update(1f / 200f);
+    }
+
+    public void update(float dt) {
+        hitEffects.update(dt);
+        player.updateFlash(dt);
+        enemyManager.updateFlash(dt);
+        if (hitEffects.isFrozen())
+            return;
         if (paused) {
             pauseOverlay.update();
 
@@ -176,13 +190,18 @@ public class Playing extends State implements Statemethods {
     public void draw(Graphics g) {
 
         int cameraX = Math.round(xLvlOffset);
+		Graphics2D world = (Graphics2D) g.create();
+		hitEffects.applyShake(world);
 
-        parallaxBackground.draw(g, cameraX, levelManager.getCurrentLevel().getLevelData());
+        parallaxBackground.draw(world, cameraX, levelManager.getCurrentLevel().getLevelData());
 
-        levelManager.draw(g, cameraX);
-        player.render(g, cameraX);
-        enemyManager.draw(g, cameraX);
-        objectManager.draw(g, cameraX);
+        levelManager.draw(world, cameraX);
+        player.render(world, cameraX);
+        enemyManager.draw(world, cameraX);
+        objectManager.draw(world, cameraX);
+		hitEffects.removeShake(world);
+		world.dispose();
+		player.renderUI(g);
 
         bossUI.draw(g, enemyManager.getActiveBoss());
 
@@ -231,6 +250,20 @@ public class Playing extends State implements Statemethods {
 
     public void checkEnemyHit(Rectangle2D.Float attackBox) {
         enemyManager.checkEnemyHit(attackBox);
+    }
+
+    public void checkEnemyHit(Rectangle2D.Float attackBox, int damage, int knockback, int direction,
+            Set<Enemy> hitTargets) {
+        enemyManager.checkEnemyHit(attackBox, damage, knockback, direction, hitTargets, false);
+    }
+
+    public void checkEnemyHit(Rectangle2D.Float attackBox, int damage, int knockback, int direction,
+            Set<Enemy> hitTargets, boolean heavy) {
+        enemyManager.checkEnemyHit(attackBox, damage, knockback, direction, hitTargets, heavy);
+    }
+
+    public HitEffects getHitEffects() {
+        return hitEffects;
     }
 
     public void checkPotionTouched(Rectangle2D.Float hitbox) {

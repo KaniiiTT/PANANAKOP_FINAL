@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Queue;
 
 import main.Game;
+import effects.HitEffects;
 import utilz.LoadSave;
 
 /** Dedicated final-stage boss. All Magellan animations are owned by this class. */
@@ -23,6 +24,8 @@ public class Magellan extends Enemy {
 			"skill_cannon_command", "skill_summon_crew", "skill_rage", "hurt", "die" };
 	private final Map<String, BufferedImage[]> leftFrames = new HashMap<>();
 	private final Map<String, BufferedImage[]> rightFrames = new HashMap<>();
+	private final Map<String, BufferedImage[]> leftWhiteFrames = new HashMap<>();
+	private final Map<String, BufferedImage[]> rightWhiteFrames = new HashMap<>();
 	private final Map<String, BufferedImage[]> effects = new HashMap<>();
 	private static final String[] EFFECT_NAMES = { "slash_wave", "thrust_streak", "bullet", "muzzle_flash",
 			"smoke_puff", "cannon_shell", "target_marker", "cannon_explosion", "shockwave", "summon_sigil",
@@ -44,6 +47,8 @@ public class Magellan extends Enemy {
 		for (String animation : ANIMATION_NAMES) {
 			leftFrames.put(animation, LoadSave.GetMagellanAnimation("left", animation));
 			rightFrames.put(animation, LoadSave.GetMagellanAnimation("right", animation));
+			leftWhiteFrames.put(animation, whiteFrames(leftFrames.get(animation)));
+			rightWhiteFrames.put(animation, whiteFrames(rightFrames.get(animation)));
 		}
 		loadEffects();
 		walkDir = LEFT;
@@ -268,11 +273,22 @@ public class Magellan extends Enemy {
 
 	public void draw(Graphics g, int xLvlOffset) {
 		BufferedImage[] frames = walkDir == LEFT ? leftFrames.get(animationName()) : rightFrames.get(animationName());
+		BufferedImage[] whiteFrames = walkDir == LEFT ? leftWhiteFrames.get(animationName())
+				: rightWhiteFrames.get(animationName());
 		BufferedImage frame = frames[Math.min(aniIndex, frames.length - 1)];
+		if (flashTimer > 0)
+			frame = whiteFrames[Math.min(aniIndex, whiteFrames.length - 1)];
 		int drawX = (int) (hitbox.x - xLvlOffset - (walkDir == LEFT ? 48 : 64) * Game.SCALE);
 		int drawY = (int) (hitbox.y + hitbox.height - (SPRITE_FEET_Y * Game.SCALE));
 		g.drawImage(frame, drawX, drawY, MAGELLAN_WIDTH, MAGELLAN_HEIGHT, null);
 		drawSkillEffects(g, xLvlOffset, drawX, drawY);
+	}
+
+	private BufferedImage[] whiteFrames(BufferedImage[] frames) {
+		BufferedImage[] white = new BufferedImage[frames.length];
+		for (int frame = 0; frame < frames.length; frame++)
+			white[frame] = HitEffects.whiteSilhouette(frames[frame]);
+		return white;
 	}
 
 	public int getHealth() {

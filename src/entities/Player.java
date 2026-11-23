@@ -6,18 +6,26 @@ import static utilz.Constants.*;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.RenderingHints;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
 
 import gamestates.Playing;
 import main.Game;
+import effects.HitEffects;
 import utilz.LoadSave;
 import utilz.SoundManager;
 
 public class Player extends Entity {
 
 	private BufferedImage[][] animations;
+	private BufferedImage[][] whiteAnimations;
+	private AnimationDefinition[] animationDefinitions;
 	private boolean moving = false, attacking = false, blocking = false;
 	private boolean left, right, jump, running;
 	private boolean jumpConsumed, dashing, usingUltimate, victory;
@@ -32,8 +40,7 @@ public class Player extends Entity {
 	// Dash (Hollow Knight style: fixed distance, fixed direction, no gravity)
 	// === DASH TUNING ===
 	private float dashSpeed = 2.8f * Game.SCALE; // pixels per tick (lower = slower)
-	private float dashDistance = 125f * Game.SCALE; // total travel distance
-	private int dashAniSpeed = ANI_SPEED; // computed per dash so the animation fits it
+	private float dashDistance = 175f * Game.SCALE; // total travel distance
 	private float dashRemaining = 0;
 	private int dashDir = 1;
 	private int dashCooldownTicks = 0;
@@ -56,7 +63,14 @@ public class Player extends Entity {
 
 	private int flipW = 1;
 
-	private boolean attackChecked;
+	private int attackCheckedFrame = -1;
+	private AttackPhase attackPhase = AttackPhase.NONE;
+	private boolean attackQueued;
+	private int attackGraceTicks;
+	private float attackLungeRemaining;
+	private float horizontalMomentum;
+	private boolean attackStartedInAir;
+	private final Set<Enemy> attackHitTargets = Collections.newSetFromMap(new IdentityHashMap<>());
 	private Playing playing;
 
 	private int tileY = 0;
@@ -99,7 +113,8 @@ public class Player extends Entity {
 				aniTick = 0;
 				aniIndex = 0;
 				playing.setPlayerDying(true);
-			} else if (aniIndex == GetSpriteAmount(DEAD) - 1 && aniTick >= ANI_SPEED - 1) {
+			} else if (aniIndex == getAnimationFrameCount(DEAD) - 1
+					&& aniTick >= getAnimationSpeed(DEAD) - 1) {
 				playing.setGameOver(true);
 			} else
 				updateAnimationTick();
@@ -119,12 +134,14 @@ public class Player extends Entity {
 			hitTicks--;
 		if (dashCooldownTicks > 0)
 			dashCooldownTicks--;
+		if (attackGraceTicks > 0 && attackPhase == AttackPhase.NONE)
+			attackGraceTicks--;
 		if (moving) {
 			checkPotionTouched();
 			checkSpikesTouched();
 			tileY = (int) (hitbox.y / Game.TILES_SIZE);
 		}
-		if (attacking || usingUltimate)
+		if (attackPhase != AttackPhase.NONE || usingUltimate)
 			checkAttack();
 
 		updateAnimationTick();
@@ -141,14 +158,35 @@ public class Player extends Entity {
 	}
 
 	private void checkAttack() {
-		if (attackChecked || aniIndex != 1)
+		if (attackPhase == AttackPhase.NONE) {
+			int hitFrame = getAttackHitFrame(aniIndex);
+			if (hitFrame < 0 || attackCheckedFrame == hitFrame)
+				return;
+			attackCheckedFrame = hitFrame;
+			playing.checkEnemyHit(attackBox);
+			playing.checkObjectHit(attackBox);
 			return;
-		attackChecked = true;
-		playing.checkEnemyHit(attackBox);
+		}
+
+		AttackDefinition attack = getCurrentAttackDefinition();
+		if (aniIndex < attack.hitActiveStart || aniIndex > attack.hitActiveEnd)
+			return;
+		playing.checkEnemyHit(attackBox, attack.damage, attack.knockback, flipW, attackHitTargets,
+				attackPhase == AttackPhase.VERTICAL);
 		playing.checkObjectHit(attackBox);
 	}
 
 	private void updateAttackBox() {
+		if (attackPhase != AttackPhase.NONE) {
+			AttackDefinition attack = getCurrentAttackDefinition();
+			attackBox.width = attack.hitboxWidth * Game.SCALE;
+			attackBox.height = attack.hitboxHeight * Game.SCALE;
+			attackBox.x = flipW > 0
+					? hitbox.x + hitbox.width + attack.hitboxOffsetX * Game.SCALE
+					: hitbox.x - attackBox.width - attack.hitboxOffsetX * Game.SCALE;
+			attackBox.y = hitbox.y + attack.hitboxOffsetY * Game.SCALE;
+			return;
+		}
 		if (dashing) {
 			// Follow the dash direction rather than the held keys.
 			if (dashDir > 0)
@@ -168,15 +206,28 @@ public class Player extends Entity {
 	}
 
 	public void render(Graphics g, int lvlOffset) {
-		// Keep the sprite's feet on the bottom of the collision box.
-		// This is important because the new sprite sheet uses 64x64 frames.
-		int drawX = (int) (hitbox.x - (width - hitbox.width) / 2) - lvlOffset;
-		int drawY = (int) (hitbox.y + hitbox.height - height + PLAYER_SPRITE_OFFSET_Y);
+		AnimationDefinition animation = animationDefinitions[state];
+		int frameWidth = (int) (animation.frameWidth * Game.SCALE);
+		int frameHeight = (int) (animation.frameHeight * Game.SCALE);
+		int anchorX = (int) (hitbox.x + hitbox.width / 2f) - lvlOffset;
+		int groundY = (int) (hitbox.y + hitbox.height + PLAYER_SPRITE_OFFSET_Y * Game.SCALE);
+		int drawX = anchorX - frameWidth / 2;
+		int drawY = groundY - frameHeight;
+		Graphics2D graphics = (Graphics2D) g.create();
+		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+				RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+		graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
 		if (flipW == -1)
-			drawX += width;
-		g.drawImage(animations[state][aniIndex], drawX, drawY, width * flipW, height, null);
+			drawX += frameWidth;
+		graphics.drawImage(animations[state][aniIndex], drawX, drawY, frameWidth * flipW, frameHeight, null);
+		if (flashTimer > 0)
+			graphics.drawImage(whiteAnimations[state][aniIndex], drawX, drawY, frameWidth * flipW, frameHeight, null);
+		graphics.dispose();
 //		drawHitbox(g, lvlOffset);
 //		drawAttackBox(g, lvlOffset);
+	}
+
+	public void renderUI(Graphics g) {
 		drawUI(g);
 	}
 
@@ -188,22 +239,34 @@ public class Player extends Entity {
 
 	private void updateAnimationTick() {
 		aniTick++;
-		int speed = (state == DASH && dashing) ? dashAniSpeed : ANI_SPEED;
+		int speed = attackPhase != AttackPhase.NONE ? getCurrentAttackDefinition().frameDuration
+				: getAnimationSpeed(state);
 		if (aniTick >= speed) {
 			aniTick = 0;
-			if (state == BLOCK) {
-				// Blocking is a hold pose: play the transition once, then keep
-				// displaying its final frame while the block button is held.
-				aniIndex = Math.min(aniIndex + 1, GetSpriteAmount(BLOCK) - 1);
+			if (attackPhase != AttackPhase.NONE) {
+				aniIndex++;
+				AttackDefinition attack = getCurrentAttackDefinition();
+				if (attackPhase == AttackPhase.HORIZONTAL && attackQueued
+						&& aniIndex > attack.hitActiveEnd) {
+					beginAttackPhase(AttackPhase.VERTICAL);
+					return;
+				}
+				if (aniIndex > attack.endFrame)
+					finishAttackPhase();
+				return;
+			}
+			AnimationDefinition animation = animationDefinitions[state];
+			if (animation.holdFinalFrame) {
+				aniIndex = Math.min(aniIndex + 1, animation.frameCount - 1);
 				return;
 			}
 			aniIndex++;
-			if (state == DASH && dashing && aniIndex >= GetSpriteAmount(DASH)) {
-				aniIndex = GetSpriteAmount(DASH) - 1; // hold last frame, don't loop
-			} else if (aniIndex >= GetSpriteAmount(state)) {
-				aniIndex = state == RUNNING ? RUN_START_FRAME : 0;
+			if (animation.looping && aniIndex > animation.loopEndFrame) {
+				aniIndex = animation.loopStartFrame;
+			} else if (!animation.looping && aniIndex >= animation.frameCount) {
+				aniIndex = animation.frameCount - 1;
 				attacking = false;
-				attackChecked = false;
+				attackCheckedFrame = -1;
 				// Dash now ends by distance (see updateDash), not by animation length.
 				if (state == ULTIMATE)
 					usingUltimate = false;
@@ -248,7 +311,73 @@ public class Player extends Entity {
 
 	private void resetAniTick() {
 		aniTick = 0;
-		aniIndex = state == RUNNING ? RUN_START_FRAME : 0;
+		aniIndex = animationDefinitions[state].initialFrame;
+		if (state == ATTACK)
+			attackCheckedFrame = -1;
+	}
+
+	private void beginAttackPhase(AttackPhase phase) {
+		attackPhase = phase;
+		attackQueued = false;
+		attackGraceTicks = 0;
+		attackHitTargets.clear();
+		attacking = true;
+		attackStartedInAir = inAir;
+		attackLungeRemaining = ATTACK_LUNGE_DISTANCE * Game.SCALE;
+		if (inAir && (horizontalMomentum == 0 || left != right)) {
+			float speed = running ? walkSpeed * 1.7f : walkSpeed;
+			horizontalMomentum = right ? speed : left ? -speed : 0;
+		}
+		if (right)
+			flipW = 1;
+		else if (left)
+			flipW = -1;
+		AttackDefinition attack = getCurrentAttackDefinition();
+		aniIndex = attack.startFrame;
+		aniTick = 0;
+		attackCheckedFrame = -1;
+	}
+
+	private void finishAttackPhase() {
+		if (attackPhase == AttackPhase.HORIZONTAL && attackQueued) {
+			beginAttackPhase(AttackPhase.VERTICAL);
+			return;
+		}
+		if (attackPhase == AttackPhase.VERTICAL && attackQueued) {
+			beginAttackPhase(AttackPhase.HORIZONTAL);
+			return;
+		}
+		boolean horizontal = attackPhase == AttackPhase.HORIZONTAL;
+		attackPhase = AttackPhase.NONE;
+		attackQueued = false;
+		attacking = false;
+		attackGraceTicks = horizontal ? ATTACK_CHAIN_GRACE_TICKS : 0;
+		attackHitTargets.clear();
+		attackCheckedFrame = -1;
+		attackLungeRemaining = 0;
+		attackStartedInAir = false;
+		aniIndex = 0;
+	}
+
+	private void cancelAttackPhase() {
+		attackPhase = AttackPhase.NONE;
+		attackQueued = false;
+		attacking = false;
+		attackGraceTicks = 0;
+		attackHitTargets.clear();
+		attackCheckedFrame = -1;
+		attackLungeRemaining = 0;
+		attackStartedInAir = false;
+	}
+
+	private AttackDefinition getCurrentAttackDefinition() {
+		return attackPhase == AttackPhase.VERTICAL ? ATTACK_VERTICAL : ATTACK_HORIZONTAL;
+	}
+
+	private boolean canCancelAttack() {
+		if (attackPhase == AttackPhase.NONE)
+			return true;
+		return aniIndex > getCurrentAttackDefinition().hitActiveEnd;
 	}
 
 	private void updatePos() {
@@ -266,20 +395,36 @@ public class Player extends Entity {
 		} else if (!jump)
 			jumpConsumed = false;
 
-		if (!inAir)
-			if ((!left && !right) || (right && left))
-				return;
+		boolean hasHorizontalInput = left != right;
+		boolean attackMovementLocked = LOCK_MOVEMENT_DURING_ATTACK && attackPhase != AttackPhase.NONE;
+		boolean attackLungeActive = attackPhase != AttackPhase.NONE && !attackStartedInAir
+				&& attackLungeRemaining > 0;
+		if (!inAir && !hasHorizontalInput)
+			horizontalMomentum = 0;
+		if (!inAir && !hasHorizontalInput && !attackLungeActive)
+			return;
 
 		float xSpeed = 0;
 		float speed = running ? walkSpeed * 1.7f : walkSpeed;
 
-		if (left) {
-			xSpeed -= speed;
-			flipW = -1;
+		if (!attackMovementLocked) {
+			if (left) {
+				xSpeed -= speed;
+				horizontalMomentum = -speed;
+				flipW = -1;
+			}
+			if (right) {
+				xSpeed += speed;
+				horizontalMomentum = speed;
+				flipW = 1;
+			}
 		}
-		if (right) {
-			xSpeed += speed;
-			flipW = 1;
+		if (attackPhase != AttackPhase.NONE && inAir)
+			xSpeed += horizontalMomentum;
+		if (attackLungeActive) {
+			float lungeStep = Math.min(ATTACK_LUNGE_SPEED * Game.SCALE, attackLungeRemaining);
+			xSpeed += flipW * lungeStep;
+			attackLungeRemaining -= lungeStep;
 		}
 
 		if (!inAir)
@@ -307,7 +452,7 @@ public class Player extends Entity {
 
 		} else
 			updateXPos(xSpeed);
-		moving = true;
+		moving = hasHorizontalInput;
 	}
 
 	private boolean isOnCrumblingPlatform() {
@@ -401,6 +546,10 @@ public class Player extends Entity {
 			return;
 		if (value < 0)
 			SoundManager.play(SoundManager.Effect.HIT);
+		if (value < 0) {
+			setFlashTimer(playing.getHitEffects().flashSeconds());
+			playing.getHitEffects().trigger(false);
+		}
 		currentHealth += value;
 		if (value < 0)
 			hitTicks = ANI_SPEED * 2;
@@ -430,15 +579,123 @@ public class Player extends Entity {
 	}
 
 	private void loadAnimations() {
-		BufferedImage img = LoadSave.GetSpriteAtlas(spriteSheet);
-		animations = new BufferedImage[15][];
-		for (int j = 0; j < animations.length; j++) {
-			animations[j] = new BufferedImage[GetSpriteAmount(j)];
-			for (int i = 0; i < animations[j].length; i++)
-				animations[j][i] = img.getSubimage(i * 64, j * 64, 64, 64);
+		boolean splitMaleSheet = LoadSave.MALE_PLAYER_ATLAS.equals(spriteSheet);
+		animationDefinitions = splitMaleSheet ? createMaleAnimationDefinitions() : createLegacyAnimationDefinitions();
+		animations = new BufferedImage[animationDefinitions.length][];
+		whiteAnimations = new BufferedImage[animationDefinitions.length][];
+		for (int state = 0; state < animationDefinitions.length; state++) {
+			AnimationDefinition animation = animationDefinitions[state];
+			BufferedImage sheet = LoadSave.GetSpriteAtlas(animation.sheet);
+			validateSheet(animation, sheet);
+			animations[state] = new BufferedImage[animation.frameCount];
+			whiteAnimations[state] = new BufferedImage[animation.frameCount];
+			for (int frame = 0; frame < animation.frameCount; frame++)
+				animations[state][frame] = sheet.getSubimage(frame * animation.frameWidth,
+						animation.row * animation.frameHeight, animation.frameWidth, animation.frameHeight);
+			for (int frame = 0; frame < animation.frameCount; frame++)
+				whiteAnimations[state][frame] = HitEffects.whiteSilhouette(animations[state][frame]);
 		}
 
 		statusBarImg = LoadSave.GetSpriteAtlas(LoadSave.STATUS_BAR);
+	}
+
+	private AnimationDefinition[] createMaleAnimationDefinitions() {
+		String main = LoadSave.MALE_PLAYER_ATLAS;
+		String continuation = LoadSave.MALE_PLAYER_CONTINUATION_ATLAS;
+		return new AnimationDefinition[] {
+			new AnimationDefinition(main, 64, 64, 0, 9, 17, true, false),
+			new AnimationDefinition(main, 64, 64, 1, 9, 17, true, false),
+			new AnimationDefinition(continuation, 96, 64, 1, 9, continuationFrameTicks(RUNNING_FRAME_SECONDS),
+					continuationFrameTicks(RUNNING_FRAME_SECONDS), 0, 1, 2, 8, true, false),
+			new AnimationDefinition(continuation, 96, 64, 0, 13,
+					continuationFrameTicks(ATTACK_HORIZONTAL_FRAME_SECONDS), false, false),
+			new AnimationDefinition(main, 64, 64, 2, 5, 20, false, true),
+			new AnimationDefinition(main, 64, 64, 3, 5, 20, false, false),
+			new AnimationDefinition(main, 64, 64, 4, 9, 12, false, false),
+			new AnimationDefinition(main, 64, 64, 5, 5, 20, false, false),
+			new AnimationDefinition(main, 64, 64, 6, 9, 14, false, false),
+			new AnimationDefinition(main, 64, 64, 7, 5, 20, true, false),
+			new AnimationDefinition(main, 64, 64, 8, 5, 20, false, false),
+			new AnimationDefinition(main, 64, 64, 9, 9, 18, false, true),
+			new AnimationDefinition(main, 64, 64, 10, 9, 18, false, true),
+			new AnimationDefinition(continuation, 96, 64, 2, 5, continuationFrameTicks(DASH_FRAME_SECONDS), false, true),
+			new AnimationDefinition(continuation, 96, 64, 3, 9, continuationFrameTicks(ULTIMATE_FRAME_SECONDS), false, false)
+		};
+	}
+
+	private AnimationDefinition[] createLegacyAnimationDefinitions() {
+		int[] frameCounts = { 6, 8, 7, 6, 4, 4, 6, 4, 6, 3, 4, 8, 6, 5, 8 };
+		AnimationDefinition[] definitions = new AnimationDefinition[15];
+		for (int state = 0; state < definitions.length; state++)
+			definitions[state] = new AnimationDefinition(spriteSheet, 64, 64, state,
+					frameCounts[state], ANI_SPEED, false, state == BLOCK || state == DASH);
+		return definitions;
+	}
+
+	private void validateSheet(AnimationDefinition animation, BufferedImage sheet) {
+		int requiredWidth = animation.frameWidth * animation.frameCount;
+		int requiredHeight = animation.frameHeight * (animation.row + 1);
+		if (sheet.getWidth() < requiredWidth || sheet.getHeight() < requiredHeight)
+			throw new IllegalStateException("Sprite sheet '" + animation.sheet + "' is too small for player animation row "
+					+ animation.row + ". Expected at least " + requiredWidth + "x" + requiredHeight + ".");
+	}
+
+	private int getAnimationFrameCount(int state) {
+		return animationDefinitions[state].frameCount;
+	}
+
+	private int getAnimationSpeed(int state) {
+		AnimationDefinition animation = animationDefinitions[state];
+		return animation.hasIntro() && aniIndex <= animation.introEndFrame
+				? animation.introFrameDelay : animation.frameDelay;
+	}
+
+	private int getAttackHitFrame(int frame) {
+		if (state == ULTIMATE)
+			return frame == ULTIMATE_HIT_FRAME ? frame : -1;
+		return -1;
+	}
+
+	private static class AnimationDefinition {
+		private final String sheet;
+		private final int frameWidth, frameHeight, row, frameCount;
+		private final int introFrameDelay, frameDelay, initialFrame, introEndFrame;
+		private final int loopStartFrame, loopEndFrame;
+		private final boolean looping, holdFinalFrame;
+
+		private AnimationDefinition(String sheet, int frameWidth, int frameHeight, int row, int frameCount,
+				int frameDelay, boolean looping, boolean holdFinalFrame) {
+			this(sheet, frameWidth, frameHeight, row, frameCount, frameDelay, frameDelay, looping ? RUN_START_FRAME : 0,
+					-1, looping ? RUN_START_FRAME : 0, looping ? frameCount - 1 : -1, looping, holdFinalFrame);
+		}
+
+		private AnimationDefinition(String sheet, int frameWidth, int frameHeight, int row, int frameCount,
+				int introFrameDelay, int frameDelay, int initialFrame, int introEndFrame, int loopStartFrame,
+				int loopEndFrame, boolean looping, boolean holdFinalFrame) {
+			this.sheet = sheet;
+			this.frameWidth = frameWidth;
+			this.frameHeight = frameHeight;
+			this.row = row;
+			this.frameCount = frameCount;
+			this.introFrameDelay = introFrameDelay;
+			this.frameDelay = frameDelay;
+			this.initialFrame = initialFrame;
+			this.introEndFrame = introEndFrame;
+			this.loopStartFrame = loopStartFrame;
+			this.loopEndFrame = loopEndFrame;
+			this.looping = looping;
+			this.holdFinalFrame = holdFinalFrame;
+		}
+
+		private boolean hasIntro() {
+			return introEndFrame >= initialFrame;
+		}
+	}
+
+	private enum AttackPhase {
+		NONE,
+		HORIZONTAL,
+		VERTICAL
 	}
 
 	// This changes the hero without creating a second Player class.
@@ -464,10 +721,25 @@ public class Player extends Entity {
 	}
 
 	public void setAttacking(boolean attacking) {
-		this.attacking = attacking;
+		if (!attacking)
+			return;
+		if (attackPhase == AttackPhase.HORIZONTAL) {
+			attackQueued = true;
+			return;
+		}
+		if (attackPhase == AttackPhase.VERTICAL) {
+			if (aniIndex >= ATTACK_VERTICAL.endFrame - 1)
+				attackQueued = true;
+			return;
+		}
+		beginAttackPhase(attackGraceTicks > 0 ? AttackPhase.VERTICAL : AttackPhase.HORIZONTAL);
 	}
 
 	public void setBlocking(boolean blocking) {
+		if (blocking && !canCancelAttack())
+			return;
+		if (blocking)
+			cancelAttackPhase();
 		this.blocking = blocking;
 	}
 
@@ -478,7 +750,7 @@ public class Player extends Entity {
 	// Call this once per key press. The direction is locked to where the
 	// player is facing when the dash starts, no matter what keys are held.
 	public void setDash(boolean dash) {
-		if (!dash || dashing || dashCooldownTicks > 0)
+		if (!dash || dashing || dashCooldownTicks > 0 || !canCancelAttack())
 			return;
 		if (inAir && airDashUsed)
 			return;
@@ -486,13 +758,10 @@ public class Player extends Entity {
 		dashing = true;
 		dashDir = flipW;
 		dashRemaining = dashDistance;
-		// Stretch the dash animation so it spans the whole dash.
-		int dashTicks = Math.round(dashDistance / dashSpeed);
-		dashAniSpeed = Math.max(1, Math.round(dashTicks / (float) GetSpriteAmount(DASH)));
 		if (inAir)
 			airDashUsed = true;
-		attacking = false;
-		attackChecked = false;
+		cancelAttackPhase();
+		attackCheckedFrame = -1;
 		aniTick = 0;
 		aniIndex = 0;
 	}
@@ -526,6 +795,10 @@ public class Player extends Entity {
 	}
 
 	public void setJump(boolean jump) {
+		if (jump && !canCancelAttack())
+			return;
+		if (jump)
+			cancelAttackPhase();
 		this.jump = jump;
 	}
 
@@ -533,6 +806,11 @@ public class Player extends Entity {
 		resetDirBooleans();
 		inAir = false;
 		attacking = false;
+		attackPhase = AttackPhase.NONE;
+		attackQueued = false;
+		attackGraceTicks = 0;
+		attackHitTargets.clear();
+		attackCheckedFrame = -1;
 		blocking = false;
 		dashing = false;
 		dashRemaining = 0;

@@ -113,11 +113,18 @@ public abstract class Enemy extends Entity {
 	}
 
 	public void hurt(int amount) {
+		if (!active || state == DEAD)
+			return;
 		currentHealth -= amount;
 		if (currentHealth <= 0)
 			newState(DEAD);
 		else
 			newState(HIT);
+	}
+
+	public void applyKnockback(int amount, int direction) {
+		if (amount != 0)
+			hitbox.x += amount * Game.SCALE * direction;
 	}
 
 	protected void checkPlayerHit(Rectangle2D.Float attackBox, Player player) {

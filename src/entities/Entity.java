@@ -17,6 +17,7 @@ public abstract class Entity {
 	protected boolean inAir = false;
 	protected int maxHealth;
 	protected int currentHealth;
+	protected float flashTimer;
 	protected Rectangle2D.Float attackBox;
 	protected float walkSpeed;
 
@@ -44,6 +45,18 @@ public abstract class Entity {
 
 	public Rectangle2D.Float getHitbox() {
 		return hitbox;
+	}
+
+	public float getFlashTimer() {
+		return flashTimer;
+	}
+
+	public void setFlashTimer(float seconds) {
+		flashTimer = Math.max(flashTimer, seconds);
+	}
+
+	public void updateFlash(float dt) {
+		flashTimer = Math.max(0, flashTimer - dt);
 	}
 
 	public int getState() {
