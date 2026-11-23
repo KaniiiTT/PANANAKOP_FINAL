@@ -31,8 +31,9 @@ public class CloudLayer extends TiledBackgroundLayer {
      *                       update (negative values drift left)
      * @param cycle          day/night clock; clouds turn thin and dark at night
      */
-    public CloudLayer(BufferedImage image, double parallaxFactor, double driftPerUpdate, DayNightCycle cycle) {
-        super(image, parallaxFactor, 0);
+    public CloudLayer(BufferedImage image, double parallaxFactor, double verticalFactor, double driftPerUpdate,
+            DayNightCycle cycle) {
+        super(image, parallaxFactor, 0, verticalFactor);
         this.driftPerUpdate = driftPerUpdate;
         this.cycle = cycle;
     }

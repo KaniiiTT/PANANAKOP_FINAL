@@ -13,6 +13,10 @@ import main.Game;
  * stars and a moon that crosses the sky. It sits right behind the clouds and
  * the forests, so they correctly pass in front of the stars and the moon, and
  * it draws nothing during the day.
+ *
+ * The sky never moves, so "sky plus dark wash" is blended once and kept; it is
+ * only blended again when the darkness reaches the next opacity step. This
+ * gives exactly the same picture as blending every frame, at a fraction of the cost.
  */
 public class NightSkyLayer implements BackgroundLayer {
     private static final int STAR_COUNT = 70;
@@ -20,14 +24,17 @@ public class NightSkyLayer implements BackgroundLayer {
     private static final int MOON_RADIUS = 6;  // in sprite pixels
     private static final double WASH_STRENGTH = 0.80;
     // The bushes are fully opaque below about 72% of the picture height, so the wash only
-    // has to cover the part above that; the rest would be painted over anyway.
-    private static final double WASH_COVERAGE = 0.73;
+    // has to cover the part above that (plus the room the vertical parallax can move them down).
+    private static final double WASH_COVERAGE = 0.72 + 1.5 * BackgroundLayer.MAX_VERTICAL_SHIFT / Game.GAME_HEIGHT;
 
     private final DayNightCycle cycle;
     private final AlphaSteps alpha = AlphaSteps.shared();
     private final double secondsPerUpdate;
     private final Color[] starColors = new Color[STAR_STEPS + 1];
     private final BufferedImage wash;
+    private final BufferedImage daySky;   // the top part of the sky picture, as the sky layer draws it
+    private final BufferedImage nightSky; // that part with the wash blended in, for the current step
+    private int nightSkyStep = -1;        // opacity step nightSky was built for
     private final BufferedImage moon;
     private final BufferedImage halo;
 
@@ -38,7 +45,8 @@ public class NightSkyLayer implements BackgroundLayer {
     private final double[] starRate = new double[STAR_COUNT];
     private double clock;
 
-    public NightSkyLayer(DayNightCycle cycle, double updatesPerSecond) {
+    /** @param skyArt the same picture the sky layer was built from */
+    public NightSkyLayer(DayNightCycle cycle, BufferedImage skyArt, double updatesPerSecond) {
         this.cycle = cycle;
         this.secondsPerUpdate = 1.0 / updatesPerSecond;
         for (int i = 0; i <= STAR_STEPS; i++)
@@ -46,6 +54,8 @@ public class NightSkyLayer implements BackgroundLayer {
 
         int unit = PixelSprites.pixelUnit();
         wash = createWash();
+        daySky = scaleTop(skyArt, wash.getHeight());
+        nightSky = new BufferedImage(wash.getWidth(), wash.getHeight(), BufferedImage.TYPE_INT_RGB);
         moon = createMoon(unit);
         halo = createHalo(moon.getWidth() * 3);
 
@@ -77,6 +87,29 @@ public class NightSkyLayer implements BackgroundLayer {
                 image.setRGB(x, y, rgb);
         }
         return image;
+    }
+
+    /** The top rows of the sky picture, stretched to the view exactly like the sky layer stretches it. */
+    private static BufferedImage scaleTop(BufferedImage skyArt, int rows) {
+        BufferedImage scaled = new BufferedImage(Game.GAME_WIDTH, Game.GAME_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = scaled.createGraphics();
+        g.drawImage(skyArt, 0, 0, Game.GAME_WIDTH, Game.GAME_HEIGHT, null);
+        g.dispose();
+        BufferedImage top = new BufferedImage(Game.GAME_WIDTH, rows, BufferedImage.TYPE_INT_RGB);
+        g = top.createGraphics();
+        g.drawImage(scaled, 0, 0, null);
+        g.dispose();
+        return top;
+    }
+
+    /** Blends the wash over the day sky for the given opacity step; done only when the step changes. */
+    private void rebuildNightSky(int step, double opacity) {
+        Graphics2D g = nightSky.createGraphics();
+        g.drawImage(daySky, 0, 0, null);
+        g.setComposite(alpha.get(opacity));
+        g.drawImage(wash, 0, 0, null);
+        g.dispose();
+        nightSkyStep = step;
     }
 
     private static BufferedImage createMoon(int unit) {
@@ -134,9 +167,11 @@ public class NightSkyLayer implements BackgroundLayer {
         Composite originalComposite = g.getComposite();
         Color originalColor = g.getColor();
         try {
-            g.setComposite(alpha.get(night * WASH_STRENGTH));
-            g.drawImage(wash, 0, 0, null);
-            g.setComposite(originalComposite);
+            double washOpacity = night * WASH_STRENGTH;
+            int step = alpha.index(washOpacity);
+            if (step != nightSkyStep)
+                rebuildNightSky(step, washOpacity);
+            g.drawImage(nightSky, 0, 0, null);
 
             for (int i = 0; i < STAR_COUNT; i++) {
                 double twinkle = 0.55 + 0.45 * Math.sin(clock * starRate[i] + starPhase[i]);

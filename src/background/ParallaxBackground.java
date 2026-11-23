@@ -48,8 +48,28 @@ public class ParallaxBackground {
     private static final double UPDATES_PER_SECOND = 200.0; // Game.UPS_SET
 
     // Day/night: one whole day lasts this many seconds of play (a new game starts in the morning).
-    private static final double DAY_SECONDS = 360.0;
-    private static final double START_TIME_OF_DAY = 0.0;
+    // For testing, start the game with -Dpananakop.daySeconds=60 to watch a whole day in one minute.
+    private static final double DAY_SECONDS = Double.parseDouble(System.getProperty("pananakop.daySeconds", "600"));
+    private static final double START_TIME_OF_DAY = 0.14; // a new game starts in clear daylight
+
+    // Vertical parallax: how much each layer follows the player's up/down movement
+    // (pixels of layer shift per pixel of player movement; closer layers move more).
+    private static final double[] CLOUD_VERTICAL = { 0.020, 0.015, 0.010 };
+    private static final double BIRD_VERTICAL = 0.020;
+    private static final double BAT_VERTICAL = 0.040;
+    private static final double FAR_FOREST_VERTICAL = 0.040;
+    private static final double LIGHT_SHAFT_VERTICAL = 0.050;
+    private static final double NEAR_FOREST_VERTICAL = 0.090;
+    private static final double BAT_FACTOR = 0.10;
+
+    // The viewer position is eased so the background glides instead of jerking, and a slower
+    // "rest position" follows it, so after a jump or fall the scene settles back to its normal look.
+    private static final double FOCUS_FOLLOW = 0.030;   // per update
+    private static final double REST_FOLLOW = 0.0008;   // per update (about 6 s)
+    private static final double TELEPORT_DISTANCE = Game.GAME_HEIGHT * 0.25; // a bigger jump is a respawn
+
+    // Wind sway of the near bushes: pixels the tree tops lean at full wind (0 turns the sway off).
+    private static final int NEAR_FOREST_SWAY = Math.max(2, Math.round(Game.GAME_WIDTH / 480f));
 
     // Haze over the far forest and the light beams: both are meant to be subtle.
     private static final Color HAZE_TINT = new Color(185, 196, 230);
@@ -61,11 +81,18 @@ public class ParallaxBackground {
     private final BackgroundLayer underground;
     private final BackgroundLayer fallbackBackground;
     /**
-     * Draw order = insertion order: sky, night sky (stars, moon), cloud bands, birds,
-     * far forest (hazy), light shafts, near forest, forest life, mood tint, fireflies.
+     * Draw order = insertion order: sky, night sky (stars, moon), shooting stars, cloud bands,
+     * birds, far forest (hazy), bats, light shafts, near forest (swaying), forest life,
+     * mood tint, fireflies.
      */
     private final ArrayList<BackgroundLayer> layers = new ArrayList<>();
     private final DayNightCycle cycle = new DayNightCycle(DAY_SECONDS, START_TIME_OF_DAY, UPDATES_PER_SECOND);
+
+    // Vertical parallax state, in screen pixels of player height.
+    private double focusTarget;   // where the player really is
+    private double focusEased;    // the same, glided towards
+    private double restPosition;  // where the scene is "at rest"
+    private boolean focusKnown;
     private final TerrainAnalyzer terrainAnalyzer = new TerrainAnalyzer();
 
     private TerrainProfile terrain;
@@ -103,21 +130,28 @@ public class ParallaxBackground {
             if (Files.isRegularFile(skyImg) && Files.isRegularFile(cloudImg)
                     && Files.isRegularFile(farImg) && Files.isRegularFile(nearImg)) {
                 // The order of insertion is the order of drawing (back to front).
-                layers.add(new SkyLayer(load(skyImg)));
-                layers.add(new NightSkyLayer(cycle, UPDATES_PER_SECOND));
+                BufferedImage skyArt = SkyLayer.withoutClouds(load(skyImg));
+                layers.add(new SkyLayer(skyArt));
+                layers.add(new NightSkyLayer(cycle, skyArt, UPDATES_PER_SECOND));
+                layers.add(new ShootingStarLayer(cycle, UPDATES_PER_SECOND));
                 // Lowest (farthest) cloud band first, highest (nearest) last.
                 List<BufferedImage> cloudBands = CloudLayer.splitIntoBands(load(cloudImg), CLOUD_FACTORS.length);
                 for (int band = CLOUD_FACTORS.length - 1; band >= 0; band--)
-                    layers.add(new CloudLayer(cloudBands.get(band), CLOUD_FACTORS[band],
+                    layers.add(new CloudLayer(cloudBands.get(band), CLOUD_FACTORS[band], CLOUD_VERTICAL[band],
                             CLOUD_DRIFT_PX_PER_SECOND[band] / UPDATES_PER_SECOND, cycle));
-                layers.add(new BirdLayer(cycle, BIRD_FACTOR, UPDATES_PER_SECOND));
-                layers.add(new ForestLayer(load(farImg), FAR_FOREST_FACTOR, HAZE_TINT, HAZE_STRENGTH));
-                layers.add(new LightShaftLayer(LIGHT_SHAFT_FACTOR, LIGHT_SHAFT_ALPHA, UPDATES_PER_SECOND, cycle));
-                layers.add(new ForestLayer(load(nearImg), NEAR_FOREST_FACTOR));
-                layers.add(new ForestLifeLayer(cycle, UPDATES_PER_SECOND));
+                layers.add(new BirdLayer(cycle, BIRD_FACTOR, BIRD_VERTICAL, UPDATES_PER_SECOND));
+                layers.add(new ForestLayer(load(farImg), FAR_FOREST_FACTOR, FAR_FOREST_VERTICAL, HAZE_TINT,
+                        HAZE_STRENGTH));
+                layers.add(new BatLayer(cycle, BAT_FACTOR, BAT_VERTICAL, UPDATES_PER_SECOND));
+                layers.add(new LightShaftLayer(LIGHT_SHAFT_FACTOR, LIGHT_SHAFT_VERTICAL, LIGHT_SHAFT_ALPHA,
+                        UPDATES_PER_SECOND, cycle));
+                SwayingForestLayer nearForest = new SwayingForestLayer(load(nearImg), NEAR_FOREST_FACTOR,
+                        NEAR_FOREST_VERTICAL, NEAR_FOREST_SWAY, UPDATES_PER_SECOND);
+                layers.add(nearForest);
+                layers.add(new ForestLifeLayer(cycle, nearForest, NEAR_FOREST_VERTICAL, UPDATES_PER_SECOND));
                 layers.add(new MoodTintLayer(cycle));
                 // After the tint, so the glow is not darkened by the night colour.
-                layers.add(new FireflyLayer(cycle, UPDATES_PER_SECOND));
+                layers.add(new FireflyLayer(cycle, NEAR_FOREST_VERTICAL, UPDATES_PER_SECOND));
                 fallbackBackground = null;
             } else {
                 fallbackBackground = new ParallaxLayer(
@@ -145,15 +179,48 @@ public class ParallaxBackground {
     /** Called from the game's update loop; lets self-moving layers (clouds) advance. */
     public void update() {
         cycle.update();
+        focusEased += (focusTarget - focusEased) * FOCUS_FOLLOW;
+        restPosition += (focusEased - restPosition) * REST_FOLLOW;
         for (BackgroundLayer layer : layers)
             layer.update();
+    }
+
+    /**
+     * Tells the backdrop where the player is vertically (screen pixels, larger = lower).
+     * Call it every update. The layers shift a little against the player's movement,
+     * the closer ones more, and glide back to their normal place when the player
+     * stays at one height. A sudden big jump (a respawn) is followed at once.
+     */
+    public void setFocusY(double y) {
+        if (!focusKnown || Math.abs(y - focusTarget) > TELEPORT_DISTANCE) {
+            focusEased = y;
+            restPosition = y;
+            focusKnown = true;
+        }
+        focusTarget = y;
+    }
+
+    /** Shift in pixels for a layer: it moves against the player, scaled by its own factor. */
+    private int verticalShift(BackgroundLayer layer) {
+        double factor = layer.getVerticalFactor();
+        if (factor == 0.0)
+            return 0;
+        double shift = (restPosition - focusEased) * factor;
+        double limit = BackgroundLayer.MAX_VERTICAL_SHIFT;
+        return (int) Math.round(Math.max(-limit, Math.min(limit, shift)));
     }
 
     public void draw(Graphics g, int cameraX, int[][] levelData) {
         Graphics2D g2 = (Graphics2D) g;
         if (!layers.isEmpty()) {
-            for (BackgroundLayer layer : layers)
+            for (BackgroundLayer layer : layers) {
+                int shift = verticalShift(layer);
+                if (shift != 0)
+                    g2.translate(0, shift);
                 layer.draw(g2, cameraX);
+                if (shift != 0)
+                    g2.translate(0, -shift);
+            }
             return;
         }
         if (fallbackBackground != null) {

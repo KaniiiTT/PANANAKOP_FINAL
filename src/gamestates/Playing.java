@@ -125,6 +125,7 @@ public class Playing extends State implements Statemethods {
             player.update();
 
         } else {
+            parallaxBackground.setFocusY(player.getHitbox().y + player.getHitbox().height / 2f);
             parallaxBackground.update();
             levelManager.update();
 

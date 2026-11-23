@@ -17,11 +17,23 @@ import java.util.Random;
 public abstract class AmbientLayer implements BackgroundLayer {
     private final ArrayList<AmbientCreature> creatures = new ArrayList<>();
     private final double secondsPerUpdate;
+    private final double verticalFactor;
     private int cameraX;
     protected final Random random = new Random();
 
     protected AmbientLayer(double updatesPerSecond) {
+        this(updatesPerSecond, 0.0);
+    }
+
+    /** @param verticalFactor how much the layer follows vertical movement (0 = never) */
+    protected AmbientLayer(double updatesPerSecond, double verticalFactor) {
         this.secondsPerUpdate = 1.0 / updatesPerSecond;
+        this.verticalFactor = Math.max(0.0, verticalFactor);
+    }
+
+    @Override
+    public double getVerticalFactor() {
+        return verticalFactor;
     }
 
     protected final void add(AmbientCreature creature) {

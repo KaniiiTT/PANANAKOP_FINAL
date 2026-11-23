@@ -15,8 +15,8 @@ public class FireflyLayer extends AmbientLayer {
     private static final double FACTOR = 0.34;
     private static final int COUNT = 16;
 
-    public FireflyLayer(DayNightCycle cycle, double updatesPerSecond) {
-        super(updatesPerSecond);
+    public FireflyLayer(DayNightCycle cycle, double verticalFactor, double updatesPerSecond) {
+        super(updatesPerSecond, verticalFactor);
         BufferedImage glow = createGlow(PixelSprites.pixelUnit());
         int w = Game.GAME_WIDTH;
         int h = Game.GAME_HEIGHT;

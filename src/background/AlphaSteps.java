@@ -8,7 +8,7 @@ import java.awt.AlphaComposite;
  * with {@link #get(double)} instead of creating a new composite every frame.
  */
 final class AlphaSteps {
-    private static final AlphaSteps SHARED = new AlphaSteps(32);
+    private static final AlphaSteps SHARED = new AlphaSteps(64);
 
     private final AlphaComposite[] levels;
 
@@ -18,7 +18,7 @@ final class AlphaSteps {
             levels[i] = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) i / steps);
     }
 
-    /** The one shared instance (32 opacity steps are invisible to the eye). */
+    /** The one shared instance (64 opacity steps, so slow fades show no visible steps). */
     static AlphaSteps shared() {
         return SHARED;
     }

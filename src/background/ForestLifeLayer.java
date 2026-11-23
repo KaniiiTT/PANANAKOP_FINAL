@@ -17,7 +17,6 @@ import main.Game;
 public class ForestLifeLayer extends AmbientLayer {
     // Depth of each kind of creature (higher = closer to the viewer).
     private static final double POLLEN_FACTOR = 0.22;
-    private static final double LEAF_FACTOR = 0.28;
     private static final double BUTTERFLY_FACTOR = 0.38;
 
     private static final int POLLEN_COUNT = 28;
@@ -41,10 +40,18 @@ public class ForestLifeLayer extends AmbientLayer {
     private static final int[] BUTTERFLY_WINGS = { 0xFFF0D25A, 0xFFEB9646, 0xFF96BEF0, 0xFFF0F0F5 };
 
     private final ArrayList<BufferedImage[]> leafSprites = new ArrayList<>();
+    private final TiledBackgroundLayer canopy; // the forest the leaves fall from
+    private final int[] crownColumns;          // columns of that forest's artwork that hold a tree crown
     private double secondsUntilNextLeaf;
 
-    public ForestLifeLayer(DayNightCycle cycle, double updatesPerSecond) {
-        super(updatesPerSecond);
+    /**
+     * @param canopy the near forest: leaves come loose from the tree crowns in its artwork
+     */
+    public ForestLifeLayer(DayNightCycle cycle, TiledBackgroundLayer canopy, double verticalFactor,
+            double updatesPerSecond) {
+        super(updatesPerSecond, verticalFactor);
+        this.canopy = canopy;
+        this.crownColumns = findCrownColumns(canopy);
         int unit = PixelSprites.pixelUnit();
         int small = Math.max(1, unit - 1);
         int w = Game.GAME_WIDTH;
@@ -64,7 +71,7 @@ public class ForestLifeLayer extends AmbientLayer {
             leafSprites.add(tilts);
         }
         for (int i = 0; i < LEAF_POOL_SIZE; i++)
-            add(new Leaf(LEAF_FACTOR, dt()));
+            add(new Leaf(canopy.getParallaxFactor(), dt())); // same depth as the trees they fall from
         secondsUntilNextLeaf = 1 + random.nextDouble() * 2;
 
         for (int i = 0; i < BUTTERFLY_COUNT; i++) {
@@ -77,6 +84,36 @@ public class ForestLifeLayer extends AmbientLayer {
         }
     }
 
+    /**
+     * Finds the columns of the forest artwork that belong to tall trees rather than
+     * to the low bushes: columns whose highest visible pixel is clearly above the
+     * usual bush height (the bush height is the 75th percentile of all column tops).
+     */
+    private static int[] findCrownColumns(TiledBackgroundLayer forest) {
+        int w = Game.GAME_WIDTH;
+        int[] tops = new int[w];
+        int[] sorted = new int[w];
+        for (int column = 0; column < w; column++) {
+            int top = forest.topVisibleRow(column);
+            tops[column] = top;
+            sorted[column] = top < 0 ? Game.GAME_HEIGHT : top;
+        }
+        java.util.Arrays.sort(sorted);
+        double bushLevel = sorted[(int) (w * 0.75)];
+        double limit = bushLevel - Game.GAME_HEIGHT * 0.04;
+
+        int count = 0;
+        for (int top : tops)
+            if (top >= 0 && top < limit)
+                count++;
+        int[] columns = new int[count];
+        int next = 0;
+        for (int column = 0; column < w; column++)
+            if (tops[column] >= 0 && tops[column] < limit)
+                columns[next++] = column;
+        return columns;
+    }
+
     @Override
     protected void spawn() {
         secondsUntilNextLeaf -= dt();
@@ -85,13 +122,28 @@ public class ForestLifeLayer extends AmbientLayer {
         secondsUntilNextLeaf = 1.2 + random.nextDouble() * 1.8;
 
         Leaf leaf = findInactive(Leaf.class);
-        if (leaf == null)
+        if (leaf == null || crownColumns.length == 0)
             return;
         int w = Game.GAME_WIDTH;
         int h = Game.GAME_HEIGHT;
+        // Pick a spot inside a tree crown: a column of the forest artwork, a little below its top.
+        // Try again if the spot falls into a gap between branches; give up for now after a few tries.
+        int column = 0;
+        double startY = 0;
+        boolean found = false;
+        for (int attempt = 0; attempt < 8 && !found; attempt++) {
+            column = crownColumns[random.nextInt(crownColumns.length)];
+            startY = canopy.topVisibleRow(column) + h * (0.02 + 0.07 * random.nextDouble());
+            found = canopy.isVisibleAt(column, (int) startY);
+        }
+        if (!found)
+            return;
+        double startX = canopy.screenXOfColumn(column, getCameraX());
         BufferedImage[] sprites = leafSprites.get(random.nextInt(leafSprites.size()));
         leaf.launch(sprites,
-                random.nextDouble() * w,
+                startX,
+                startY,
+                h * (0.16 + 0.18 * random.nextDouble()),
                 h * (0.040 + 0.030 * random.nextDouble()),
                 w * (0.006 + 0.010 * random.nextDouble()),
                 1.2 + random.nextDouble() * 1.2,

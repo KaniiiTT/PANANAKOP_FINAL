@@ -18,12 +18,18 @@ public class ForestLayer extends TiledBackgroundLayer {
         super(image, parallaxFactor, 0);
     }
 
+    /** @param verticalFactor how much the layer follows vertical movement (0 = never) */
+    public ForestLayer(BufferedImage image, double parallaxFactor, double verticalFactor) {
+        super(image, parallaxFactor, 0, verticalFactor);
+    }
+
     /**
      * @param hazeTint     haze colour (the alpha of the colour is ignored)
      * @param hazeStrength tint strength at the bottom of the artwork, 0..1
      */
-    public ForestLayer(BufferedImage image, double parallaxFactor, Color hazeTint, float hazeStrength) {
-        super(applyHaze(image, hazeTint, hazeStrength), parallaxFactor, 0);
+    public ForestLayer(BufferedImage image, double parallaxFactor, double verticalFactor, Color hazeTint,
+            float hazeStrength) {
+        super(applyHaze(image, hazeTint, hazeStrength), parallaxFactor, 0, verticalFactor);
     }
 
     /** Returns a hazy copy; the source image is left untouched. */

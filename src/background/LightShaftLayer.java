@@ -39,6 +39,7 @@ public class LightShaftLayer implements BackgroundLayer {
     private final ArrayList<Shaft> shafts = new ArrayList<>();
     private final AlphaComposite[] levels = new AlphaComposite[ALPHA_STEPS + 1];
     private final double parallaxFactor;
+    private final double verticalFactor;
     private final DayNightCycle cycle;
 
     /**
@@ -47,8 +48,10 @@ public class LightShaftLayer implements BackgroundLayer {
      * @param updatesPerSecond how often update() is called by the game loop
      * @param cycle          day/night clock; the beams are sunlight, so they fade out at night
      */
-    public LightShaftLayer(double parallaxFactor, float maxAlpha, double updatesPerSecond, DayNightCycle cycle) {
+    public LightShaftLayer(double parallaxFactor, double verticalFactor, float maxAlpha, double updatesPerSecond,
+            DayNightCycle cycle) {
         this.parallaxFactor = parallaxFactor;
+        this.verticalFactor = verticalFactor;
         this.cycle = cycle;
         for (int i = 0; i <= ALPHA_STEPS; i++)
             levels[i] = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, maxAlpha * i / ALPHA_STEPS);
@@ -80,6 +83,11 @@ public class LightShaftLayer implements BackgroundLayer {
             }
         }
         return image;
+    }
+
+    @Override
+    public double getVerticalFactor() {
+        return verticalFactor;
     }
 
     @Override
