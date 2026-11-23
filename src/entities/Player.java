@@ -36,7 +36,7 @@ public class Player extends Entity {
 	private int[][] lvlData;
 
 	// Jumping / Gravity
-	private float jumpSpeed = -2.25f * Game.SCALE;
+	private float jumpSpeed = -2.5f * Game.SCALE;
 	private float fallSpeedAfterCollision = 0.5f * Game.SCALE;
 
 	// Dash (Hollow Knight style: fixed distance, fixed direction, no gravity)
