@@ -38,6 +38,13 @@ public class ParallaxBackground {
     // Parallax factors: layerOffset = cameraOffset * factor.
     private static final double FAR_FOREST_FACTOR = 0.12;
     private static final double NEAR_FOREST_FACTOR = 0.30;
+    // Distant scenery, from the farthest (slowest) to the middle forest, between the sky and the near forest.
+    private static final double FAR_MOUNTAIN_FACTOR = 0.025;
+    private static final double NEAR_MOUNTAIN_FACTOR = 0.045;
+    private static final double HILLS_FACTOR = 0.075;
+    private static final double MID_FOREST_FACTOR = 0.20;
+    // The near forest is moved up by this many artwork pixels so its trunks and bushes stand on the ground line.
+    private static final int NEAR_FOREST_LIFT = 38;
     private static final double LIGHT_SHAFT_FACTOR = 0.08;
     private static final double BIRD_FACTOR = 0.05;
 
@@ -58,6 +65,10 @@ public class ParallaxBackground {
     private static final double BIRD_VERTICAL = 0.020;
     private static final double BAT_VERTICAL = 0.040;
     private static final double FAR_FOREST_VERTICAL = 0.040;
+    private static final double FAR_MOUNTAIN_VERTICAL = 0.022;
+    private static final double NEAR_MOUNTAIN_VERTICAL = 0.028;
+    private static final double HILLS_VERTICAL = 0.034;
+    private static final double MID_FOREST_VERTICAL = 0.065;
     private static final double LIGHT_SHAFT_VERTICAL = 0.050;
     private static final double NEAR_FOREST_VERTICAL = 0.090;
     private static final double BAT_FACTOR = 0.10;
@@ -74,6 +85,8 @@ public class ParallaxBackground {
     // Haze over the far forest and the light beams: both are meant to be subtle.
     private static final Color HAZE_TINT = new Color(185, 196, 230);
     private static final float HAZE_STRENGTH = 0.45f;
+    private static final float MID_HAZE_STRENGTH = 0.18f;
+    private static final Color MOUNTAIN_NIGHT_TINT = new Color(18, 26, 70); // the colour of the night sky
     private static final float LIGHT_SHAFT_ALPHA = 0.14f;
 
     private final BackgroundLayer sky;
@@ -82,7 +95,7 @@ public class ParallaxBackground {
     private final BackgroundLayer fallbackBackground;
     /**
      * Draw order = insertion order: sky, night sky (stars, moon), shooting stars, cloud bands,
-     * birds, far forest (hazy), bats, light shafts, near forest (swaying), forest life,
+     * birds, far mountains, near mountains, hills, far forest (hazy, with palms), bats, light shafts, middle forest, near forest (swaying, with ferns), forest life,
      * mood tint, fireflies.
      */
     private final ArrayList<BackgroundLayer> layers = new ArrayList<>();
@@ -140,12 +153,22 @@ public class ParallaxBackground {
                     layers.add(new CloudLayer(cloudBands.get(band), CLOUD_FACTORS[band], CLOUD_VERTICAL[band],
                             CLOUD_DRIFT_PX_PER_SECOND[band] / UPDATES_PER_SECOND, cycle));
                 layers.add(new BirdLayer(cycle, BIRD_FACTOR, BIRD_VERTICAL, UPDATES_PER_SECOND));
-                layers.add(new ForestLayer(load(farImg), FAR_FOREST_FACTOR, FAR_FOREST_VERTICAL, HAZE_TINT,
-                        HAZE_STRENGTH));
+                // Distant scenery: two mountain ranges and rolling hills, then the far forest with palms.
+                layers.add(new MountainLayer(TropicalScenery.farMountains(), FAR_MOUNTAIN_FACTOR,
+                        FAR_MOUNTAIN_VERTICAL, cycle, MOUNTAIN_NIGHT_TINT, 0.58f));
+                layers.add(new MountainLayer(TropicalScenery.nearMountains(), NEAR_MOUNTAIN_FACTOR,
+                        NEAR_MOUNTAIN_VERTICAL, cycle, MOUNTAIN_NIGHT_TINT, 0.68f));
+                layers.add(new ForestLayer(TropicalScenery.hills(), HILLS_FACTOR, HILLS_VERTICAL, HAZE_TINT, 0.20f));
+                layers.add(new ForestLayer(TropicalScenery.withPalms(load(farImg)), FAR_FOREST_FACTOR,
+                        FAR_FOREST_VERTICAL, HAZE_TINT, HAZE_STRENGTH));
                 layers.add(new BatLayer(cycle, BAT_FACTOR, BAT_VERTICAL, UPDATES_PER_SECOND));
                 layers.add(new LightShaftLayer(LIGHT_SHAFT_FACTOR, LIGHT_SHAFT_VERTICAL, LIGHT_SHAFT_ALPHA,
                         UPDATES_PER_SECOND, cycle));
-                SwayingForestLayer nearForest = new SwayingForestLayer(load(nearImg), NEAR_FOREST_FACTOR,
+                // Middle forest: banana plants, broad leaves and varied trees, between the far and near forest.
+                layers.add(new ForestLayer(TropicalScenery.midForest(), MID_FOREST_FACTOR, MID_FOREST_VERTICAL,
+                        HAZE_TINT, MID_HAZE_STRENGTH));
+                SwayingForestLayer nearForest = new SwayingForestLayer(TropicalScenery.raised(TropicalScenery.withFerns(load(nearImg)), NEAR_FOREST_LIFT),
+                        NEAR_FOREST_FACTOR,
                         NEAR_FOREST_VERTICAL, NEAR_FOREST_SWAY, UPDATES_PER_SECOND);
                 layers.add(nearForest);
                 layers.add(new ForestLifeLayer(cycle, nearForest, NEAR_FOREST_VERTICAL, UPDATES_PER_SECOND));
