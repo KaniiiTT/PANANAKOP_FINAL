@@ -10,8 +10,8 @@ public class HitEffects {
 	private static final float FLASH_SECONDS = 0.1f;
 	private static final float SHAKE_SECONDS = 0.1f;
 	private static final float HEAVY_SHAKE_SECONDS = 0.15f;
-	private static final int SHAKE_STRENGTH = 3;
-	private static final int HEAVY_SHAKE_STRENGTH = 5;
+	private static final int SHAKE_STRENGTH = 5;
+	private static final int HEAVY_SHAKE_STRENGTH = 7;
 
 	private final Random random = new Random();
 	private boolean hitEffectsEnabled = true;
