@@ -7,9 +7,11 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Random;
+import java.util.Set;
 
 import background.ParallaxBackground;
 import entities.EnemyManager;
+import entities.Enemy;
 import entities.Player;
 import levels.LevelManager;
 import main.Game;
@@ -230,6 +232,11 @@ public class Playing extends State implements Statemethods {
 
     public void checkEnemyHit(Rectangle2D.Float attackBox) {
         enemyManager.checkEnemyHit(attackBox);
+    }
+
+    public void checkEnemyHit(Rectangle2D.Float attackBox, int damage, int knockback, int direction,
+            Set<Enemy> hitTargets) {
+        enemyManager.checkEnemyHit(attackBox, damage, knockback, direction, hitTargets);
     }
 
     public void checkPotionTouched(Rectangle2D.Float hitbox) {

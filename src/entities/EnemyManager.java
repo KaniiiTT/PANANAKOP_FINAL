@@ -4,6 +4,8 @@ import java.awt.Graphics;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import gamestates.Playing;
 import levels.Level;
@@ -107,27 +109,33 @@ public class EnemyManager {
 	}
 
 	public void checkEnemyHit(Rectangle2D.Float attackBox) {
+		checkEnemyHit(attackBox, 10, 0, 1, new HashSet<>());
+	}
+
+	public void checkEnemyHit(Rectangle2D.Float attackBox, int damage, int knockback, int direction,
+			Set<Enemy> hitTargets) {
 		for (Crabby c : crabbies)
-			if (c.isActive())
-				if (attackBox.intersects(c.getHitbox())) {
-					c.hurt(10);
-					return;
-				}
+			if (hitEnemy(c, attackBox, damage, knockback, direction, hitTargets))
+				return;
 		for (Boar boar : boars)
-			if (boar.isActive() && attackBox.intersects(boar.getHitbox())) {
-				boar.hurt(10);
+			if (hitEnemy(boar, attackBox, damage, knockback, direction, hitTargets))
 				return;
-			}
 		for (Conquistador conquistador : conquistadors)
-			if (conquistador.isActive() && attackBox.intersects(conquistador.getHitbox())) {
-				conquistador.hurt(10);
+			if (hitEnemy(conquistador, attackBox, damage, knockback, direction, hitTargets))
 				return;
-			}
 		for (Magellan boss : magellans)
-			if (boss.isActive() && attackBox.intersects(boss.getHitbox())) {
-				boss.hurt(10);
+			if (hitEnemy(boss, attackBox, damage, knockback, direction, hitTargets))
 				return;
-			}
+	}
+
+	private boolean hitEnemy(Enemy enemy, Rectangle2D.Float attackBox, int damage, int knockback, int direction,
+			Set<Enemy> hitTargets) {
+		if (!enemy.isActive() || hitTargets.contains(enemy) || !attackBox.intersects(enemy.getHitbox()))
+			return false;
+		hitTargets.add(enemy);
+		enemy.hurt(damage);
+		enemy.applyKnockback(knockback, direction);
+		return true;
 	}
 
 	private void loadEnemyImgs() {
