@@ -248,18 +248,18 @@ public class Playing extends State implements Statemethods {
         objectManager.checkObjectHit(attackBox);
     }
 
-    public void checkEnemyHit(Rectangle2D.Float attackBox) {
-        enemyManager.checkEnemyHit(attackBox);
+    public boolean checkEnemyHit(Rectangle2D.Float attackBox) {
+        return enemyManager.checkEnemyHit(attackBox);
     }
 
-    public void checkEnemyHit(Rectangle2D.Float attackBox, int damage, int knockback, int direction,
+    public boolean checkEnemyHit(Rectangle2D.Float attackBox, int damage, int knockback, int direction,
             Set<Enemy> hitTargets) {
-        enemyManager.checkEnemyHit(attackBox, damage, knockback, direction, hitTargets, false);
+        return enemyManager.checkEnemyHit(attackBox, damage, knockback, direction, hitTargets, false);
     }
 
-    public void checkEnemyHit(Rectangle2D.Float attackBox, int damage, int knockback, int direction,
+    public boolean checkEnemyHit(Rectangle2D.Float attackBox, int damage, int knockback, int direction,
             Set<Enemy> hitTargets, boolean heavy) {
-        enemyManager.checkEnemyHit(attackBox, damage, knockback, direction, hitTargets, heavy);
+        return enemyManager.checkEnemyHit(attackBox, damage, knockback, direction, hitTargets, heavy);
     }
 
     public HitEffects getHitEffects() {

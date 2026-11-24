@@ -141,32 +141,33 @@ public class EnemyManager {
 
 	}
 
-	public void checkEnemyHit(Rectangle2D.Float attackBox) {
-		checkEnemyHit(attackBox, 10, 0, 1, new HashSet<>());
+	public boolean checkEnemyHit(Rectangle2D.Float attackBox) {
+		return checkEnemyHit(attackBox, 10, 0, 1, new HashSet<>());
 	}
 
-	public void checkEnemyHit(Rectangle2D.Float attackBox, int damage, int knockback, int direction,
+	public boolean checkEnemyHit(Rectangle2D.Float attackBox, int damage, int knockback, int direction,
 			Set<Enemy> hitTargets) {
-		checkEnemyHit(attackBox, damage, knockback, direction, hitTargets, false);
+		return checkEnemyHit(attackBox, damage, knockback, direction, hitTargets, false);
 	}
 
-	public void checkEnemyHit(Rectangle2D.Float attackBox, int damage, int knockback, int direction,
+	public boolean checkEnemyHit(Rectangle2D.Float attackBox, int damage, int knockback, int direction,
 			Set<Enemy> hitTargets, boolean heavy) {
 		for (Crabby c : crabbies)
 			if (hitEnemy(c, attackBox, damage, knockback, direction, hitTargets, heavy))
-				return;
+				return true;
 		for (Boar boar : boars)
 			if (hitEnemy(boar, attackBox, damage, knockback, direction, hitTargets, heavy))
-				return;
+				return true;
 		for (Conquistador conquistador : conquistadors)
 			if (hitEnemy(conquistador, attackBox, damage, knockback, direction, hitTargets, heavy))
-				return;
+				return true;
 		for (Magellan boss : magellans)
 			if (hitEnemy(boss, attackBox, damage, knockback, direction, hitTargets, heavy))
-				return;
+				return true;
 		for (Espinosa e : espinosas)
 			if (hitEnemy(e, attackBox, damage, knockback, direction, hitTargets, heavy))
-				return;
+				return true;
+		return false;
 	}
 
 	private boolean hitEnemy(Enemy enemy, Rectangle2D.Float attackBox, int damage, int knockback, int direction,

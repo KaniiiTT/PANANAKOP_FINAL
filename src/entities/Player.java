@@ -70,8 +70,11 @@ public class Player extends Entity {
 	private boolean attackQueued;
 	private int attackGraceTicks;
 	private float attackLungeRemaining;
+	private float lastAttackLungeStep;
+	private float attackMovementStartX;
 	private float horizontalMomentum;
 	private boolean attackStartedInAir;
+	private static final int ATTACK_RECOIL = 17;
 	private final Set<Enemy> attackHitTargets = Collections.newSetFromMap(new IdentityHashMap<>());
 	private final Map<Integer, Set<Enemy>> ultimateHitTargets = new HashMap<>();
 	private Playing playing;
@@ -128,6 +131,7 @@ public class Player extends Entity {
 		updateAttackBox();
 
 		boolean wasInAir = inAir;
+		attackMovementStartX = hitbox.x;
 		updatePos();
 		if (wasInAir && !inAir)
 			landingTicks = ANI_SPEED;
@@ -176,7 +180,8 @@ public class Player extends Entity {
 			if (hitFrame < 0 || attackCheckedFrame == hitFrame)
 				return;
 			attackCheckedFrame = hitFrame;
-			playing.checkEnemyHit(attackBox);
+			if (playing.checkEnemyHit(attackBox))
+				applyAttackRecoil();
 			playing.checkObjectHit(attackBox);
 			return;
 		}
@@ -184,9 +189,29 @@ public class Player extends Entity {
 		AttackDefinition attack = getCurrentAttackDefinition();
 		if (aniIndex < attack.hitActiveStart || aniIndex > attack.hitActiveEnd)
 			return;
-		playing.checkEnemyHit(attackBox, attack.damage, attack.knockback, flipW, attackHitTargets,
-				attackPhase == AttackPhase.VERTICAL);
+		if (playing.checkEnemyHit(attackBox, attack.damage, attack.knockback, flipW, attackHitTargets,
+				attackPhase == AttackPhase.VERTICAL))
+			applyAttackRecoil();
 		playing.checkObjectHit(attackBox);
+	}
+
+	/** Pushes the player away from an attack that was confirmed to hit an enemy. */
+	public void applyRecoil(int amount, int direction) {
+		if (amount == 0 || lvlData == null)
+			return;
+		float dx = amount * Game.SCALE * direction;
+		if (CanMoveHere(hitbox.x + dx, hitbox.y, hitbox.width, hitbox.height, lvlData))
+			hitbox.x += dx;
+		else
+			hitbox.x = GetEntityXPosNextToWall(hitbox, dx);
+	}
+
+	/** Cancels attack lunge movement on hit, then pushes the player backward. */
+	private void applyAttackRecoil() {
+		attackLungeRemaining = 0;
+		if (lastAttackLungeStep != 0)
+			hitbox.x = attackMovementStartX;
+		applyRecoil(ATTACK_RECOIL, -flipW);
 	}
 
 	private void updateAttackBox() {
@@ -403,6 +428,7 @@ public class Player extends Entity {
 
 	private void updatePos() {
 		moving = false;
+		lastAttackLungeStep = 0;
 
 		// Dash overrides everything: fixed direction, fixed distance, no gravity.
 		if (dashing) {
@@ -441,6 +467,7 @@ public class Player extends Entity {
 		if (attackLungeActive) {
 			float lungeStep = Math.min(ATTACK_LUNGE_SPEED * Game.SCALE, attackLungeRemaining);
 			xSpeed += flipW * lungeStep;
+			lastAttackLungeStep = flipW * lungeStep;
 			attackLungeRemaining -= lungeStep;
 		}
 

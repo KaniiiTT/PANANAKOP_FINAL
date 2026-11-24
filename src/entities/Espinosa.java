@@ -56,6 +56,7 @@ public class Espinosa extends Enemy {
 	// ATTACK_1 (close)
 	private static final int ATTACK_1_HIT_FIRST = 2, ATTACK_1_HIT_LAST = 5; // frames 3-6
 	private static final int ATTACK_1_DAMAGE = 15;
+	private static final int PLAYER_KNOCKBACK = 20;
 	private static final float ATTACK_1_COOLDOWN = 2f;
 	private static final float ATTACK_1_RANGE = 84f;
 	private static final float ATTACK_1_REACH = 72f;
@@ -340,6 +341,7 @@ public class Espinosa extends Enemy {
 		if (attackBox.intersects(player.getHitbox())) {
 			hitLanded = true; // one hit per swing, even if the player was blocking
 			player.changeHealth(-a.damage);
+			player.applyRecoil(PLAYER_KNOCKBACK, facingRight ? 1 : -1);
 		}
 	}
 
