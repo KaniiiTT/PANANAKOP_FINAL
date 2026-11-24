@@ -79,8 +79,8 @@ public class Espinosa extends Enemy {
 	private static final float ATTACK_3_REACH = 84f;
 
 	// Shared attack box shape
-	private static final float ATTACK_BOX_HEIGHT = 60f;
-	private static final float ATTACK_BOX_Y_OFFSET = 9.6f; // from the top of the hitbox
+	private static final float ATTACK_BOX_HEIGHT = 90f;
+	private static final float ATTACK_BOX_Y_OFFSET = 14.4f; // from the top of the hitbox
 	// ==================================================
 
 	/** Rows in the sheet, in order: row index == ordinal. */
