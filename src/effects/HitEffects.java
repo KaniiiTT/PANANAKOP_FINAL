@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.util.Random;
 
 public class HitEffects {
+	private static HitEffects activeInstance;
 	private static final float HIT_STOP_SECONDS = 0.06f;
 	private static final float HEAVY_HIT_STOP_SECONDS = 0.09f;
 	private static final float FLASH_SECONDS = 0.1f;
@@ -18,6 +19,18 @@ public class HitEffects {
 	private float hitStopTimer;
 	private float shakeTimer;
 	private int shakeX, shakeY;
+
+	public HitEffects() {
+		activeInstance = this;
+	}
+
+	public static void triggerAttackShake() {
+		if (activeInstance == null || !activeInstance.hitEffectsEnabled)
+			return;
+		activeInstance.shakeTimer = Math.max(activeInstance.shakeTimer, SHAKE_SECONDS);
+		activeInstance.shakeX = activeInstance.random.nextInt(SHAKE_STRENGTH * 2 + 1) - SHAKE_STRENGTH;
+		activeInstance.shakeY = activeInstance.random.nextInt(SHAKE_STRENGTH * 2 + 1) - SHAKE_STRENGTH;
+	}
 
 	public void trigger(boolean heavy) {
 		if (!hitEffectsEnabled)

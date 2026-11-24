@@ -168,6 +168,7 @@ public class Espinosa extends Enemy {
 	private float gapTimer;
 	private boolean dashStarted;
 	private float dashRemaining;
+	private int lastAttackShakeFrame = -1;
 
 	public Espinosa(float x, float y) {
 		super(x, y, size(), size(), ESPINOSA);
@@ -266,6 +267,7 @@ public class Espinosa extends Enemy {
 		inBashGap = false;
 		dashStarted = false;
 		dashRemaining = 0f;
+		lastAttackShakeFrame = -1;
 		changePhase(Phase.ATTACK);
 		setAnim(a.anim);
 	}
@@ -279,6 +281,7 @@ public class Espinosa extends Enemy {
 				hitLanded = false;
 				dashStarted = false;
 				dashRemaining = 0f;
+				lastAttackShakeFrame = -1;
 				setAnim(Anim.ATTACK_2);
 			}
 			return;
@@ -293,6 +296,10 @@ public class Espinosa extends Enemy {
 				moveX(facingRight ? dashRemaining : -dashRemaining, lvlData);
 				dashRemaining = 0f;
 			}
+		}
+		if (frame >= 5 && frame <= 7 && frame != lastAttackShakeFrame) {
+			HitEffects.triggerAttackShake();
+			lastAttackShakeFrame = frame;
 		}
 		if (!hitLanded && frame >= a.hitFirst && frame <= a.hitLast)
 			tryHitPlayer(a, player);
@@ -556,6 +563,7 @@ public class Espinosa extends Enemy {
 		Arrays.fill(attackCooldowns, 0f);
 		clearAttackState();
 		lastAttack = null;
+		lastAttackShakeFrame = -1;
 		phase = Phase.CHASE;
 		resumePhase = Phase.CHASE;
 		cooldownTimer = 0f;
