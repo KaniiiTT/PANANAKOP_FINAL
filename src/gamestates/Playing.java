@@ -10,6 +10,7 @@ import java.awt.image.BufferedImage;
 import java.util.Random;
 import java.util.Set;
 
+import background.GroundLifeLayer;
 import background.ParallaxBackground;
 import entities.EnemyManager;
 import entities.Enemy;
@@ -35,6 +36,7 @@ public class Playing extends State implements Statemethods {
 
     private BufferedImage backgroundImg, bigCloud, smallCloud;
     private ParallaxBackground parallaxBackground;
+    private GroundLifeLayer groundLife;
     private int[] smallCloudsPos;
     private Random rnd = new Random();
     private PauseOverlay pauseOverlay;
@@ -64,6 +66,7 @@ public class Playing extends State implements Statemethods {
         super(game);
         initClasses(testLevel);
         parallaxBackground = new ParallaxBackground();
+        groundLife = new GroundLifeLayer(parallaxBackground.getCycle(), 200.0); // 200 = Game.UPS_SET
 
         backgroundImg = LoadSave.GetSpriteAtlas(LoadSave.PLAYING_BG_IMG);
         bigCloud = LoadSave.GetSpriteAtlas(LoadSave.BIG_CLOUDS);
@@ -148,6 +151,7 @@ public class Playing extends State implements Statemethods {
             );
 
             player.update();
+            groundLife.update(levelManager.getCurrentLevel(), player.getHitbox());
 
             enemyManager.update(
                     levelManager.getCurrentLevel().getLevelData(), player
@@ -196,6 +200,7 @@ public class Playing extends State implements Statemethods {
         parallaxBackground.draw(world, cameraX, levelManager.getCurrentLevel().getLevelData());
 
         levelManager.draw(world, cameraX);
+        groundLife.draw(world, cameraX); // grass, ferns and small animals stand on the ground, behind the player
         player.render(world, cameraX);
         enemyManager.draw(world, cameraX);
         objectManager.draw(world, cameraX);

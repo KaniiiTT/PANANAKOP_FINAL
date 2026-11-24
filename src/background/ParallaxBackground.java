@@ -100,6 +100,8 @@ public class ParallaxBackground {
      */
     private final ArrayList<BackgroundLayer> layers = new ArrayList<>();
     private final DayNightCycle cycle = new DayNightCycle(DAY_SECONDS, START_TIME_OF_DAY, UPDATES_PER_SECOND);
+    // Wind, birds and crickets; their volumes follow the same cycle, so they change as gradually as the light.
+    private final AmbientSoundscape soundscape = new AmbientSoundscape(cycle);
 
     // Vertical parallax state, in screen pixels of player height.
     private double focusTarget;   // where the player really is
@@ -202,6 +204,7 @@ public class ParallaxBackground {
     /** Called from the game's update loop; lets self-moving layers (clouds) advance. */
     public void update() {
         cycle.update();
+        soundscape.update();
         focusEased += (focusTarget - focusEased) * FOCUS_FOLLOW;
         restPosition += (focusEased - restPosition) * REST_FOLLOW;
         for (BackgroundLayer layer : layers)

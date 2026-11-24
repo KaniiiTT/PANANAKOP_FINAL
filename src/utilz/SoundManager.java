@@ -74,6 +74,15 @@ public final class SoundManager {
 		muted = value;
 	}
 
+	/** Master volume (0..1) chosen in the audio options; the ambient sounds follow it too. */
+	public static synchronized float getVolume() {
+		return volume;
+	}
+
+	public static synchronized boolean isMuted() {
+		return muted;
+	}
+
 	public static synchronized void setVolume(float value) {
 		volume = Math.max(0f, Math.min(1f, value));
 		for (Clip clip : CLIPS.values())
