@@ -1,5 +1,7 @@
 package utilz;
 
+import static utilz.Constants.EnemyConstants.ESPINOSA;
+import entities.Espinosa;
 import static utilz.Constants.EnemyConstants.CRABBY;
 import static utilz.Constants.EnemyConstants.MAGELLAN;
 import static utilz.Constants.EnemyConstants.BOAR;
@@ -186,6 +188,15 @@ public class HelpMethods {
 			for (int i = 0; i < img.getWidth(); i++)
 				if (new Color(img.getRGB(i, j)).getGreen() == CONQUISTADOR)
 					list.add(new Conquistador(i * Game.TILES_SIZE, j * Game.TILES_SIZE));
+		return list;
+	}
+
+	public static ArrayList<Espinosa> GetEspinosas(BufferedImage img) {
+	ArrayList<Espinosa> list = new ArrayList<>();
+	for (int j = 0; j < img.getHeight(); j++)
+		for (int i = 0; i < img.getWidth(); i++)
+			if (new Color(img.getRGB(i, j)).getGreen() == ESPINOSA)
+					list.add(new Espinosa(i * Game.TILES_SIZE, j * Game.TILES_SIZE));
 		return list;
 	}
 

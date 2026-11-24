@@ -532,6 +532,7 @@ public class GameEditor {
 		addToolButton(buttons, "Crabby mob", Tool.marker(0, NO_MARKER), "Crabby mob");
 		addToolButton(buttons, "Boar mob", Tool.marker(2, NO_MARKER), "Boar mob");
 		addToolButton(buttons, "Conquistador mob", Tool.marker(3, NO_MARKER), "Conquistador mob");
+		addToolButton(buttons, "Espinosa miniboss", Tool.marker(4, NO_MARKER), "Espinosa miniboss");
 		try {
 			BufferedImage portrait = LoadSave.GetSpriteAtlas("pananakop_boss_magellan/portrait/magellan_portrait_64.png");
 			addToolButton(buttons, "Magellan boss (all skills)", Tool.marker(1, NO_MARKER),
@@ -1182,6 +1183,9 @@ public class GameEditor {
 			} else if (green == 3) {
 				label = "C";
 				color = new Color(190, 80, 45);
+			} else if (green == 4) {
+				label = "E";
+				color = new Color(120, 140, 190);
 			} else if (blue <= 6) {
 				String[] labels = { "R", "B", "B", "C", "S", "L", "R" };
 				label = labels[blue];

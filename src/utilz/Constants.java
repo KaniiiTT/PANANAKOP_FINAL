@@ -95,6 +95,8 @@ public class Constants {
 		public static final int BOAR = 2;
 		/** Green channel marker used by the editor and level loader for Conquistador. */
 		public static final int CONQUISTADOR = 3;
+		/** Green channel marker used by the editor and level loader for Espinosa. */
+		public static final int ESPINOSA = 4;
 
 		public static final int IDLE = 0;
 		public static final int RUNNING = 1;

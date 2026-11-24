@@ -26,6 +26,7 @@ public class EnemyManager {
 	private ArrayList<Boar> boars = new ArrayList<>();
 	private ArrayList<Conquistador> conquistadors = new ArrayList<>();
 	private ArrayList<Magellan> magellans = new ArrayList<>();
+	private ArrayList<Espinosa> espinosas = new ArrayList<>();
 
 	public EnemyManager(Playing playing) {
 		this.playing = playing;
@@ -37,6 +38,7 @@ public class EnemyManager {
 		boars = level.getBoars();
 		conquistadors = level.getConquistadors();
 		magellans = level.getMagellans();
+		espinosas = level.getEspinosas();
 	}
 
 	public void update(int[][] lvlData, Player player) {
@@ -61,6 +63,13 @@ public class EnemyManager {
 				boss.update(lvlData, player);
 				isAnyActive = true;
 			}
+		for (Espinosa e : espinosas)
+			if (e.isActive()) {
+				e.update(lvlData, player);
+				// A dead Espinosa stays drawn on his last frame but no longer blocks level completion.
+				if (!e.isDefeated())
+					isAnyActive = true;
+			}
 		if (!isAnyActive)
 			playing.setLevelCompleted(true);
 	}
@@ -74,6 +83,8 @@ public class EnemyManager {
 			conquistador.updateFlash(dt);
 		for (Magellan boss : magellans)
 			boss.updateFlash(dt);
+		for (Espinosa e : espinosas)
+			e.updateFlash(dt);
 	}
 
 	public void draw(Graphics g, int xLvlOffset) {
@@ -83,6 +94,9 @@ public class EnemyManager {
 		for (Magellan boss : magellans)
 			if (boss.isActive())
 				boss.draw(g, xLvlOffset);
+		for (Espinosa e : espinosas)
+			if (e.isActive())
+				e.draw(g, xLvlOffset);
 	}
 
 	private void drawBoars(Graphics g, int xLvlOffset) {
@@ -149,6 +163,9 @@ public class EnemyManager {
 				return;
 		for (Magellan boss : magellans)
 			if (hitEnemy(boss, attackBox, damage, knockback, direction, hitTargets, heavy))
+				return;
+		for (Espinosa e : espinosas)
+			if (hitEnemy(e, attackBox, damage, knockback, direction, hitTargets, heavy))
 				return;
 	}
 
@@ -230,6 +247,8 @@ public class EnemyManager {
 			conquistador.resetEnemy();
 		for (Magellan boss : magellans)
 			boss.resetEnemy();
+		for (Espinosa e : espinosas)
+			e.resetEnemy();
 	}
 
 }
