@@ -3,17 +3,21 @@ package main;
 import java.awt.Graphics;
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
+import java.util.prefs.Preferences;
 
 import gamestates.GameOptions;
 import gamestates.Gamestate;
 import gamestates.Menu;
 import gamestates.Playing;
 import gamestates.CharacterSelect;
+import gamestates.LevelSelect;
 import levels.Level;
 import ui.AudioOptions;
 import utilz.SoundManager;
 
 public class Game implements Runnable {
+	private static final Preferences PROGRESS = Preferences.userNodeForPackage(Game.class);
+	private static final String UNLOCKED_LEVELS_KEY = "unlockedLevelCount";
 
 	private GamePanel gamePanel;
 	private Thread gameThread;
@@ -24,7 +28,10 @@ public class Game implements Runnable {
 	private Menu menu;
 	private GameOptions gameOptions;
 	private CharacterSelect characterSelect;
+	private LevelSelect levelSelect;
 	private AudioOptions audioOptions;
+	private int selectedLevelIndex;
+	private int unlockedLevelCount = 1;
 	private GameWindow gameWindow;
 	private volatile boolean running = true;
 	private final boolean testMode;
@@ -68,8 +75,11 @@ public class Game implements Runnable {
 		audioOptions = new AudioOptions();
 		menu = new Menu(this);
 		playing = new Playing(this, testLevel);
+		unlockedLevelCount = Math.min(playing.getLevelManager().getAmountOfLevels(),
+				Math.max(3, PROGRESS.getInt(UNLOCKED_LEVELS_KEY, 3)));
 		gameOptions = new GameOptions(this);
 		characterSelect = new CharacterSelect(this);
+		levelSelect = new LevelSelect(this);
 	}
 
 	private void startGameLoop() {
@@ -93,6 +103,10 @@ public class Game implements Runnable {
 		case CHARACTER_SELECT:
 			SoundManager.musicMenu();
 			characterSelect.update();
+			break;
+		case LEVEL_SELECT:
+			SoundManager.musicMenu();
+			levelSelect.update();
 			break;
 		case OPTIONS:
 			SoundManager.musicMenu();
@@ -120,6 +134,9 @@ public class Game implements Runnable {
 			break;
 		case CHARACTER_SELECT:
 			characterSelect.draw(g);
+			break;
+		case LEVEL_SELECT:
+			levelSelect.draw(g);
 			break;
 		case OPTIONS:
 			gameOptions.draw(g);
@@ -192,8 +209,41 @@ public class Game implements Runnable {
 	}
 
 	public void chooseCharacter(String spriteSheet) {
+		playing.startLevel(selectedLevelIndex);
 		playing.getPlayer().setSpriteSheet(spriteSheet);
 		Gamestate.state = Gamestate.PLAYING;
+	}
+
+	public void beginNewGameSelection() {
+		selectedLevelIndex = 0;
+		Gamestate.state = Gamestate.CHARACTER_SELECT;
+	}
+
+	public boolean startUnlockedLevel(int levelNumber) {
+		if (levelNumber < 1 || levelNumber > unlockedLevelCount
+				|| levelNumber > playing.getLevelManager().getAmountOfLevels())
+			return false;
+		selectedLevelIndex = levelNumber - 1;
+		playing.startLevel(selectedLevelIndex);
+		Gamestate.state = Gamestate.PLAYING;
+		return true;
+	}
+
+	public int getUnlockedLevelCount() {
+		return unlockedLevelCount;
+	}
+
+	public void recordLevelCompletion(int levelNumber) {
+		if (levelNumber == unlockedLevelCount
+				&& unlockedLevelCount < playing.getLevelManager().getAmountOfLevels()) {
+			unlockedLevelCount++;
+			PROGRESS.putInt(UNLOCKED_LEVELS_KEY, unlockedLevelCount);
+		}
+	}
+
+	public void openLevelSelect() {
+		levelSelect.setSelectedLevel(unlockedLevelCount - 1);
+		Gamestate.state = Gamestate.LEVEL_SELECT;
 	}
 
 	public Menu getMenu() {
@@ -214,6 +264,10 @@ public class Game implements Runnable {
 
 	public CharacterSelect getCharacterSelect() {
 		return characterSelect;
+	}
+
+	public LevelSelect getLevelSelect() {
+		return levelSelect;
 	}
 
 }

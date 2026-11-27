@@ -37,9 +37,21 @@ public class LevelManager {
 			Gamestate.state = Gamestate.MENU;
 		}
 
+		loadCurrentLevel();
+	}
+
+	public void loadLevel(int levelIndex) {
+		if (levelIndex < 0 || levelIndex >= levels.size())
+			throw new IllegalArgumentException("Invalid level index: " + levelIndex);
+		lvlIndex = levelIndex;
+		loadCurrentLevel();
+	}
+
+	private void loadCurrentLevel() {
 		Level newLevel = levels.get(lvlIndex);
 		game.getPlaying().getEnemyManager().loadEnemies(newLevel);
 		game.getPlaying().getPlayer().loadLvlData(newLevel.getLevelData());
+		game.getPlaying().getPlayer().setSpawn(newLevel.getPlayerSpawn());
 		game.getPlaying().setMaxLvlOffset(newLevel.getLvlOffset());
 		game.getPlaying().getObjectManager().loadObjects(newLevel);
 	}

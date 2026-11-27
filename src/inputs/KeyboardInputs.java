@@ -31,6 +31,9 @@ public class KeyboardInputs implements KeyListener {
 		case CHARACTER_SELECT:
 			gamePanel.getGame().getCharacterSelect().keyReleased(e);
 			break;
+		case LEVEL_SELECT:
+			gamePanel.getGame().getLevelSelect().keyReleased(e);
+			break;
 		default:
 			break;
 
@@ -51,6 +54,9 @@ public class KeyboardInputs implements KeyListener {
 			break;
 		case OPTIONS:
 			gamePanel.getGame().getGameOptions().keyPressed(e);
+			break;
+		case LEVEL_SELECT:
+			gamePanel.getGame().getLevelSelect().keyPressed(e);
 			break;
 		default:
 			break;

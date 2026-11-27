@@ -31,7 +31,7 @@ public class Menu extends State implements Statemethods {
 		float scale = Game.GAME_WIDTH / DESIGN_WIDTH;
 		int centerX = Game.GAME_WIDTH / 2;
 		String[] names = { "play", "continue", "options", "exit" };
-		Gamestate[] states = { Gamestate.CHARACTER_SELECT, Gamestate.CHARACTER_SELECT,
+		Gamestate[] states = { Gamestate.CHARACTER_SELECT, Gamestate.LEVEL_SELECT,
 				Gamestate.OPTIONS, Gamestate.QUIT };
 		float[] centerY = { 0.52f, 0.625f, 0.73f, 0.835f };
 		for (int i = 0; i < buttons.length; i++) {
@@ -75,11 +75,17 @@ public class Menu extends State implements Statemethods {
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		for (MenuButton button : buttons) {
+		for (int i = 0; i < buttons.length; i++) {
+			MenuButton button = buttons[i];
 			if (isIn(e, button)) {
 				if (button.isMousePressed()) {
 					SoundManager.play(SoundManager.Effect.MENU);
-					button.applyGamestate();
+					if (i == 0)
+						game.beginNewGameSelection();
+					else if (i == 1)
+						game.openLevelSelect();
+					else
+						button.applyGamestate();
 				}
 				break;
 			}
@@ -101,7 +107,7 @@ public class Menu extends State implements Statemethods {
 	@Override
 	public void keyPressed(KeyEvent e) {
 		if (e.getKeyCode() == KeyEvent.VK_ENTER)
-			Gamestate.state = Gamestate.CHARACTER_SELECT;
+			game.beginNewGameSelection();
 	}
 
 	@Override
