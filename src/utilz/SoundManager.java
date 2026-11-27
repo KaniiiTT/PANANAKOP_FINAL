@@ -8,14 +8,115 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.FloatControl;
 
-/** Small generated sound effects, so the game does not need external audio files. */
+import audio.AudioEngine;
+import audio.Encounter;
+import audio.MusicDirector;
+import audio.MusicZones;
+
+/**
+ * The game's one audio facade. Gameplay code only calls the simple static methods below.
+ * <ul>
+ * <li>Music (Audio Pack, Task 1) is delegated to the {@code audio} package: {@link AudioEngine} plays it and
+ * {@link MusicDirector} decides what should play.</li>
+ * <li>The small generated sound effects below are the original ones and are untouched.</li>
+ * </ul>
+ */
 public final class SoundManager {
 	private static final int SAMPLE_RATE = 22050;
 	private static final Map<Effect, Clip> CLIPS = new EnumMap<>(Effect.class);
 	private static boolean muted;
 	private static float volume = 0.7f;
 
+	private static AudioEngine engine;
+	private static MusicDirector music;
+	private static boolean musicMuted;
+	private static boolean pausedState;
+	private static boolean shutdownHookAdded;
+
 	private SoundManager() {}
+
+	// ------------------------------------------------------------------ music (audio pack)
+
+	private static synchronized MusicDirector music() {
+		if (music == null) {
+			engine = AudioEngine.createDefault();
+			engine.setMasterVolume(volume);
+			engine.setBusMuted(audio.Bus.MUSIC, musicMuted);
+			music = new MusicDirector(engine, MusicZones.defaultWorld());
+			if (!shutdownHookAdded) {
+				shutdownHookAdded = true;
+				Runtime.getRuntime().addShutdownHook(new Thread(SoundManager::shutdown, "PANANAKOP-audio-shutdown"));
+			}
+		}
+		return music;
+	}
+
+	/** Main menu, character select and options screens. Cheap to call every update. */
+	public static void musicMenu() {
+		pausedState = false;
+		music().enterMenu();
+	}
+
+	/** Call every gameplay update with the current map index, the player's tile column and the frame time. */
+	public static void musicWorldUpdate(int levelIndex, int playerTileX, float dt) {
+		music().updateExploration(levelIndex, playerTileX, dt);
+	}
+
+	public static void musicBossEngaged(boolean finalBoss) {
+		music().beginEncounter(finalBoss ? Encounter.FINAL_BOSS : Encounter.MINI_BOSS);
+	}
+
+	public static void musicBossEnded() {
+		music().endEncounter();
+	}
+
+	public static void musicGameOver() {
+		music().gameOver();
+	}
+
+	/** Pause menu open/close; only acts when the state really changes. */
+	public static void musicPaused(boolean paused) {
+		if (paused == pausedState)
+			return;
+		pausedState = paused;
+		music().setPaused(paused);
+	}
+
+	/** Freezes / resumes all audio when the game window loses / regains focus. */
+	public static void windowFocusChanged(boolean focused) {
+		music();
+		engine.setSuspended(!focused);
+	}
+
+	public static synchronized void setMusicMuted(boolean value) {
+		musicMuted = value;
+		if (engine != null)
+			engine.setBusMuted(audio.Bus.MUSIC, value);
+	}
+
+	public static synchronized boolean isMusicMuted() {
+		return musicMuted;
+	}
+
+	/** The track that is audible right now (null = none). For diagnostics and tests. */
+	public static String currentMusic() {
+		return engine == null ? null : engine.currentMusic();
+	}
+
+	/** The underlying engine (null until first use). For diagnostics and tests only. */
+	public static synchronized AudioEngine audioEngine() {
+		return engine;
+	}
+
+	/** Stops the audio thread and releases the sound card and all loaded audio. Safe to call repeatedly. */
+	public static synchronized void shutdown() {
+		if (engine != null) {
+			engine.shutdown();
+			engine = null;
+			music = null; // a later call (e.g. another test run in the editor) builds a fresh engine
+			pausedState = false;
+		}
+	}
 
 	public enum Effect { JUMP, ATTACK, HIT, PICKUP, BOUNCE, TRAP, MENU }
 
@@ -85,6 +186,8 @@ public final class SoundManager {
 
 	public static synchronized void setVolume(float value) {
 		volume = Math.max(0f, Math.min(1f, value));
+		if (engine != null)
+			engine.setMasterVolume(volume);
 		for (Clip clip : CLIPS.values())
 			applyVolume(clip);
 	}

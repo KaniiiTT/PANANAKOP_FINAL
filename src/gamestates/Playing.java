@@ -14,6 +14,7 @@ import background.GroundLifeLayer;
 import background.ParallaxBackground;
 import entities.EnemyManager;
 import entities.Enemy;
+import entities.Magellan;
 import entities.Player;
 import levels.LevelManager;
 import main.Game;
@@ -24,6 +25,7 @@ import ui.GameOverOverlay;
 import ui.LevelCompletedOverlay;
 import ui.PauseOverlay;
 import utilz.LoadSave;
+import static utilz.Constants.EnemyConstants.DEAD;
 import static utilz.Constants.Environment.*;
 import utilz.SoundManager;
 
@@ -55,6 +57,9 @@ public class Playing extends State implements Statemethods {
     private float cameraFollowSpeed = 0.06f;
 
     private boolean gameOver;
+    private static final int BOSS_MUSIC_RANGE_TILES = 8; // same distance as Magellan's introduction
+    private static final int BOSS_MUSIC_LEAVE_TILES = 22; // far wider than the entry range: no flicker at the edge
+    private Enemy musicBoss; // the boss whose fight the music is currently following
     private boolean lvlCompleted;
     private boolean playerDying;
 
@@ -124,6 +129,7 @@ public class Playing extends State implements Statemethods {
     }
 
     public void update(float dt) {
+        SoundManager.musicPaused(paused);
         hitEffects.update(dt);
         player.updateFlash(dt);
         enemyManager.updateFlash(dt);
@@ -158,8 +164,27 @@ public class Playing extends State implements Statemethods {
             );
 
             bossUI.update(player, enemyManager.getActiveBoss());
+            updateMusic(dt);
 
             checkCloseToBorder();
+        }
+    }
+
+    // Tells the music system where the player is and whether a boss fight is on.
+    private void updateMusic(float dt) {
+        if (playerDying || gameOver)
+            return; // the death just faded the music out; do not start it again this tick
+        float centerX = player.getHitbox().x + player.getHitbox().width / 2f;
+        SoundManager.musicWorldUpdate(levelManager.getLevelIndex(), (int) (centerX / Game.TILES_SIZE), dt);
+
+        if (musicBoss == null) {
+            musicBoss = enemyManager.findBossNear(player, BOSS_MUSIC_RANGE_TILES * Game.TILES_SIZE);
+            if (musicBoss != null)
+                SoundManager.musicBossEngaged(musicBoss instanceof Magellan);
+        } else if (!musicBoss.isActive() || musicBoss.getState() == DEAD
+                || Math.abs(musicBoss.getHitbox().x - player.getHitbox().x) > BOSS_MUSIC_LEAVE_TILES * Game.TILES_SIZE) {
+            musicBoss = null;
+            SoundManager.musicBossEnded();
         }
     }
 
@@ -234,6 +259,8 @@ public class Playing extends State implements Statemethods {
     }
 
     public void resetAll() {
+        musicBoss = null;
+        SoundManager.musicBossEnded();
         gameOver = false;
         paused = false;
         lvlCompleted = false;
@@ -246,6 +273,8 @@ public class Playing extends State implements Statemethods {
     }
 
     public void setGameOver(boolean gameOver) {
+        if (gameOver && !this.gameOver)
+            SoundManager.musicGameOver();
         this.gameOver = gameOver;
     }
 
@@ -451,6 +480,8 @@ public class Playing extends State implements Statemethods {
     }
 
     public void setPlayerDying(boolean playerDying) {
+        if (playerDying)
+            SoundManager.musicGameOver(); // the music starts fading as the death animation begins
         this.playerDying = playerDying;
     }
 }

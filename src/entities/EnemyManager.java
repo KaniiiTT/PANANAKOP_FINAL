@@ -120,6 +120,27 @@ public class EnemyManager {
 						CONQUISTADOR_WIDTH * conquistador.flipW(), CONQUISTADOR_HEIGHT, null);
 	}
 
+	/**
+	 * A living boss (Magellan or the Espinosa mini-boss) within {@code range} pixels of the player, or null.
+	 * Used by the music system to start boss music.
+	 */
+	public Enemy findBossNear(Player player, float range) {
+		float px = player.getHitbox().x + player.getHitbox().width / 2f;
+		float py = player.getHitbox().y;
+		for (Magellan boss : magellans)
+			if (boss.isActive() && boss.getState() != DEAD && isNear(boss, px, py, range))
+				return boss;
+		for (Espinosa e : espinosas)
+			if (e.isActive() && !e.isDefeated() && e.getState() != DEAD && isNear(e, px, py, range))
+				return e;
+		return null;
+	}
+
+	private static boolean isNear(Enemy enemy, float px, float py, float range) {
+		return Math.abs(enemy.getHitbox().x + enemy.getHitbox().width / 2f - px) <= range
+				&& Math.abs(enemy.getHitbox().y - py) <= range; // same floor area, not just the same column
+	}
+
 	public Magellan getActiveBoss() {
 		for (Magellan boss : magellans)
 			if (boss.isActive())

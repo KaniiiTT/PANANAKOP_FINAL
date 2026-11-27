@@ -11,6 +11,7 @@ import gamestates.Playing;
 import gamestates.CharacterSelect;
 import levels.Level;
 import ui.AudioOptions;
+import utilz.SoundManager;
 
 public class Game implements Runnable {
 
@@ -83,19 +84,23 @@ public class Game implements Runnable {
 	public void update(float dt) {
 		switch (Gamestate.state) {
 		case MENU:
+			SoundManager.musicMenu();
 			menu.update();
 			break;
 		case PLAYING:
 			playing.update(dt);
 			break;
 		case CHARACTER_SELECT:
+			SoundManager.musicMenu();
 			characterSelect.update();
 			break;
 		case OPTIONS:
+			SoundManager.musicMenu();
 			gameOptions.update();
 			break;
 		case QUIT:
 		default:
+			SoundManager.shutdown();
 			if (testMode)
 				gameWindow.close();
 			else
@@ -176,7 +181,12 @@ public class Game implements Runnable {
 		running = false;
 	}
 
+	public void windowFocusGained() {
+		SoundManager.windowFocusChanged(true);
+	}
+
 	public void windowFocusLost() {
+		SoundManager.windowFocusChanged(false);
 		if (Gamestate.state == Gamestate.PLAYING)
 			playing.getPlayer().resetDirBooleans();
 	}

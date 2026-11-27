@@ -67,8 +67,10 @@ public class AudioOptions {
 
 	public void mouseReleased(MouseEvent e) {
 		if (isIn(e, musicButton)) {
-			if (musicButton.isMousePressed())
+			if (musicButton.isMousePressed()) {
 				musicButton.setMuted(!musicButton.isMuted());
+				SoundManager.setMusicMuted(musicButton.isMuted());
+			}
 
 		} else if (isIn(e, sfxButton)) {
 			if (sfxButton.isMousePressed()) {

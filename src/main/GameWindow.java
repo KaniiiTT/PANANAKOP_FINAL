@@ -44,7 +44,7 @@ public class GameWindow {
 
 			@Override
 			public void windowGainedFocus(WindowEvent e) {
-				// TODO Auto-generated method stub
+				gamePanel.getGame().windowFocusGained();
 
 			}
 		});
@@ -53,6 +53,7 @@ public class GameWindow {
 				@Override
 				public void windowClosed(WindowEvent event) {
 					gamePanel.getGame().stopGameLoop();
+					utilz.SoundManager.shutdown();
 					if (onTestClosed != null)
 						onTestClosed.run();
 				}

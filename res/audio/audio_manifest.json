@@ -1,0 +1,1047 @@
+{
+ "bgm_main_menu": {
+  "category": "music",
+  "file_ogg": "music/ogg/bgm_main_menu.ogg",
+  "file_mp3": "music/mp3/bgm_main_menu.mp3",
+  "loop": true,
+  "loop_start_sec": 0.0,
+  "loop_end_sec": 53.333,
+  "bpm": 72,
+  "bars": 16,
+  "key_scale": "minpent",
+  "use": "Main menu / title screen",
+  "stage": 0,
+  "suggested_volume_db": -8.0
+ },
+ "bgm_stage1_barangay": {
+  "category": "music",
+  "file_ogg": "music/ogg/bgm_stage1_barangay.ogg",
+  "file_mp3": "music/mp3/bgm_stage1_barangay.mp3",
+  "loop": true,
+  "loop_start_sec": 0.0,
+  "loop_end_sec": 36.923,
+  "bpm": 104,
+  "bars": 16,
+  "key_scale": "majpent",
+  "use": "Stage 1 - Barangay Mactan (tutorial)",
+  "stage": 1,
+  "suggested_volume_db": -8.0
+ },
+ "bgm_stage2_forest": {
+  "category": "music",
+  "file_ogg": "music/ogg/bgm_stage2_forest.ogg",
+  "file_mp3": "music/mp3/bgm_stage2_forest.mp3",
+  "loop": true,
+  "loop_start_sec": 0.0,
+  "loop_end_sec": 50.526,
+  "bpm": 76,
+  "bars": 16,
+  "key_scale": "phryg",
+  "use": "Stage 2 - Forest of Mactan",
+  "stage": 2,
+  "suggested_volume_db": -8.0
+ },
+ "bgm_stage3_island": {
+  "category": "music",
+  "file_ogg": "music/ogg/bgm_stage3_island.ogg",
+  "file_mp3": "music/mp3/bgm_stage3_island.mp3",
+  "loop": true,
+  "loop_start_sec": 0.0,
+  "loop_end_sec": 33.103,
+  "bpm": 116,
+  "bars": 16,
+  "key_scale": "hmin",
+  "use": "Stage 3 - Mactan Island (Spanish allies)",
+  "stage": 3,
+  "suggested_volume_db": -8.0
+ },
+ "bgm_stage4_punta_engano": {
+  "category": "music",
+  "file_ogg": "music/ogg/bgm_stage4_punta_engano.ogg",
+  "file_mp3": "music/mp3/bgm_stage4_punta_engano.mp3",
+  "loop": true,
+  "loop_start_sec": 0.0,
+  "loop_end_sec": 41.739,
+  "bpm": 92,
+  "bars": 16,
+  "key_scale": "dor",
+  "use": "Stage 4 - Punta Engano",
+  "stage": 4,
+  "suggested_volume_db": -8.0
+ },
+ "bgm_stage5_liberty_shrine": {
+  "category": "music",
+  "file_ogg": "music/ogg/bgm_stage5_liberty_shrine.ogg",
+  "file_mp3": "music/mp3/bgm_stage5_liberty_shrine.mp3",
+  "loop": true,
+  "loop_start_sec": 0.0,
+  "loop_end_sec": 45.714,
+  "bpm": 84,
+  "bars": 16,
+  "key_scale": "nmin",
+  "use": "Stage 5 - Mactan Liberty Shrine (approach)",
+  "stage": 5,
+  "suggested_volume_db": -8.0
+ },
+ "bgm_miniboss_bear": {
+  "category": "music",
+  "file_ogg": "music/ogg/bgm_miniboss_bear.ogg",
+  "file_mp3": "music/mp3/bgm_miniboss_bear.mp3",
+  "loop": true,
+  "loop_start_sec": 0.0,
+  "loop_end_sec": 27.826,
+  "bpm": 138,
+  "bars": 16,
+  "key_scale": "phryg",
+  "use": "Stage 2 mini boss - giant bear",
+  "stage": 2,
+  "suggested_volume_db": -8.0
+ },
+ "bgm_miniboss_captain": {
+  "category": "music",
+  "file_ogg": "music/ogg/bgm_miniboss_captain.ogg",
+  "file_mp3": "music/mp3/bgm_miniboss_captain.mp3",
+  "loop": true,
+  "loop_start_sec": 0.0,
+  "loop_end_sec": 30.0,
+  "bpm": 128,
+  "bars": 16,
+  "key_scale": "hmin",
+  "use": "Stage 4 mini boss - Magellan army captain",
+  "stage": 4,
+  "suggested_volume_db": -8.0
+ },
+ "bgm_boss_magellan_final": {
+  "category": "music",
+  "file_ogg": "music/ogg/bgm_boss_magellan_final.ogg",
+  "file_mp3": "music/mp3/bgm_boss_magellan_final.mp3",
+  "loop": true,
+  "loop_start_sec": 0.0,
+  "loop_end_sec": 32.432,
+  "bpm": 148,
+  "bars": 20,
+  "key_scale": "hmin",
+  "use": "Stage 5 final boss - Magellan",
+  "stage": 5,
+  "suggested_volume_db": -8.0
+ },
+ "bgm_cutscene_story": {
+  "category": "music",
+  "file_ogg": "music/ogg/bgm_cutscene_story.ogg",
+  "file_mp3": "music/mp3/bgm_cutscene_story.mp3",
+  "loop": true,
+  "loop_start_sec": 0.0,
+  "loop_end_sec": 46.452,
+  "bpm": 62,
+  "bars": 12,
+  "key_scale": "minpent",
+  "use": "Story cutscenes / dialogue",
+  "stage": 0,
+  "suggested_volume_db": -8.0
+ },
+ "bgm_ending_credits": {
+  "category": "music",
+  "file_ogg": "music/ogg/bgm_ending_credits.ogg",
+  "file_mp3": "music/mp3/bgm_ending_credits.mp3",
+  "loop": true,
+  "loop_start_sec": 0.0,
+  "loop_end_sec": 43.636,
+  "bpm": 88,
+  "bars": 16,
+  "key_scale": "majpent",
+  "use": "Ending / credits",
+  "stage": 0,
+  "suggested_volume_db": -8.0
+ },
+ "jingle_stage_clear": {
+  "category": "jingle",
+  "file_ogg": "jingles/ogg/jingle_stage_clear.ogg",
+  "file_mp3": "jingles/mp3/jingle_stage_clear.mp3",
+  "loop": false,
+  "duration_sec": 7.9,
+  "suggested_volume_db": -6.0
+ },
+ "jingle_game_over": {
+  "category": "jingle",
+  "file_ogg": "jingles/ogg/jingle_game_over.ogg",
+  "file_mp3": "jingles/mp3/jingle_game_over.mp3",
+  "loop": false,
+  "duration_sec": 8.0,
+  "suggested_volume_db": -6.0
+ },
+ "jingle_skill_acquired": {
+  "category": "jingle",
+  "file_ogg": "jingles/ogg/jingle_skill_acquired.ogg",
+  "file_mp3": "jingles/mp3/jingle_skill_acquired.mp3",
+  "loop": false,
+  "duration_sec": 5.96,
+  "suggested_volume_db": -6.0
+ },
+ "jingle_boss_defeated": {
+  "category": "jingle",
+  "file_ogg": "jingles/ogg/jingle_boss_defeated.ogg",
+  "file_mp3": "jingles/mp3/jingle_boss_defeated.mp3",
+  "loop": false,
+  "duration_sec": 7.32,
+  "suggested_volume_db": -6.0
+ },
+ "jingle_level_start": {
+  "category": "jingle",
+  "file_ogg": "jingles/ogg/jingle_level_start.ogg",
+  "file_mp3": "jingles/mp3/jingle_level_start.mp3",
+  "loop": false,
+  "duration_sec": 5.25,
+  "suggested_volume_db": -6.0
+ },
+ "jingle_checkpoint": {
+  "category": "jingle",
+  "file_ogg": "jingles/ogg/jingle_checkpoint.ogg",
+  "file_mp3": "jingles/mp3/jingle_checkpoint.mp3",
+  "loop": false,
+  "duration_sec": 4.9,
+  "suggested_volume_db": -6.0
+ },
+ "player_jump": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_jump.wav",
+  "file_ogg": "sfx/ogg/player_jump.ogg",
+  "loop": false,
+  "duration_sec": 0.18,
+  "suggested_volume_db": -6.0
+ },
+ "player_double_jump": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_double_jump.wav",
+  "file_ogg": "sfx/ogg/player_double_jump.ogg",
+  "loop": false,
+  "duration_sec": 0.3,
+  "suggested_volume_db": -6.0
+ },
+ "player_land_soft": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_land_soft.wav",
+  "file_ogg": "sfx/ogg/player_land_soft.ogg",
+  "loop": false,
+  "duration_sec": 0.18,
+  "suggested_volume_db": -6.0
+ },
+ "player_land_hard": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_land_hard.wav",
+  "file_ogg": "sfx/ogg/player_land_hard.ogg",
+  "loop": false,
+  "duration_sec": 0.35,
+  "suggested_volume_db": -6.0
+ },
+ "player_dash": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_dash.wav",
+  "file_ogg": "sfx/ogg/player_dash.ogg",
+  "loop": false,
+  "duration_sec": 0.28,
+  "suggested_volume_db": -6.0
+ },
+ "player_wall_slide_loop": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_wall_slide_loop.wav",
+  "file_ogg": "sfx/ogg/player_wall_slide_loop.ogg",
+  "loop": true,
+  "duration_sec": 0.5,
+  "suggested_volume_db": -6.0
+ },
+ "player_wall_jump": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_wall_jump.wav",
+  "file_ogg": "sfx/ogg/player_wall_jump.ogg",
+  "loop": false,
+  "duration_sec": 0.16,
+  "suggested_volume_db": -6.0
+ },
+ "player_attack_1": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_attack_1.wav",
+  "file_ogg": "sfx/ogg/player_attack_1.ogg",
+  "loop": false,
+  "duration_sec": 0.2,
+  "suggested_volume_db": -6.0
+ },
+ "player_attack_2": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_attack_2.wav",
+  "file_ogg": "sfx/ogg/player_attack_2.ogg",
+  "loop": false,
+  "duration_sec": 0.2,
+  "suggested_volume_db": -6.0
+ },
+ "player_attack_3": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_attack_3.wav",
+  "file_ogg": "sfx/ogg/player_attack_3.ogg",
+  "loop": false,
+  "duration_sec": 0.28,
+  "suggested_volume_db": -6.0
+ },
+ "player_slash_hit": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_slash_hit.wav",
+  "file_ogg": "sfx/ogg/player_slash_hit.ogg",
+  "loop": false,
+  "duration_sec": 0.15,
+  "suggested_volume_db": -6.0
+ },
+ "player_block": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_block.wav",
+  "file_ogg": "sfx/ogg/player_block.ogg",
+  "loop": false,
+  "duration_sec": 0.35,
+  "suggested_volume_db": -6.0
+ },
+ "player_parry": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_parry.wav",
+  "file_ogg": "sfx/ogg/player_parry.ogg",
+  "loop": false,
+  "duration_sec": 0.5,
+  "suggested_volume_db": -6.0
+ },
+ "player_hurt": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_hurt.wav",
+  "file_ogg": "sfx/ogg/player_hurt.ogg",
+  "loop": false,
+  "duration_sec": 0.3,
+  "suggested_volume_db": -6.0
+ },
+ "player_death": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_death.wav",
+  "file_ogg": "sfx/ogg/player_death.ogg",
+  "loop": false,
+  "duration_sec": 0.95,
+  "suggested_volume_db": -6.0
+ },
+ "player_heal": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_heal.wav",
+  "file_ogg": "sfx/ogg/player_heal.ogg",
+  "loop": false,
+  "duration_sec": 0.7,
+  "suggested_volume_db": -6.0
+ },
+ "player_effort_grunt_1": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_effort_grunt_1.wav",
+  "file_ogg": "sfx/ogg/player_effort_grunt_1.ogg",
+  "loop": false,
+  "duration_sec": 0.18,
+  "suggested_volume_db": -6.0
+ },
+ "player_effort_grunt_2": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_effort_grunt_2.wav",
+  "file_ogg": "sfx/ogg/player_effort_grunt_2.ogg",
+  "loop": false,
+  "duration_sec": 0.2,
+  "suggested_volume_db": -6.0
+ },
+ "player_special_charge": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_special_charge.wav",
+  "file_ogg": "sfx/ogg/player_special_charge.ogg",
+  "loop": false,
+  "duration_sec": 1.2,
+  "suggested_volume_db": -6.0
+ },
+ "player_special_release": {
+  "category": "sfx_player",
+  "file_wav": "sfx/wav/player_special_release.wav",
+  "file_ogg": "sfx/ogg/player_special_release.ogg",
+  "loop": false,
+  "duration_sec": 1.22,
+  "suggested_volume_db": -6.0
+ },
+ "step_grass_1": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_grass_1.wav",
+  "file_ogg": "sfx/ogg/step_grass_1.ogg",
+  "loop": false,
+  "duration_sec": 0.1,
+  "suggested_volume_db": -14.0
+ },
+ "step_grass_2": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_grass_2.wav",
+  "file_ogg": "sfx/ogg/step_grass_2.ogg",
+  "loop": false,
+  "duration_sec": 0.1,
+  "suggested_volume_db": -14.0
+ },
+ "step_grass_3": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_grass_3.wav",
+  "file_ogg": "sfx/ogg/step_grass_3.ogg",
+  "loop": false,
+  "duration_sec": 0.1,
+  "suggested_volume_db": -14.0
+ },
+ "step_dirt_1": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_dirt_1.wav",
+  "file_ogg": "sfx/ogg/step_dirt_1.ogg",
+  "loop": false,
+  "duration_sec": 0.1,
+  "suggested_volume_db": -14.0
+ },
+ "step_dirt_2": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_dirt_2.wav",
+  "file_ogg": "sfx/ogg/step_dirt_2.ogg",
+  "loop": false,
+  "duration_sec": 0.1,
+  "suggested_volume_db": -14.0
+ },
+ "step_dirt_3": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_dirt_3.wav",
+  "file_ogg": "sfx/ogg/step_dirt_3.ogg",
+  "loop": false,
+  "duration_sec": 0.1,
+  "suggested_volume_db": -14.0
+ },
+ "step_sand_1": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_sand_1.wav",
+  "file_ogg": "sfx/ogg/step_sand_1.ogg",
+  "loop": false,
+  "duration_sec": 0.12,
+  "suggested_volume_db": -14.0
+ },
+ "step_sand_2": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_sand_2.wav",
+  "file_ogg": "sfx/ogg/step_sand_2.ogg",
+  "loop": false,
+  "duration_sec": 0.12,
+  "suggested_volume_db": -14.0
+ },
+ "step_sand_3": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_sand_3.wav",
+  "file_ogg": "sfx/ogg/step_sand_3.ogg",
+  "loop": false,
+  "duration_sec": 0.12,
+  "suggested_volume_db": -14.0
+ },
+ "step_stone_1": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_stone_1.wav",
+  "file_ogg": "sfx/ogg/step_stone_1.ogg",
+  "loop": false,
+  "duration_sec": 0.1,
+  "suggested_volume_db": -14.0
+ },
+ "step_stone_2": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_stone_2.wav",
+  "file_ogg": "sfx/ogg/step_stone_2.ogg",
+  "loop": false,
+  "duration_sec": 0.1,
+  "suggested_volume_db": -14.0
+ },
+ "step_stone_3": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_stone_3.wav",
+  "file_ogg": "sfx/ogg/step_stone_3.ogg",
+  "loop": false,
+  "duration_sec": 0.1,
+  "suggested_volume_db": -14.0
+ },
+ "step_wood_1": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_wood_1.wav",
+  "file_ogg": "sfx/ogg/step_wood_1.ogg",
+  "loop": false,
+  "duration_sec": 0.1,
+  "suggested_volume_db": -14.0
+ },
+ "step_wood_2": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_wood_2.wav",
+  "file_ogg": "sfx/ogg/step_wood_2.ogg",
+  "loop": false,
+  "duration_sec": 0.1,
+  "suggested_volume_db": -14.0
+ },
+ "step_wood_3": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_wood_3.wav",
+  "file_ogg": "sfx/ogg/step_wood_3.ogg",
+  "loop": false,
+  "duration_sec": 0.1,
+  "suggested_volume_db": -14.0
+ },
+ "step_water_1": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_water_1.wav",
+  "file_ogg": "sfx/ogg/step_water_1.ogg",
+  "loop": false,
+  "duration_sec": 0.16,
+  "suggested_volume_db": -14.0
+ },
+ "step_water_2": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_water_2.wav",
+  "file_ogg": "sfx/ogg/step_water_2.ogg",
+  "loop": false,
+  "duration_sec": 0.16,
+  "suggested_volume_db": -14.0
+ },
+ "step_water_3": {
+  "category": "sfx_footstep",
+  "file_wav": "sfx/wav/step_water_3.wav",
+  "file_ogg": "sfx/ogg/step_water_3.ogg",
+  "loop": false,
+  "duration_sec": 0.16,
+  "suggested_volume_db": -14.0
+ },
+ "coin": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/coin.wav",
+  "file_ogg": "sfx/ogg/coin.ogg",
+  "loop": false,
+  "duration_sec": 0.57,
+  "suggested_volume_db": -6.0
+ },
+ "coin_big": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/coin_big.wav",
+  "file_ogg": "sfx/ogg/coin_big.ogg",
+  "loop": false,
+  "duration_sec": 1.16,
+  "suggested_volume_db": -6.0
+ },
+ "heart_pickup": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/heart_pickup.wav",
+  "file_ogg": "sfx/ogg/heart_pickup.ogg",
+  "loop": false,
+  "duration_sec": 1.3,
+  "suggested_volume_db": -6.0
+ },
+ "spirit_orb": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/spirit_orb.wav",
+  "file_ogg": "sfx/ogg/spirit_orb.ogg",
+  "loop": false,
+  "duration_sec": 0.35,
+  "suggested_volume_db": -6.0
+ },
+ "skill_pickup": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/skill_pickup.wav",
+  "file_ogg": "sfx/ogg/skill_pickup.ogg",
+  "loop": false,
+  "duration_sec": 2.6,
+  "suggested_volume_db": -6.0
+ },
+ "key_pickup": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/key_pickup.wav",
+  "file_ogg": "sfx/ogg/key_pickup.ogg",
+  "loop": false,
+  "duration_sec": 0.6,
+  "suggested_volume_db": -6.0
+ },
+ "dash_crystal_collect": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/dash_crystal_collect.wav",
+  "file_ogg": "sfx/ogg/dash_crystal_collect.ogg",
+  "loop": false,
+  "duration_sec": 0.45,
+  "suggested_volume_db": -6.0
+ },
+ "dash_crystal_respawn": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/dash_crystal_respawn.wav",
+  "file_ogg": "sfx/ogg/dash_crystal_respawn.ogg",
+  "loop": false,
+  "duration_sec": 0.4,
+  "suggested_volume_db": -6.0
+ },
+ "checkpoint_activate": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/checkpoint_activate.wav",
+  "file_ogg": "sfx/ogg/checkpoint_activate.ogg",
+  "loop": false,
+  "duration_sec": 2.2,
+  "suggested_volume_db": -6.0
+ },
+ "checkpoint_rest": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/checkpoint_rest.wav",
+  "file_ogg": "sfx/ogg/checkpoint_rest.ogg",
+  "loop": false,
+  "duration_sec": 3.0,
+  "suggested_volume_db": -6.0
+ },
+ "breakable_wall": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/breakable_wall.wav",
+  "file_ogg": "sfx/ogg/breakable_wall.ogg",
+  "loop": false,
+  "duration_sec": 0.6,
+  "suggested_volume_db": -6.0
+ },
+ "jar_break": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/jar_break.wav",
+  "file_ogg": "sfx/ogg/jar_break.ogg",
+  "loop": false,
+  "duration_sec": 0.35,
+  "suggested_volume_db": -6.0
+ },
+ "gate_open": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/gate_open.wav",
+  "file_ogg": "sfx/ogg/gate_open.ogg",
+  "loop": false,
+  "duration_sec": 1.6,
+  "suggested_volume_db": -6.0
+ },
+ "gate_close": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/gate_close.wav",
+  "file_ogg": "sfx/ogg/gate_close.ogg",
+  "loop": false,
+  "duration_sec": 1.25,
+  "suggested_volume_db": -6.0
+ },
+ "lever_pull": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/lever_pull.wav",
+  "file_ogg": "sfx/ogg/lever_pull.ogg",
+  "loop": false,
+  "duration_sec": 0.29,
+  "suggested_volume_db": -6.0
+ },
+ "pressure_plate": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/pressure_plate.wav",
+  "file_ogg": "sfx/ogg/pressure_plate.ogg",
+  "loop": false,
+  "duration_sec": 0.2,
+  "suggested_volume_db": -6.0
+ },
+ "spring_bounce": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/spring_bounce.wav",
+  "file_ogg": "sfx/ogg/spring_bounce.ogg",
+  "loop": false,
+  "duration_sec": 0.25,
+  "suggested_volume_db": -6.0
+ },
+ "mushroom_bounce": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/mushroom_bounce.wav",
+  "file_ogg": "sfx/ogg/mushroom_bounce.ogg",
+  "loop": false,
+  "duration_sec": 0.3,
+  "suggested_volume_db": -6.0
+ },
+ "barrier_close": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/barrier_close.wav",
+  "file_ogg": "sfx/ogg/barrier_close.ogg",
+  "loop": false,
+  "duration_sec": 1.7,
+  "suggested_volume_db": -6.0
+ },
+ "barrier_open": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/barrier_open.wav",
+  "file_ogg": "sfx/ogg/barrier_open.ogg",
+  "loop": false,
+  "duration_sec": 1.2,
+  "suggested_volume_db": -6.0
+ },
+ "water_splash": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/water_splash.wav",
+  "file_ogg": "sfx/ogg/water_splash.ogg",
+  "loop": false,
+  "duration_sec": 0.7,
+  "suggested_volume_db": -6.0
+ },
+ "poison_splash": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/poison_splash.wav",
+  "file_ogg": "sfx/ogg/poison_splash.ogg",
+  "loop": false,
+  "duration_sec": 0.7,
+  "suggested_volume_db": -6.0
+ },
+ "spikes_hit": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/spikes_hit.wav",
+  "file_ogg": "sfx/ogg/spikes_hit.ogg",
+  "loop": false,
+  "duration_sec": 0.2,
+  "suggested_volume_db": -6.0
+ },
+ "saw_loop": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/saw_loop.wav",
+  "file_ogg": "sfx/ogg/saw_loop.ogg",
+  "loop": true,
+  "duration_sec": 0.5,
+  "suggested_volume_db": -6.0
+ },
+ "saw_hit": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/saw_hit.wav",
+  "file_ogg": "sfx/ogg/saw_hit.ogg",
+  "loop": false,
+  "duration_sec": 0.3,
+  "suggested_volume_db": -6.0
+ },
+ "fire_warning_spark": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/fire_warning_spark.wav",
+  "file_ogg": "sfx/ogg/fire_warning_spark.ogg",
+  "loop": false,
+  "duration_sec": 0.5,
+  "suggested_volume_db": -6.0
+ },
+ "fire_jet": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/fire_jet.wav",
+  "file_ogg": "sfx/ogg/fire_jet.ogg",
+  "loop": false,
+  "duration_sec": 1.2,
+  "suggested_volume_db": -6.0
+ },
+ "fire_jet_loop": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/fire_jet_loop.wav",
+  "file_ogg": "sfx/ogg/fire_jet_loop.ogg",
+  "loop": true,
+  "duration_sec": 1.0,
+  "suggested_volume_db": -6.0
+ },
+ "arrow_trap_click": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/arrow_trap_click.wav",
+  "file_ogg": "sfx/ogg/arrow_trap_click.ogg",
+  "loop": false,
+  "duration_sec": 0.09,
+  "suggested_volume_db": -6.0
+ },
+ "arrow_shot": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/arrow_shot.wav",
+  "file_ogg": "sfx/ogg/arrow_shot.ogg",
+  "loop": false,
+  "duration_sec": 0.2,
+  "suggested_volume_db": -6.0
+ },
+ "arrow_hit_wall": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/arrow_hit_wall.wav",
+  "file_ogg": "sfx/ogg/arrow_hit_wall.ogg",
+  "loop": false,
+  "duration_sec": 0.33,
+  "suggested_volume_db": -6.0
+ },
+ "pendulum_swish_loop": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/pendulum_swish_loop.wav",
+  "file_ogg": "sfx/ogg/pendulum_swish_loop.ogg",
+  "loop": true,
+  "duration_sec": 1.2,
+  "suggested_volume_db": -6.0
+ },
+ "rock_fall_warning": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/rock_fall_warning.wav",
+  "file_ogg": "sfx/ogg/rock_fall_warning.ogg",
+  "loop": false,
+  "duration_sec": 0.6,
+  "suggested_volume_db": -6.0
+ },
+ "rock_land": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/rock_land.wav",
+  "file_ogg": "sfx/ogg/rock_land.ogg",
+  "loop": false,
+  "duration_sec": 0.5,
+  "suggested_volume_db": -6.0
+ },
+ "stalactite_break": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/stalactite_break.wav",
+  "file_ogg": "sfx/ogg/stalactite_break.ogg",
+  "loop": false,
+  "duration_sec": 0.4,
+  "suggested_volume_db": -6.0
+ },
+ "crumble_shake": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/crumble_shake.wav",
+  "file_ogg": "sfx/ogg/crumble_shake.ogg",
+  "loop": false,
+  "duration_sec": 0.8,
+  "suggested_volume_db": -6.0
+ },
+ "crumble_fall": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/crumble_fall.wav",
+  "file_ogg": "sfx/ogg/crumble_fall.ogg",
+  "loop": false,
+  "duration_sec": 0.65,
+  "suggested_volume_db": -6.0
+ },
+ "cannon_fire": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/cannon_fire.wav",
+  "file_ogg": "sfx/ogg/cannon_fire.ogg",
+  "loop": false,
+  "duration_sec": 1.0,
+  "suggested_volume_db": -6.0
+ },
+ "cannon_explosion": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/cannon_explosion.wav",
+  "file_ogg": "sfx/ogg/cannon_explosion.ogg",
+  "loop": false,
+  "duration_sec": 1.6,
+  "suggested_volume_db": -6.0
+ },
+ "crate_break": {
+  "category": "sfx_world_hazard",
+  "file_wav": "sfx/wav/crate_break.wav",
+  "file_ogg": "sfx/ogg/crate_break.ogg",
+  "loop": false,
+  "duration_sec": 0.35,
+  "suggested_volume_db": -6.0
+ },
+ "enemy_hit": {
+  "category": "sfx_enemy_boss",
+  "file_wav": "sfx/wav/enemy_hit.wav",
+  "file_ogg": "sfx/ogg/enemy_hit.ogg",
+  "loop": false,
+  "duration_sec": 0.2,
+  "suggested_volume_db": -6.0
+ },
+ "enemy_death": {
+  "category": "sfx_enemy_boss",
+  "file_wav": "sfx/wav/enemy_death.wav",
+  "file_ogg": "sfx/ogg/enemy_death.ogg",
+  "loop": false,
+  "duration_sec": 0.5,
+  "suggested_volume_db": -6.0
+ },
+ "animal_snarl": {
+  "category": "sfx_enemy_boss",
+  "file_wav": "sfx/wav/animal_snarl.wav",
+  "file_ogg": "sfx/ogg/animal_snarl.ogg",
+  "loop": false,
+  "duration_sec": 0.7,
+  "suggested_volume_db": -6.0
+ },
+ "bear_roar": {
+  "category": "sfx_enemy_boss",
+  "file_wav": "sfx/wav/bear_roar.wav",
+  "file_ogg": "sfx/ogg/bear_roar.ogg",
+  "loop": false,
+  "duration_sec": 1.6,
+  "suggested_volume_db": -6.0
+ },
+ "bear_stomp": {
+  "category": "sfx_enemy_boss",
+  "file_wav": "sfx/wav/bear_stomp.wav",
+  "file_ogg": "sfx/ogg/bear_stomp.ogg",
+  "loop": false,
+  "duration_sec": 0.7,
+  "suggested_volume_db": -6.0
+ },
+ "bat_flap": {
+  "category": "sfx_enemy_boss",
+  "file_wav": "sfx/wav/bat_flap.wav",
+  "file_ogg": "sfx/ogg/bat_flap.ogg",
+  "loop": false,
+  "duration_sec": 0.12,
+  "suggested_volume_db": -6.0
+ },
+ "snake_hiss": {
+  "category": "sfx_enemy_boss",
+  "file_wav": "sfx/wav/snake_hiss.wav",
+  "file_ogg": "sfx/ogg/snake_hiss.ogg",
+  "loop": false,
+  "duration_sec": 0.7,
+  "suggested_volume_db": -6.0
+ },
+ "spanish_sword_clash": {
+  "category": "sfx_enemy_boss",
+  "file_wav": "sfx/wav/spanish_sword_clash.wav",
+  "file_ogg": "sfx/ogg/spanish_sword_clash.ogg",
+  "loop": false,
+  "duration_sec": 0.5,
+  "suggested_volume_db": -6.0
+ },
+ "crossbow_shot": {
+  "category": "sfx_enemy_boss",
+  "file_wav": "sfx/wav/crossbow_shot.wav",
+  "file_ogg": "sfx/ogg/crossbow_shot.ogg",
+  "loop": false,
+  "duration_sec": 0.2,
+  "suggested_volume_db": -6.0
+ },
+ "musket_shot": {
+  "category": "sfx_enemy_boss",
+  "file_wav": "sfx/wav/musket_shot.wav",
+  "file_ogg": "sfx/ogg/musket_shot.ogg",
+  "loop": false,
+  "duration_sec": 0.6,
+  "suggested_volume_db": -6.0
+ },
+ "boss_hit": {
+  "category": "sfx_enemy_boss",
+  "file_wav": "sfx/wav/boss_hit.wav",
+  "file_ogg": "sfx/ogg/boss_hit.ogg",
+  "loop": false,
+  "duration_sec": 0.42,
+  "suggested_volume_db": -6.0
+ },
+ "boss_stagger": {
+  "category": "sfx_enemy_boss",
+  "file_wav": "sfx/wav/boss_stagger.wav",
+  "file_ogg": "sfx/ogg/boss_stagger.ogg",
+  "loop": false,
+  "duration_sec": 0.9,
+  "suggested_volume_db": -6.0
+ },
+ "boss_roar_intro": {
+  "category": "sfx_enemy_boss",
+  "file_wav": "sfx/wav/boss_roar_intro.wav",
+  "file_ogg": "sfx/ogg/boss_roar_intro.ogg",
+  "loop": false,
+  "duration_sec": 2.4,
+  "suggested_volume_db": -6.0
+ },
+ "boss_death_explosion": {
+  "category": "sfx_enemy_boss",
+  "file_wav": "sfx/wav/boss_death_explosion.wav",
+  "file_ogg": "sfx/ogg/boss_death_explosion.ogg",
+  "loop": false,
+  "duration_sec": 3.5,
+  "suggested_volume_db": -6.0
+ },
+ "ui_move": {
+  "category": "sfx_ui",
+  "file_wav": "sfx/wav/ui_move.wav",
+  "file_ogg": "sfx/ogg/ui_move.ogg",
+  "loop": false,
+  "duration_sec": 0.07,
+  "suggested_volume_db": -6.0
+ },
+ "ui_select": {
+  "category": "sfx_ui",
+  "file_wav": "sfx/wav/ui_select.wav",
+  "file_ogg": "sfx/ogg/ui_select.ogg",
+  "loop": false,
+  "duration_sec": 0.57,
+  "suggested_volume_db": -6.0
+ },
+ "ui_back": {
+  "category": "sfx_ui",
+  "file_wav": "sfx/wav/ui_back.wav",
+  "file_ogg": "sfx/ogg/ui_back.ogg",
+  "loop": false,
+  "duration_sec": 0.47,
+  "suggested_volume_db": -6.0
+ },
+ "ui_pause": {
+  "category": "sfx_ui",
+  "file_wav": "sfx/wav/ui_pause.wav",
+  "file_ogg": "sfx/ogg/ui_pause.ogg",
+  "loop": false,
+  "duration_sec": 0.38,
+  "suggested_volume_db": -6.0
+ },
+ "ui_unpause": {
+  "category": "sfx_ui",
+  "file_wav": "sfx/wav/ui_unpause.wav",
+  "file_ogg": "sfx/ogg/ui_unpause.ogg",
+  "loop": false,
+  "duration_sec": 0.38,
+  "suggested_volume_db": -6.0
+ },
+ "ui_error": {
+  "category": "sfx_ui",
+  "file_wav": "sfx/wav/ui_error.wav",
+  "file_ogg": "sfx/ogg/ui_error.ogg",
+  "loop": false,
+  "duration_sec": 0.2,
+  "suggested_volume_db": -6.0
+ },
+ "ui_coin_tick": {
+  "category": "sfx_ui",
+  "file_wav": "sfx/wav/ui_coin_tick.wav",
+  "file_ogg": "sfx/ogg/ui_coin_tick.ogg",
+  "loop": false,
+  "duration_sec": 0.03,
+  "suggested_volume_db": -6.0
+ },
+ "ui_stage_start": {
+  "category": "sfx_ui",
+  "file_wav": "sfx/wav/ui_stage_start.wav",
+  "file_ogg": "sfx/ogg/ui_stage_start.ogg",
+  "loop": false,
+  "duration_sec": 2.8,
+  "suggested_volume_db": -6.0
+ },
+ "ui_achievement": {
+  "category": "sfx_ui",
+  "file_wav": "sfx/wav/ui_achievement.wav",
+  "file_ogg": "sfx/ogg/ui_achievement.ogg",
+  "loop": false,
+  "duration_sec": 1.5,
+  "suggested_volume_db": -6.0
+ },
+ "amb_stage1_village": {
+  "category": "ambience",
+  "file_ogg": "ambience/ogg/amb_stage1_village.ogg",
+  "loop": true,
+  "duration_sec": 20.0,
+  "suggested_volume_db": -18.0
+ },
+ "amb_stage2_forest": {
+  "category": "ambience",
+  "file_ogg": "ambience/ogg/amb_stage2_forest.ogg",
+  "loop": true,
+  "duration_sec": 20.0,
+  "suggested_volume_db": -18.0
+ },
+ "amb_stage3_beach": {
+  "category": "ambience",
+  "file_ogg": "ambience/ogg/amb_stage3_beach.ogg",
+  "loop": true,
+  "duration_sec": 20.0,
+  "suggested_volume_db": -18.0
+ },
+ "amb_stage4_cliff": {
+  "category": "ambience",
+  "file_ogg": "ambience/ogg/amb_stage4_cliff.ogg",
+  "loop": true,
+  "duration_sec": 20.0,
+  "suggested_volume_db": -18.0
+ },
+ "amb_stage5_shrine_night": {
+  "category": "ambience",
+  "file_ogg": "ambience/ogg/amb_stage5_shrine_night.ogg",
+  "loop": true,
+  "duration_sec": 20.0,
+  "suggested_volume_db": -18.0
+ }
+}
