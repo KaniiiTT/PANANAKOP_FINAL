@@ -24,7 +24,7 @@ public class VolumeButton extends PauseButton {
 		minX = x + VOLUME_WIDTH / 2;
 		maxX = x + width - VOLUME_WIDTH / 2;
 		loadImgs();
-		SoundManager.setVolume(0.5f);
+		setVolume(SoundManager.getVolume());
 	}
 
 	private void loadImgs() {
@@ -64,6 +64,11 @@ public class VolumeButton extends PauseButton {
 		bounds.x = buttonX - VOLUME_WIDTH / 2;
 		SoundManager.setVolume((buttonX - minX) / (float) (maxX - minX));
 
+	}
+
+	public void setVolume(float volume) {
+		buttonX = minX + Math.round(Math.max(0f, Math.min(1f, volume)) * (maxX - minX));
+		bounds.x = buttonX - VOLUME_WIDTH / 2;
 	}
 
 	public void resetBools() {

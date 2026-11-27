@@ -5,118 +5,106 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 
+import background.ParallaxBackground;
 import main.Game;
 import ui.MenuButton;
+import utilz.HelpMethods;
 import utilz.LoadSave;
 import utilz.SoundManager;
 
 public class Menu extends State implements Statemethods {
+	private static final float DESIGN_WIDTH = 1280f;
 
-	private MenuButton[] buttons = new MenuButton[3];
-	private BufferedImage backgroundImg, backgroundImgPink;
-	private int menuX, menuY, menuWidth, menuHeight;
+	private final MenuButton[] buttons = new MenuButton[4];
+	private final ParallaxBackground background;
+	private final int[][] backgroundLevelData;
+	private final BufferedImage titleLogo;
+	private final int titleWidth;
+	private final int titleHeight;
 
 	public Menu(Game game) {
 		super(game);
-		loadButtons();
-		loadBackground();
-		backgroundImgPink = LoadSave.GetSpriteAtlas(LoadSave.MENU_BACKGROUND_IMG);
+		background = new ParallaxBackground();
+		backgroundLevelData = HelpMethods.GetLevelData(LoadSave.GetAllLevels()[0]);
+		titleLogo = LoadSave.GetSpriteAtlas("menu/title_logo.png");
 
-	}
+		float scale = Game.GAME_WIDTH / DESIGN_WIDTH;
+		int centerX = Game.GAME_WIDTH / 2;
+		String[] names = { "play", "continue", "options", "exit" };
+		Gamestate[] states = { Gamestate.CHARACTER_SELECT, Gamestate.CHARACTER_SELECT,
+				Gamestate.OPTIONS, Gamestate.QUIT };
+		float[] centerY = { 0.52f, 0.625f, 0.73f, 0.835f };
+		for (int i = 0; i < buttons.length; i++) {
+			int buttonHeight = Math.round(72 * scale);
+			int y = Math.round(Game.GAME_HEIGHT * centerY[i] - buttonHeight / 2f);
+			buttons[i] = new MenuButton(centerX, y, names[i], states[i], scale);
+		}
 
-	private void loadBackground() {
-		backgroundImg = LoadSave.GetSpriteAtlas(LoadSave.MENU_BACKGROUND);
-		menuWidth = (int) (backgroundImg.getWidth() * Game.SCALE);
-		menuHeight = (int) (backgroundImg.getHeight() * Game.SCALE);
-		menuX = Game.GAME_WIDTH / 2 - menuWidth / 2;
-		menuY = (int) (45 * Game.SCALE);
-
-	}
-
-	private void loadButtons() {
-		buttons[0] = new MenuButton(Game.GAME_WIDTH / 2, (int) (150 * Game.SCALE), 0, Gamestate.CHARACTER_SELECT);
-		buttons[1] = new MenuButton(Game.GAME_WIDTH / 2, (int) (220 * Game.SCALE), 1, Gamestate.OPTIONS);
-		buttons[2] = new MenuButton(Game.GAME_WIDTH / 2, (int) (290 * Game.SCALE), 2, Gamestate.QUIT);
+		titleWidth = Math.round(800 * scale);
+		titleHeight = Math.round(250 * scale);
 	}
 
 	@Override
 	public void update() {
-		for (MenuButton mb : buttons)
-			mb.update();
+		background.update(false);
+		for (MenuButton button : buttons)
+			button.update();
 	}
 
 	@Override
 	public void draw(Graphics g) {
+		background.draw(g, 0, backgroundLevelData);
+		int titleX = (Game.GAME_WIDTH - titleWidth) / 2;
+		int titleY = Math.round(12 * Game.GAME_WIDTH / DESIGN_WIDTH);
+		g.drawImage(titleLogo, titleX, titleY, titleWidth, titleHeight, null);
 
-		g.drawImage(backgroundImgPink, 0, 0, Game.GAME_WIDTH, Game.GAME_HEIGHT, null);
-		g.drawImage(backgroundImg, menuX, menuY, menuWidth, menuHeight, null);
-
-		for (MenuButton mb : buttons)
-			mb.draw(g);
+		for (MenuButton button : buttons)
+			button.draw(g);
 	}
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void mousePressed(MouseEvent e) {
-		for (MenuButton mb : buttons) {
-			if (isIn(e, mb)) {
-				mb.setMousePressed(true);
-			}
-		}
-
+		for (MenuButton button : buttons)
+			if (isIn(e, button))
+				button.setMousePressed(true);
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		for (MenuButton mb : buttons) {
-			if (isIn(e, mb)) {
-				if (mb.isMousePressed()) {
+		for (MenuButton button : buttons) {
+			if (isIn(e, button)) {
+				if (button.isMousePressed()) {
 					SoundManager.play(SoundManager.Effect.MENU);
-					mb.applyGamestate();
+					button.applyGamestate();
 				}
 				break;
 			}
 		}
-
 		resetButtons();
-
 	}
 
 	private void resetButtons() {
-		for (MenuButton mb : buttons)
-			mb.resetBools();
-
+		for (MenuButton button : buttons)
+			button.resetBools();
 	}
 
 	@Override
 	public void mouseMoved(MouseEvent e) {
-		for (MenuButton mb : buttons)
-			mb.setMouseOver(false);
-
-		for (MenuButton mb : buttons)
-			if (isIn(e, mb)) {
-				mb.setMouseOver(true);
-				break;
-			}
-
+		for (MenuButton button : buttons)
+			button.setMouseOver(isIn(e, button));
 	}
 
 	@Override
 	public void keyPressed(KeyEvent e) {
 		if (e.getKeyCode() == KeyEvent.VK_ENTER)
 			Gamestate.state = Gamestate.CHARACTER_SELECT;
-
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		// TODO Auto-generated method stub
-
 	}
-
 }

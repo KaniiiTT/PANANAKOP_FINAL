@@ -20,6 +20,7 @@ import levels.LevelManager;
 import main.Game;
 import objects.ObjectManager;
 import ui.BossUI;
+import ui.AreaTitleOverlay;
 import effects.HitEffects;
 import ui.GameOverOverlay;
 import ui.LevelCompletedOverlay;
@@ -45,6 +46,7 @@ public class Playing extends State implements Statemethods {
     private GameOverOverlay gameOverOverlay;
     private LevelCompletedOverlay levelCompletedOverlay;
     private BossUI bossUI;
+    private final AreaTitleOverlay areaTitle = new AreaTitleOverlay();
     private final HitEffects hitEffects = new HitEffects();
 
     private boolean paused = false;
@@ -82,11 +84,13 @@ public class Playing extends State implements Statemethods {
 
         calcLvlOffset();
         loadStartLevel();
+        areaTitle.showLevel(levelManager.getLevelIndex() + 1);
     }
 
     public void loadNextLevel() {
         resetAll();
         levelManager.loadNextLevel();
+        areaTitle.showLevel(levelManager.getLevelIndex() + 1);
         player.setSpawn(levelManager.getCurrentLevel().getPlayerSpawn());
 
         calcLvlOffset();
@@ -148,6 +152,7 @@ public class Playing extends State implements Statemethods {
             player.update();
 
         } else {
+            areaTitle.update(dt);
             parallaxBackground.setFocusY(player.getHitbox().y + player.getHitbox().height / 2f);
             parallaxBackground.update();
             levelManager.update();
@@ -234,6 +239,9 @@ public class Playing extends State implements Statemethods {
 		player.renderUI(g);
 
         bossUI.draw(g, enemyManager.getActiveBoss());
+
+        if (!paused && !gameOver && !lvlCompleted)
+            areaTitle.draw(g);
 
         if (paused) {
             g.setColor(new Color(0, 0, 0, 150));

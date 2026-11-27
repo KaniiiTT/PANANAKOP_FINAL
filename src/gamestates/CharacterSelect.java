@@ -46,17 +46,28 @@ public class CharacterSelect extends State implements Statemethods {
 
 	@Override
 	public void mousePressed(MouseEvent e) {
-		selectFromMouse(e);
+		int action = ui.getActionAt(e.getX(), e.getY());
+		if (action >= 0)
+			ui.setActionMousePressed(action, true);
+		else
+			selectFromMouse(e);
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		if (heroAt(e) >= 0)
-			choose();
+		int action = ui.getActionAt(e.getX(), e.getY());
+		if (action >= 0 && ui.isActionMousePressed(action)) {
+			if (action == 0)
+				choose();
+			else
+				Gamestate.state = Gamestate.MENU;
+		}
+		ui.resetActionButtons();
 	}
 
 	@Override
 	public void mouseMoved(MouseEvent e) {
+		ui.setActionMouseOver(ui.getActionAt(e.getX(), e.getY()));
 		selectFromMouse(e);
 	}
 

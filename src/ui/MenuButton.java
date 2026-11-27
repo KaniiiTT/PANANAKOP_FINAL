@@ -6,39 +6,38 @@ import java.awt.image.BufferedImage;
 
 import gamestates.Gamestate;
 import utilz.LoadSave;
-import static utilz.Constants.UI.Buttons.*;
 
 public class MenuButton {
-	private int xPos, yPos, rowIndex, index;
-	private int xOffsetCenter = B_WIDTH / 2;
+	private int xPos, yPos, index, width, height;
 	private Gamestate state;
 	private BufferedImage[] imgs;
 	private boolean mouseOver, mousePressed;
 	private Rectangle bounds;
 
-	public MenuButton(int xPos, int yPos, int rowIndex, Gamestate state) {
+	public MenuButton(int xPos, int yPos, String assetName, Gamestate state, float scale) {
 		this.xPos = xPos;
 		this.yPos = yPos;
-		this.rowIndex = rowIndex;
 		this.state = state;
-		loadImgs();
+		loadImgs(assetName);
+		width = Math.round(imgs[0].getWidth() * scale);
+		height = Math.round(imgs[0].getHeight() * scale);
 		initBounds();
 	}
 
 	private void initBounds() {
-		bounds = new Rectangle(xPos - xOffsetCenter, yPos, B_WIDTH, B_HEIGHT);
+		bounds = new Rectangle(xPos - width / 2, yPos, width, height);
 
 	}
 
-	private void loadImgs() {
+	private void loadImgs(String assetName) {
 		imgs = new BufferedImage[3];
-		BufferedImage temp = LoadSave.GetSpriteAtlas(LoadSave.MENU_BUTTONS);
+		String[] states = { "normal", "hover", "pressed" };
 		for (int i = 0; i < imgs.length; i++)
-			imgs[i] = temp.getSubimage(i * B_WIDTH_DEFAULT, rowIndex * B_HEIGHT_DEFAULT, B_WIDTH_DEFAULT, B_HEIGHT_DEFAULT);
+			imgs[i] = LoadSave.GetSpriteAtlas("menu/buttons/btn_" + assetName + "_" + states[i] + ".png");
 	}
 
 	public void draw(Graphics g) {
-		g.drawImage(imgs[index], xPos - xOffsetCenter, yPos, B_WIDTH, B_HEIGHT, null);
+		g.drawImage(imgs[index], bounds.x, bounds.y, width, height, null);
 	}
 
 	public void update() {

@@ -203,8 +203,14 @@ public class ParallaxBackground {
 
     /** Called from the game's update loop; lets self-moving layers (clouds) advance. */
     public void update() {
+        update(true);
+    }
+
+    /** Advances the visual layers, optionally leaving ambient audio to the active game state. */
+    public void update(boolean updateSoundscape) {
         cycle.update();
-        soundscape.update();
+        if (updateSoundscape)
+            soundscape.update();
         focusEased += (focusTarget - focusEased) * FOCUS_FOLLOW;
         restPosition += (focusEased - restPosition) * REST_FOLLOW;
         for (BackgroundLayer layer : layers)

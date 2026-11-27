@@ -35,6 +35,9 @@ public class AudioOptions {
 	}
 
 	public void update() {
+		musicButton.setMuted(SoundManager.isMusicMuted());
+		sfxButton.setMuted(SoundManager.isMuted());
+		volumeButton.setVolume(SoundManager.getVolume());
 		musicButton.update();
 		sfxButton.update();
 
