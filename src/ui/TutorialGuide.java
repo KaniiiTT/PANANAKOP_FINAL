@@ -95,9 +95,8 @@ public class TutorialGuide {
 	public void drawPrompt(Graphics graphics, float playerWorldX) {
 		int tileX = Math.max(0, (int) (playerWorldX / Game.TILES_SIZE));
 		int lesson = lessonAt(tileX);
-		// Render the noticeboard at half the game scale so it stays compact on
-		// high-resolution windows while retaining the same readable layout.
-		int scale = Math.max(1, Math.round(Game.SCALE / 2f));
+		// Keep the noticeboard text readable at the same scale as the game HUD.
+		int scale = Math.max(1, Math.round(Game.SCALE));
 		int width = Math.min(Game.GAME_WIDTH - 20 * scale, 170 * scale);
 		int height = 44 * scale;
 		int x = Game.GAME_WIDTH - width - 14 * scale;
