@@ -31,9 +31,9 @@ public class Gorilla extends Enemy {
 	private static final int LEAP_TAKEOFF_LAST = 4;
 	private static final int ATTACK_HIT_FRAME = 5;
 	private static final float WALK_SPEED = 0.45f * Game.SCALE;
-	private static final float JUMP_SPEED = -1.25f * Game.SCALE;
-	private static final float LEAP_SPEED = 1.75f * Game.SCALE;
-	private static final float MAX_LEAP_SPEED = 3.5f * Game.SCALE;
+	private static final float JUMP_SPEED = -1.75f * Game.SCALE;
+	private static final float LEAP_SPEED = 1.25f * Game.SCALE;
+	private static final float MAX_LEAP_SPEED = 2.5f * Game.SCALE;
 	private static final float GRAVITY = 0.04f * Game.SCALE;
 	private static final float MAX_FALL_SPEED = 4f * Game.SCALE;
 
