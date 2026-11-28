@@ -16,7 +16,7 @@ import utilz.LoadSave;
 public class Gorilla extends Enemy {
 	private static final int CELL = 64;
 	private static final float SPRITE_SCALE = 2f;
-	private static final int SIGHT_RANGE = 300;
+	private static final int SIGHT_RANGE = 450;
 	private static final int SLAM_RANGE = 96;
 	private static final int VERTICAL_TOLERANCE = 64;
 	private static final int MAX_HEALTH = 80;
@@ -32,8 +32,8 @@ public class Gorilla extends Enemy {
 	private static final int ATTACK_HIT_FRAME = 5;
 	private static final float WALK_SPEED = 0.45f * Game.SCALE;
 	private static final float JUMP_SPEED = -1.25f * Game.SCALE;
-	private static final float LEAP_SPEED = 2.5f * Game.SCALE;
-	private static final float MAX_LEAP_SPEED = 5f * Game.SCALE;
+	private static final float LEAP_SPEED = 1.75f * Game.SCALE;
+	private static final float MAX_LEAP_SPEED = 3.5f * Game.SCALE;
 	private static final float GRAVITY = 0.04f * Game.SCALE;
 	private static final float MAX_FALL_SPEED = 4f * Game.SCALE;
 
@@ -219,7 +219,6 @@ public class Gorilla extends Enemy {
 	@Override
 	protected void checkPlayerHit(Rectangle2D.Float attackBox, Player player) {
 		if (!attackBox.intersects(player.getHitbox()) && !hitbox.intersects(player.getHitbox())) {
-			attackChecked = true;
 			return;
 		}
 		if (player.isBlocking()) {
