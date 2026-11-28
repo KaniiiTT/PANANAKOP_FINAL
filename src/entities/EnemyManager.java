@@ -28,6 +28,7 @@ public class EnemyManager {
 	private ArrayList<Magellan> magellans = new ArrayList<>();
 	private ArrayList<Espinosa> espinosas = new ArrayList<>();
 	private ArrayList<Monkey> monkeys = new ArrayList<>();
+	private ArrayList<Gorilla> gorillas = new ArrayList<>();
 
 	public EnemyManager(Playing playing) {
 		this.playing = playing;
@@ -41,6 +42,7 @@ public class EnemyManager {
 		magellans = level.getMagellans();
 		espinosas = level.getEspinosas();
 		monkeys = level.getMonkeys();
+		gorillas = level.getGorillas();
 	}
 
 	public void update(int[][] lvlData, Player player) {
@@ -77,6 +79,11 @@ public class EnemyManager {
 				monkey.update(lvlData, player);
 				isAnyActive = true;
 			}
+		for (Gorilla gorilla : gorillas)
+			if (gorilla.isActive()) {
+				gorilla.update(lvlData, player);
+				isAnyActive = true;
+			}
 		if (!isAnyActive)
 			playing.setLevelCompleted(true);
 	}
@@ -94,6 +101,8 @@ public class EnemyManager {
 			e.updateFlash(dt);
 		for (Monkey monkey : monkeys)
 			monkey.updateFlash(dt);
+		for (Gorilla gorilla : gorillas)
+			gorilla.updateFlash(dt);
 	}
 
 	public void draw(Graphics g, int xLvlOffset) {
@@ -109,6 +118,9 @@ public class EnemyManager {
 		for (Monkey monkey : monkeys)
 			if (monkey.isActive() || monkey.getState() == DEAD)
 				monkey.draw(g, xLvlOffset);
+		for (Gorilla gorilla : gorillas)
+			if (gorilla.isActive() || gorilla.getState() == DEAD)
+				gorilla.draw(g, xLvlOffset);
 	}
 
 	private void drawBoars(Graphics g, int xLvlOffset) {
@@ -133,7 +145,7 @@ public class EnemyManager {
 	}
 
 	/**
-	 * A living boss (Magellan or the Espinosa mini-boss) within {@code range} pixels of the player, or null.
+	 * A living boss (Magellan, Espinosa, or Gorilla) within {@code range} pixels of the player, or null.
 	 * Used by the music system to start boss music.
 	 */
 	public Enemy findBossNear(Player player, float range) {
@@ -145,6 +157,9 @@ public class EnemyManager {
 		for (Espinosa e : espinosas)
 			if (e.isActive() && !e.isDefeated() && e.getState() != DEAD && isNear(e, px, py, range))
 				return e;
+		for (Gorilla gorilla : gorillas)
+			if (gorilla.isActive() && gorilla.getState() != DEAD && isNear(gorilla, px, py, range))
+				return gorilla;
 		return null;
 	}
 
@@ -202,6 +217,9 @@ public class EnemyManager {
 				return true;
 		for (Monkey monkey : monkeys)
 			if (hitEnemy(monkey, attackBox, damage, knockback, direction, hitTargets, heavy))
+				return true;
+		for (Gorilla gorilla : gorillas)
+			if (hitEnemy(gorilla, attackBox, damage, knockback, direction, hitTargets, heavy))
 				return true;
 		return false;
 	}
@@ -288,6 +306,8 @@ public class EnemyManager {
 			e.resetEnemy();
 		for (Monkey monkey : monkeys)
 			monkey.resetEnemy();
+		for (Gorilla gorilla : gorillas)
+			gorilla.resetEnemy();
 	}
 
 }

@@ -47,6 +47,7 @@ public class LoadSave {
 	public static final String CONQUISTADOR_SPRITE = "conquistador_spritesheet.png";
 	public static final String ESPINOSA_SPRITE = "espinosa_spritesheet.png";
 	public static final String MONKEY_SPRITE = "monkey_spritesheet.png";
+	public static final String GORILLA_SPRITE = "gorilla_spritesheet.png";
 	public static final String STATUS_BAR = "health_power_bar.png";
 	public static final String COMPLETED_IMG = "completed_sprite.png";
 	public static final String POTION_ATLAS = "potions_sprites.png";
