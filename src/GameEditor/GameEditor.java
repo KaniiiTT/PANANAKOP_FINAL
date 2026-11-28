@@ -16,7 +16,9 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -34,9 +36,11 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import main.Game;
@@ -64,6 +68,8 @@ public class GameEditor {
 	private final Map<String, BufferedImage> previewCache = new TreeMap<>();
 	private final List<BackgroundOption> backgroundOptions = new ArrayList<>();
 	private final List<LevelDecoration> placedDecorations = new ArrayList<>();
+	private final Deque<MapSnapshot> undoHistory = new ArrayDeque<>();
+	private final Deque<MapSnapshot> redoHistory = new ArrayDeque<>();
 	private final EditorCanvas canvas = new EditorCanvas();
 	private final JLabel status = new JLabel("Select a block, then click or drag on the map.");
 	private final JLabel currentMapLabel = new JLabel();
@@ -86,6 +92,8 @@ public class GameEditor {
 	private boolean testGameRunning;
 	private boolean updatingStagePicker;
 	private boolean updatingBackgroundList;
+	private MapSnapshot savedSnapshot;
+	private boolean restoringSnapshot;
 
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(() -> {
@@ -131,6 +139,10 @@ public class GameEditor {
 	private JPanel createToolbar() {
 		JPanel toolbar = new JPanel();
 		JButton newButton = new JButton("New map");
+		JButton resizeButton = new JButton("Resize map");
+		JButton undoButton = new JButton("Undo");
+		JButton redoButton = new JButton("Redo");
+		JButton resetButton = new JButton("Reset map");
 		JButton openButton = new JButton("Open PNG");
 		JButton saveButton = new JButton("Save");
 		JButton saveAsButton = new JButton("Save as...");
@@ -145,6 +157,10 @@ public class GameEditor {
 		syncStagePicker();
 
 		newButton.addActionListener(event -> createNewMap());
+		resizeButton.addActionListener(event -> resizeCurrentMap());
+		undoButton.addActionListener(event -> undo());
+		redoButton.addActionListener(event -> redo());
+		resetButton.addActionListener(event -> resetMap());
 		openButton.addActionListener(event -> openMap());
 		saveButton.addActionListener(event -> saveMap(currentMapPath));
 		saveAsButton.addActionListener(event -> saveMapAs());
@@ -154,6 +170,10 @@ public class GameEditor {
 		buildArenaButton.addActionListener(event -> buildBossArena());
 
 		toolbar.add(newButton);
+		toolbar.add(resizeButton);
+		toolbar.add(undoButton);
+		toolbar.add(redoButton);
+		toolbar.add(resetButton);
 		toolbar.add(openButton);
 		toolbar.add(saveButton);
 		toolbar.add(saveAsButton);
@@ -213,6 +233,9 @@ public class GameEditor {
 		selectedBackground = null;
 		currentMapPath = levelsDirectory.resolve(stage.number + ".png");
 		unsavedChanges = true;
+		savedSnapshot = null;
+		undoHistory.clear();
+		redoHistory.clear();
 		updateStageDisplay();
 		syncBackgroundSelection();
 		updateCanvas();
@@ -239,6 +262,7 @@ public class GameEditor {
 				"Build boss arena", JOptionPane.YES_NO_OPTION);
 		if (answer != JOptionPane.YES_OPTION)
 			return;
+		recordHistory();
 
 		for (int y = 0; y < mapImage.getHeight(); y++)
 			for (int x = 0; x < mapImage.getWidth(); x++) {
@@ -373,6 +397,7 @@ public class GameEditor {
 			BackgroundOption option = backgroundList.getSelectedValue();
 			if (option == null)
 				return;
+			recordHistory();
 			selectedBackground = option;
 			unsavedChanges = true;
 			canvas.repaint();
@@ -672,6 +697,9 @@ public class GameEditor {
 			selectedBackground = null;
 			currentMapPath = newMapPath;
 			unsavedChanges = true;
+			savedSnapshot = null;
+			undoHistory.clear();
+			redoHistory.clear();
 			syncStagePicker();
 			syncBackgroundSelection();
 			updateCanvas();
@@ -681,6 +709,154 @@ public class GameEditor {
 					+ Game.TILES_IN_WIDTH + " to 500.",
 					"Invalid map size", JOptionPane.ERROR_MESSAGE);
 		}
+	}
+
+	private void resizeCurrentMap() {
+		if (mapImage == null)
+			return;
+
+		JPanel panel = new JPanel(new BorderLayout(8, 8));
+		JSpinner widthSpinner = new JSpinner(new SpinnerNumberModel(mapImage.getWidth(),
+				Game.TILES_IN_WIDTH, 500, 1));
+		panel.add(new JLabel("Width in tiles (height is fixed at " + Game.TILES_IN_HEIGHT + ")"),
+				BorderLayout.NORTH);
+		panel.add(widthSpinner, BorderLayout.CENTER);
+
+		int answer = JOptionPane.showConfirmDialog(frame, panel, "Resize map",
+				JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+		if (answer != JOptionPane.OK_OPTION)
+			return;
+
+		int newWidth = (Integer) widthSpinner.getValue();
+		if (newWidth == mapImage.getWidth())
+			return;
+		if (newWidth < mapImage.getWidth()) {
+			int removedColumns = mapImage.getWidth() - newWidth;
+			int confirm = JOptionPane.showConfirmDialog(frame,
+					"This will remove the rightmost " + removedColumns + " column"
+							+ (removedColumns == 1 ? "" : "s") + " and anything placed there. Continue?",
+					"Confirm resize", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+			if (confirm != JOptionPane.YES_OPTION)
+				return;
+		}
+		recordHistory();
+
+		BufferedImage oldImage = mapImage;
+		String[][] oldModernTilePaths = modernTilePaths;
+		int oldWidth = oldImage.getWidth();
+		mapImage = new BufferedImage(newWidth, oldImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+		modernTilePaths = new String[oldImage.getHeight()][newWidth];
+		for (int y = 0; y < mapImage.getHeight(); y++) {
+			for (int x = 0; x < newWidth; x++) {
+				if (x < oldWidth) {
+					mapImage.setRGB(x, y, oldImage.getRGB(x, y));
+					modernTilePaths[y][x] = oldModernTilePaths[y][x];
+				} else {
+					setPixel(x, y, EMPTY_TILE, NO_MARKER, NO_MARKER);
+				}
+			}
+		}
+
+		List<LevelDecoration> resizedDecorations = new ArrayList<>();
+		int newPixelWidth = newWidth * TILE_SIZE;
+		for (LevelDecoration decoration : placedDecorations) {
+			if (decoration.getX() >= newPixelWidth)
+				continue;
+			int clippedWidth = Math.min(decoration.getWidth(), newPixelWidth - decoration.getX());
+			resizedDecorations.add(new LevelDecoration(decoration.getX(), decoration.getY(), clippedWidth,
+					decoration.getHeight(), decoration.getAssetPath(), decoration.getImage()));
+		}
+		placedDecorations.clear();
+		placedDecorations.addAll(resizedDecorations);
+		unsavedChanges = true;
+		updateCanvas();
+		status.setText("Resized map to " + newWidth + " × " + mapImage.getHeight() + " tiles.");
+	}
+
+	private void undo() {
+		if (undoHistory.isEmpty()) {
+			status.setText("Nothing to undo.");
+			return;
+		}
+		redoHistory.push(captureSnapshot());
+		restoreSnapshot(undoHistory.pop());
+		unsavedChanges = true;
+		status.setText("Undid last map edit.");
+	}
+
+	private void redo() {
+		if (redoHistory.isEmpty()) {
+			status.setText("Nothing to redo.");
+			return;
+		}
+		undoHistory.push(captureSnapshot());
+		restoreSnapshot(redoHistory.pop());
+		unsavedChanges = true;
+		status.setText("Redid last map edit.");
+	}
+
+	private void resetMap() {
+		if (savedSnapshot == null)
+			return;
+		if (!unsavedChanges) {
+			status.setText("Map is already reset.");
+			return;
+		}
+		int answer = JOptionPane.showConfirmDialog(frame,
+				"Discard all unsaved edits and restore the last saved map?",
+				"Reset map", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+		if (answer != JOptionPane.YES_OPTION)
+			return;
+		restoreSnapshot(savedSnapshot);
+		undoHistory.clear();
+		redoHistory.clear();
+		unsavedChanges = false;
+		status.setText("Map reset to the last saved version.");
+	}
+
+	private void recordHistory() {
+		if (restoringSnapshot || mapImage == null)
+			return;
+		undoHistory.push(captureSnapshot());
+		redoHistory.clear();
+	}
+
+	private MapSnapshot captureSnapshot() {
+		BufferedImage image = new BufferedImage(mapImage.getWidth(), mapImage.getHeight(),
+				BufferedImage.TYPE_INT_RGB);
+		Graphics2D graphics = image.createGraphics();
+		graphics.drawImage(mapImage, 0, 0, null);
+		graphics.dispose();
+		String[][] paths = new String[modernTilePaths.length][];
+		for (int y = 0; y < modernTilePaths.length; y++)
+			paths[y] = modernTilePaths[y].clone();
+		return new MapSnapshot(image, paths, new ArrayList<>(placedDecorations), selectedBackground);
+	}
+
+	private void restoreSnapshot(MapSnapshot snapshot) {
+		restoringSnapshot = true;
+		try {
+			mapImage = copyImage(snapshot.image);
+			modernTilePaths = new String[snapshot.modernTilePaths.length][];
+			for (int y = 0; y < snapshot.modernTilePaths.length; y++)
+				modernTilePaths[y] = snapshot.modernTilePaths[y].clone();
+			placedDecorations.clear();
+			placedDecorations.addAll(snapshot.decorations);
+			selectedBackground = snapshot.background;
+			syncBackgroundSelection();
+			updateCanvas();
+		} finally {
+			restoringSnapshot = false;
+		}
+	}
+
+	private BufferedImage copyImage(BufferedImage source) {
+		BufferedImage copy = new BufferedImage(source.getWidth(), source.getHeight(),
+				BufferedImage.TYPE_INT_RGB);
+		Graphics2D graphics = copy.createGraphics();
+		graphics.drawImage(source, 0, 0, null);
+		graphics.dispose();
+		return copy;
 	}
 
 	private int nextLevelNumber() {
@@ -728,6 +904,9 @@ public class GameEditor {
 			placedDecorations.clear();
 			placedDecorations.addAll(loadedDecorations);
 			unsavedChanges = false;
+			savedSnapshot = captureSnapshot();
+			undoHistory.clear();
+			redoHistory.clear();
 			syncStagePicker();
 			syncBackgroundSelection();
 			updateCanvas();
@@ -900,6 +1079,9 @@ public class GameEditor {
 
 			currentMapPath = absolutePath;
 			unsavedChanges = false;
+			savedSnapshot = captureSnapshot();
+			undoHistory.clear();
+			redoHistory.clear();
 			syncStagePicker();
 			status.setText("Saved " + absolutePath.getFileName() + " — " + mapImage.getWidth() + " × "
 					+ mapImage.getHeight() + " tiles.");
@@ -911,6 +1093,7 @@ public class GameEditor {
 	private void paintCell(int x, int y, boolean erase) {
 		if (x < 0 || x >= mapImage.getWidth() || y < 0 || y >= mapImage.getHeight())
 			return;
+		recordHistory();
 		if (erase) {
 			if (removeDecorationAt(x * TILE_SIZE, y * TILE_SIZE)) {
 				unsavedChanges = true;
@@ -997,6 +1180,7 @@ public class GameEditor {
 	private void placeSelectedDecoration() {
 		if (selectedDecoration == null || selectedDecoration.image == null || decorationPreviewPosition == null)
 			return;
+		recordHistory();
 		placedDecorations.add(new LevelDecoration(decorationPreviewPosition.x, decorationPreviewPosition.y,
 				getSelectedDecorationWidth(), getSelectedDecorationHeight(), selectedDecoration.path,
 				selectedDecoration.image));
@@ -1198,6 +1382,21 @@ public class GameEditor {
 				g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, label.length() > 1 ? 9 : 12));
 				g.drawString(label, x + (label.length() > 1 ? 9 : 13), y + 20);
 			}
+		}
+	}
+
+	private static class MapSnapshot {
+		private final BufferedImage image;
+		private final String[][] modernTilePaths;
+		private final List<LevelDecoration> decorations;
+		private final BackgroundOption background;
+
+		private MapSnapshot(BufferedImage image, String[][] modernTilePaths,
+				List<LevelDecoration> decorations, BackgroundOption background) {
+			this.image = image;
+			this.modernTilePaths = modernTilePaths;
+			this.decorations = decorations;
+			this.background = background;
 		}
 	}
 
