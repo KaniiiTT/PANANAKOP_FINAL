@@ -21,6 +21,7 @@ import main.Game;
 import objects.ObjectManager;
 import ui.BossUI;
 import ui.AreaTitleOverlay;
+import ui.TutorialGuide;
 import effects.HitEffects;
 import ui.GameOverOverlay;
 import ui.LevelCompletedOverlay;
@@ -47,6 +48,7 @@ public class Playing extends State implements Statemethods {
     private LevelCompletedOverlay levelCompletedOverlay;
     private BossUI bossUI;
     private final AreaTitleOverlay areaTitle = new AreaTitleOverlay();
+    private TutorialGuide tutorialGuide;
     private final HitEffects hitEffects = new HitEffects();
     private BufferedImage ultimateScene;
 
@@ -65,6 +67,7 @@ public class Playing extends State implements Statemethods {
     private Enemy musicBoss; // the boss whose fight the music is currently following
     private boolean lvlCompleted;
     private boolean playerDying;
+    private float tutorialAdvanceTimer;
 
     public Playing(Game game) {
         this(game, null);
@@ -85,6 +88,7 @@ public class Playing extends State implements Statemethods {
 
         calcLvlOffset();
         loadStartLevel();
+        refreshTutorialGuide();
         areaTitle.showLevel(levelManager.getLevelIndex() + 1);
     }
 
@@ -94,6 +98,7 @@ public class Playing extends State implements Statemethods {
         levelManager.loadNextLevel();
         areaTitle.showLevel(levelManager.getLevelIndex() + 1);
         player.setSpawn(levelManager.getCurrentLevel().getPlayerSpawn());
+        refreshTutorialGuide();
 
         calcLvlOffset();
         focusCameraOnPlayer();
@@ -102,6 +107,7 @@ public class Playing extends State implements Statemethods {
     public void startLevel(int levelIndex) {
         resetAll();
         levelManager.loadLevel(levelIndex);
+        refreshTutorialGuide();
         player.setSpawn(levelManager.getCurrentLevel().getPlayerSpawn());
         calcLvlOffset();
         focusCameraOnPlayer();
@@ -158,6 +164,13 @@ public class Playing extends State implements Statemethods {
 
         } else if (lvlCompleted) {
             levelCompletedOverlay.update();
+            if (tutorialGuide != null && levelManager.getAmountOfLevels() > 1) {
+                tutorialAdvanceTimer += dt;
+                if (tutorialAdvanceTimer >= 1.6f) {
+                    loadNextLevel();
+                    return;
+                }
+            }
 
         } else if (gameOver) {
             gameOverOverlay.update();
@@ -181,6 +194,9 @@ public class Playing extends State implements Statemethods {
             enemyManager.update(
                     levelManager.getCurrentLevel().getLevelData(), player
             );
+
+            if (tutorialGuide != null)
+                tutorialGuide.update(player.getHitbox().x + player.getHitbox().width / 2f);
 
             bossUI.update(player, enemyManager.getActiveBoss());
             updateMusic(dt);
@@ -262,6 +278,8 @@ public class Playing extends State implements Statemethods {
         player.render(world, cameraX);
         enemyManager.draw(world, cameraX);
         objectManager.draw(world, cameraX);
+        if (tutorialGuide != null)
+            tutorialGuide.drawGates(world, cameraX);
 		hitEffects.removeShake(world);
 		world.dispose();
 		player.renderUI(g);
@@ -282,6 +300,9 @@ public class Playing extends State implements Statemethods {
         } else if (lvlCompleted) {
             levelCompletedOverlay.draw(g);
         }
+
+        if (tutorialGuide != null && !paused && !gameOver && !lvlCompleted)
+            tutorialGuide.drawPrompt(g, player.getHitbox().x + player.getHitbox().width / 2f);
 	}
 
 	private BufferedImage renderUltimateScene(int cameraX) {
@@ -299,6 +320,8 @@ public class Playing extends State implements Statemethods {
 		enemyManager.draw(scene, cameraX);
 		objectManager.draw(scene, cameraX);
 		player.render(scene, cameraX);
+		if (tutorialGuide != null)
+			tutorialGuide.drawGates(scene, cameraX);
 		hitEffects.removeShake(scene);
 		scene.dispose();
 		return ultimateScene;
@@ -320,12 +343,21 @@ public class Playing extends State implements Statemethods {
         gameOver = false;
         paused = false;
         lvlCompleted = false;
+        tutorialAdvanceTimer = 0f;
         playerDying = false;
 
         player.resetAll();
         enemyManager.resetAllEnemies();
         objectManager.resetAllObjects();
         bossUI.reset();
+        if (tutorialGuide != null)
+            tutorialGuide.reset();
+    }
+
+    private void refreshTutorialGuide() {
+        levels.Level level = levelManager.getCurrentLevel();
+        tutorialGuide = levelManager.getLevelIndex() == 0 && TutorialGuide.supports(level)
+                ? new TutorialGuide(level, enemyManager) : null;
     }
 
     public void setGameOver(boolean gameOver) {
@@ -509,6 +541,8 @@ public class Playing extends State implements Statemethods {
     }
 
     public void setLevelCompleted(boolean levelCompleted) {
+        if (levelCompleted && !lvlCompleted)
+            tutorialAdvanceTimer = 0f;
         this.lvlCompleted = levelCompleted;
     }
 

@@ -151,7 +151,7 @@ public class GameEditor {
 					frame.dispose();
 			}
 		});
-		JPanel root = new JPanel(new BorderLayout(10, 10)) {
+		JPanel root = new JPanel(new BorderLayout(6, 6)) {
 			private static final long serialVersionUID = 1L;
 			@Override protected void paintComponent(Graphics graphics) {
 				super.paintComponent(graphics);
@@ -163,7 +163,7 @@ public class GameEditor {
 				}
 			}
 		};
-		root.setBorder(BorderFactory.createEmptyBorder(10, 12, 8, 12));
+		root.setBorder(BorderFactory.createEmptyBorder(6, 8, 5, 8));
 		root.setOpaque(false);
 		root.add(createToolbar(), BorderLayout.NORTH);
 		root.add(createPalette(), BorderLayout.WEST);
@@ -177,32 +177,32 @@ public class GameEditor {
 		workspace.setBorder(null);
 		root.add(workspace, BorderLayout.CENTER);
 		status.setForeground(new Color(247, 240, 222));
-		status.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
-		status.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
+		status.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+		status.setBorder(BorderFactory.createEmptyBorder(3, 6, 3, 6));
 		root.add(status, BorderLayout.SOUTH);
 		frame.setContentPane(root);
 		installKeyboardShortcuts();
-		frame.setMinimumSize(new Dimension(1000, 650));
-		frame.setSize(1380, 850);
+		frame.setMinimumSize(new Dimension(900, 580));
+		frame.setSize(1160, 740);
 		frame.setLocationRelativeTo(null);
 	}
 
 	private JPanel createToolbar() {
-		JPanel toolbar = new JPanel(new BorderLayout(8, 5));
+		JPanel toolbar = new JPanel(new BorderLayout(6, 3));
 		toolbar.setOpaque(false);
 		JPanel header = new JPanel(new BorderLayout(12, 0));
 		header.setOpaque(false);
 		if (menuLogo != null) {
-			JLabel logo = new JLabel(new javax.swing.ImageIcon(menuLogo.getScaledInstance(210, 66,
+			JLabel logo = new JLabel(new javax.swing.ImageIcon(menuLogo.getScaledInstance(132, 42,
 					java.awt.Image.SCALE_SMOOTH)));
-			logo.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 8));
+			logo.setBorder(BorderFactory.createEmptyBorder(0, 3, 0, 5));
 			header.add(logo, BorderLayout.WEST);
 		}
 		JLabel editorTitle = new JLabel("WORLD BUILDER");
 		editorTitle.setForeground(new Color(30, 43, 64));
-		editorTitle.setFont(new Font(Font.SERIF, Font.BOLD, 20));
+		editorTitle.setFont(new Font(Font.SERIF, Font.BOLD, 16));
 		header.add(editorTitle, BorderLayout.CENTER);
-		JPanel stageRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 6));
+		JPanel stageRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 2));
 		stageRow.setOpaque(false);
 		stageRow.add(new JLabel("STAGE"));
 		stageRow.add(currentMapLabel);
@@ -214,7 +214,7 @@ public class GameEditor {
 		syncStagePicker();
 		header.add(stageRow, BorderLayout.EAST);
 		toolbar.add(header, BorderLayout.NORTH);
-		JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
+		JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
 		actions.setOpaque(false);
 		JButton newButton = new JButton("New map");
 		JButton selectButton = new JButton("Select");
@@ -275,7 +275,7 @@ public class GameEditor {
 		stageRow.add(zoomLabel);
 		stageRow.add(zoomIn);
 		toolbar.add(actions, BorderLayout.SOUTH);
-		toolbar.setBorder(BorderFactory.createEmptyBorder(3, 4, 7, 4));
+		toolbar.setBorder(BorderFactory.createEmptyBorder(1, 3, 3, 3));
 		return toolbar;
 	}
 
@@ -288,13 +288,13 @@ public class GameEditor {
 	}
 
 	private static void styleMenuButton(JButton button) {
-		button.setFont(new Font(Font.SERIF, Font.BOLD, 13));
+		button.setFont(new Font(Font.SERIF, Font.BOLD, 11));
 		button.setForeground(new Color(36, 48, 68));
 		button.setBackground(new Color(244, 238, 221));
 		button.setFocusPainted(false);
 		button.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createLineBorder(new Color(78, 91, 112), 1),
-				BorderFactory.createEmptyBorder(6, 9, 6, 9)));
+				BorderFactory.createEmptyBorder(3, 6, 3, 6)));
 		button.setOpaque(true);
 	}
 
@@ -311,7 +311,7 @@ public class GameEditor {
 
 	private JPanel createScenePanel() {
 		JPanel panel = new JPanel(new BorderLayout(6, 8));
-		panel.setPreferredSize(new Dimension(245, 0));
+		panel.setPreferredSize(new Dimension(205, 0));
 		panel.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createLineBorder(new Color(39, 51, 72), 2),
 				BorderFactory.createEmptyBorder(10, 10, 10, 10)));
@@ -745,12 +745,12 @@ public class GameEditor {
 				}
 			}
 		};
-		palette.setPreferredSize(new Dimension(260, 0));
-		palette.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
+		palette.setPreferredSize(new Dimension(220, 0));
+		palette.setBorder(BorderFactory.createEmptyBorder(7, 8, 7, 8));
 		JPanel paletteHeading = new JPanel(new BorderLayout(0, 3));
 		paletteHeading.setOpaque(false);
 		JLabel heading = new JLabel("ASSET LIBRARY");
-		heading.setFont(new Font(Font.SERIF, Font.BOLD, 16));
+		heading.setFont(new Font(Font.SERIF, Font.BOLD, 14));
 		heading.setForeground(new Color(36, 48, 68));
 		paletteHeading.add(heading, BorderLayout.NORTH);
 		if (menuDivider != null)

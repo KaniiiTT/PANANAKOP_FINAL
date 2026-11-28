@@ -10,6 +10,7 @@ import java.util.Set;
 import gamestates.Playing;
 import effects.HitEffects;
 import levels.Level;
+import main.Game;
 import utilz.LoadSave;
 import static utilz.Constants.EnemyConstants.*;
 
@@ -173,6 +174,26 @@ public class EnemyManager {
 			if (boss.isActive())
 				return boss;
 		return null;
+	}
+
+	/** True while a living enemy spawned inside the requested horizontal tile range remains. */
+	public boolean hasActiveEnemyBetweenTiles(int firstTile, int lastTile) {
+		return hasActiveEnemyBetweenTiles(crabbies, firstTile, lastTile)
+				|| hasActiveEnemyBetweenTiles(boars, firstTile, lastTile)
+				|| hasActiveEnemyBetweenTiles(conquistadors, firstTile, lastTile)
+				|| hasActiveEnemyBetweenTiles(espinosas, firstTile, lastTile)
+				|| hasActiveEnemyBetweenTiles(monkeys, firstTile, lastTile)
+				|| hasActiveEnemyBetweenTiles(gorillas, firstTile, lastTile)
+				|| hasActiveEnemyBetweenTiles(magellans, firstTile, lastTile);
+	}
+
+	private boolean hasActiveEnemyBetweenTiles(java.util.List<? extends Enemy> enemies, int firstTile, int lastTile) {
+		for (Enemy enemy : enemies) {
+			int spawnTile = (int) (enemy.x / Game.TILES_SIZE);
+			if (enemy.isActive() && enemy.getState() != DEAD && spawnTile >= firstTile && spawnTile <= lastTile)
+				return true;
+		}
+		return false;
 	}
 
 	private void drawCrabs(Graphics g, int xLvlOffset) {

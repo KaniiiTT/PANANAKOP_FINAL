@@ -145,6 +145,15 @@ public class Level {
 		return lvlData;
 	}
 
+	/** Opens or closes a tutorial gate column in the collision and draw data. */
+	public void setTutorialGateOpen(int tileX, boolean open) {
+		if (tileX < 0 || tileX >= lvlData[0].length)
+			return;
+		// Keep the three floor rows solid; only the gate's vertical column opens.
+		for (int y = 0; y < Math.min(Game.TILES_IN_HEIGHT - 3, lvlData.length); y++)
+			lvlData[y][tileX] = open ? 11 : 0;
+	}
+
 	public int getLvlOffset() {
 		return maxLvlOffsetX;
 	}
