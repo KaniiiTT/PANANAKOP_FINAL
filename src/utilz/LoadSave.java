@@ -281,14 +281,15 @@ public class LoadSave {
 			for (String line : Files.readAllLines(sidecar)) {
 				if (line.isBlank())
 					continue;
-				String[] fields = line.split("\\t", 5);
-				if (fields.length != 5)
+				String[] fields = line.split("\\t", 6);
+				if (fields.length != 5 && fields.length != 6)
 					throw new IOException("Malformed decoration entry: " + line);
 				int x = Integer.parseInt(fields[0]);
 				int y = Integer.parseInt(fields[1]);
 				int width = Integer.parseInt(fields[2]);
 				int height = Integer.parseInt(fields[3]);
-				Path imagePath = projectRoot.resolve(fields[4]).normalize();
+				int rotation = fields.length == 6 ? Integer.parseInt(fields[4]) : 0;
+				Path imagePath = projectRoot.resolve(fields[fields.length - 1]).normalize();
 				boolean allowedCategory = imagePath.startsWith(assetsRoot.resolve("Building"))
 						|| imagePath.startsWith(assetsRoot.resolve("Environment"));
 				if (x < 0 || y < 0 || width < 1 || height < 1 || !allowedCategory
@@ -297,7 +298,7 @@ public class LoadSave {
 				BufferedImage image = ImageIO.read(imagePath.toFile());
 				if (image == null)
 					throw new IOException("Unsupported decoration image: " + imagePath);
-				decorations.add(new LevelDecoration(x, y, width, height, imagePath, image));
+				decorations.add(new LevelDecoration(x, y, width, height, rotation, imagePath, image));
 			}
 		} catch (IOException | NumberFormatException e) {
 			throw new IllegalStateException("Unable to load decorations from " + sidecar, e);

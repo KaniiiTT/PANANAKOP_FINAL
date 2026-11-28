@@ -1,6 +1,7 @@
 package levels;
 
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
@@ -90,7 +91,10 @@ public class LevelManager {
 			int y = Math.round(decoration.getY() * decorationScale);
 			int width = Math.max(1, Math.round(decoration.getWidth() * decorationScale));
 			int height = Math.max(1, Math.round(decoration.getHeight() * decorationScale));
-			g.drawImage(decoration.getImage(), x, y, width, height, null);
+			Graphics2D rotated = (Graphics2D) g.create();
+			rotated.rotate(Math.toRadians(decoration.getRotationDegrees()), x + width / 2.0, y + height / 2.0);
+			rotated.drawImage(decoration.getImage(), x, y, width, height, null);
+			rotated.dispose();
 		}
 	}
 

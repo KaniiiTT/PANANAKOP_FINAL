@@ -22,23 +22,23 @@ public class TutorialGuide {
 			{ 70, 94 }, { 94, 112 }, { 112, 136 }, { 136, 154 }, { 154, 173 }, { 173, Integer.MAX_VALUE }
 	};
 	private static final String[] TITLES = {
-			"WELCOME TO MACTAN VILLAGE", "MOVE AND SPRINT", "JUMP AND DOUBLE JUMP",
-			"BASIC ATTACK", "DASH THROUGH THE COURSE", "BLOCK AND PARRY",
-			"CHAIN YOUR STRIKES", "FIGHT YOUR WAY THROUGH", "UNLEASH YOUR ULTIMATE",
-			"FINAL COMBAT TRIAL", "FINAL ENCOUNTER"
+			"WELCOME TO MACTAN", "MOVE + SPRINT", "JUMP + DOUBLE JUMP",
+			"BASIC ATTACK", "DASH COURSE", "BLOCK + PARRY",
+			"ATTACK CHAIN", "COMBAT TRIAL", "UNLEASH ULTIMATE",
+			"FINAL TRIAL", "FINAL ENCOUNTER"
 	};
 	private static final String[] INSTRUCTIONS = {
-			"Move with A / D. Hold SHIFT to sprint. Clear each wave to open the village path.",
-			"Use A / D to move. Hold SHIFT to sprint across the training ground.",
-			"Press SPACE to jump. Press SPACE again in mid-air to double jump.",
-			"Left-click to attack. Time a second click to chain a powerful vertical strike.",
-			"Press Q to dash in the direction you are facing. Use it to cross the spike course.",
-			"Hold right-click to block. Face an incoming attack to parry and stun the enemy.",
-			"Practice the second-click vertical strike, then clear the enemies to open the gate.",
-			"Combine movement, jumping, dashing, and chained attacks to clear this encounter.",
-			"Press R to unleash your ultimate. Use it when enemies are close together.",
-			"Use every skill you learned. Defeat this group to open the final route.",
-			"Defeat the final enemy to complete the tutorial and unlock the next stage."
+			"A / D move  ·  SHIFT sprint",
+			"A / D move  ·  SHIFT sprint",
+			"SPACE twice to double jump",
+			"Left-click; time your next hit",
+			"Q dashes forward across spikes",
+			"Right-click to block and parry",
+			"Time a click for a heavy strike",
+			"Mix skills. Clear every enemy.",
+			"Press R to unleash your ultimate",
+			"Defeat the wave to advance",
+			"Defeat the final enemy"
 	};
 
 	private final Level level;
@@ -95,9 +95,11 @@ public class TutorialGuide {
 	public void drawPrompt(Graphics graphics, float playerWorldX) {
 		int tileX = Math.max(0, (int) (playerWorldX / Game.TILES_SIZE));
 		int lesson = lessonAt(tileX);
-		int scale = Math.max(1, Math.round(Game.SCALE));
-		int width = Math.min(Game.GAME_WIDTH - 20 * scale, 340 * scale);
-		int height = 82 * scale;
+		// Render the noticeboard at half the game scale so it stays compact on
+		// high-resolution windows while retaining the same readable layout.
+		int scale = Math.max(1, Math.round(Game.SCALE / 2f));
+		int width = Math.min(Game.GAME_WIDTH - 20 * scale, 170 * scale);
+		int height = 44 * scale;
 		int x = Game.GAME_WIDTH - width - 14 * scale;
 		int y = 12 * scale;
 		if (x < 220 * scale) {
@@ -106,55 +108,54 @@ public class TutorialGuide {
 		}
 		Graphics2D g = (Graphics2D) graphics.create();
 		drawVillageBoard(g, x, y, width, height, scale);
-		int iconSize = 48 * scale;
+		int iconSize = 26 * scale;
 		if (villageBoard != null)
-			g.drawImage(villageBoard, x + 8 * scale, y + (height - iconSize) / 2, iconSize, iconSize, null);
+			g.drawImage(villageBoard, x + 5 * scale, y + (height - iconSize) / 2, iconSize, iconSize, null);
 		else
-			drawVillageEmblem(g, x + 8 * scale, y + 15 * scale, 44 * scale);
-		int textX = x + 64 * scale;
-		int textWidth = width - 76 * scale;
+			drawVillageEmblem(g, x + 5 * scale, y + 9 * scale, 26 * scale);
+		int textX = x + 35 * scale;
 		g.setColor(new Color(255, 232, 187));
-		g.setFont(new Font(Font.SERIF, Font.BOLD, 12 * scale));
-		g.drawString(TITLES[lesson], textX, y + 23 * scale);
+		g.setFont(new Font(Font.SERIF, Font.BOLD, 9 * scale));
+		g.drawString(TITLES[lesson], textX, y + 14 * scale);
 		g.setColor(new Color(255, 246, 220));
-		g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 10 * scale));
-		int lineY = drawWrappedText(g, INSTRUCTIONS[lesson], textX, y + 43 * scale,
-				textWidth, 12 * scale);
+		g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 8 * scale));
+		g.drawString(INSTRUCTIONS[lesson], textX, y + 27 * scale);
 		int gate = firstClosedGate();
 		if (gate >= 0 && tileX >= GATES[gate] - 5 && tileX <= GATES[gate]) {
 			int remaining = countEnemiesForGate(gate);
 			g.setColor(new Color(255, 207, 115));
-			String challenge = "CHALLENGE GATE: defeat " + remaining + " more "
-					+ (remaining == 1 ? "enemy" : "enemies") + " to proceed.";
-			drawWrappedText(g, challenge, textX, Math.max(y + 72 * scale, lineY + 2 * scale),
-					textWidth, 11 * scale);
+			String challenge = "GATE " + (gate + 1) + "  ·  " + remaining + " "
+					+ (remaining == 1 ? "ENEMY" : "ENEMIES") + " LEFT";
+			g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 7 * scale));
+			g.drawString(challenge, textX, y + 39 * scale);
 		} else {
 			g.setColor(new Color(235, 195, 128));
-			g.drawString(VILLAGE_LABEL, textX, Math.max(y + 72 * scale, lineY + 2 * scale));
+			g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 7 * scale));
+			g.drawString(VILLAGE_LABEL, textX, y + 39 * scale);
 		}
 		g.dispose();
 	}
 
 	private void drawVillageBoard(Graphics2D g, int x, int y, int width, int height, int scale) {
 		g.setColor(new Color(8, 13, 15, 145));
-		g.fillRoundRect(x + 4 * scale, y + 5 * scale, width, height, 10 * scale, 10 * scale);
+		g.fillRoundRect(x + 2 * scale, y + 3 * scale, width, height, 7 * scale, 7 * scale);
 		g.setColor(new Color(45, 29, 22, 245));
-		g.fillRoundRect(x, y, width, height, 10 * scale, 10 * scale);
+		g.fillRoundRect(x, y, width, height, 7 * scale, 7 * scale);
 		g.setColor(new Color(111, 66, 38, 248));
-		g.fillRoundRect(x + 3 * scale, y + 3 * scale, width - 6 * scale, height - 6 * scale,
-				8 * scale, 8 * scale);
+		g.fillRoundRect(x + 2 * scale, y + 2 * scale, width - 4 * scale, height - 4 * scale,
+				5 * scale, 5 * scale);
 		g.setColor(new Color(151, 94, 53, 235));
-		g.fillRect(x + 5 * scale, y + 5 * scale, width - 10 * scale, 15 * scale);
+		g.fillRect(x + 4 * scale, y + 3 * scale, width - 8 * scale, 10 * scale);
 		g.setColor(new Color(76, 45, 29, 190));
-		g.drawLine(x + 5 * scale, y + 24 * scale, x + width - 5 * scale, y + 24 * scale);
-		g.drawLine(x + 5 * scale, y + 62 * scale, x + width - 5 * scale, y + 62 * scale);
+		g.drawLine(x + 4 * scale, y + 17 * scale, x + width - 4 * scale, y + 17 * scale);
+		g.drawLine(x + 4 * scale, y + 32 * scale, x + width - 4 * scale, y + 32 * scale);
 		g.setColor(new Color(224, 181, 104));
 		g.setStroke(new java.awt.BasicStroke(Math.max(1, scale * 2)));
-		g.drawRoundRect(x + 2 * scale, y + 2 * scale, width - 5 * scale, height - 5 * scale,
-				8 * scale, 8 * scale);
+		g.drawRoundRect(x + 1 * scale, y + 1 * scale, width - 3 * scale, height - 3 * scale,
+				6 * scale, 6 * scale);
 		g.setColor(new Color(235, 203, 141, 190));
-		g.fillOval(x + width - 14 * scale, y + 10 * scale, 4 * scale, 4 * scale);
-		g.fillOval(x + width - 14 * scale, y + height - 14 * scale, 4 * scale, 4 * scale);
+		g.fillOval(x + width - 9 * scale, y + 6 * scale, 3 * scale, 3 * scale);
+		g.fillOval(x + width - 9 * scale, y + height - 9 * scale, 3 * scale, 3 * scale);
 	}
 
 	private void drawVillageEmblem(Graphics2D g, int x, int y, int size) {
@@ -176,24 +177,6 @@ public class TutorialGuide {
 		} catch (IOException | RuntimeException exception) {
 			return null;
 		}
-	}
-
-	private int drawWrappedText(Graphics2D g, String text, int x, int baseline, int maxWidth, int lineHeight) {
-		StringBuilder line = new StringBuilder();
-		for (String word : text.split(" ")) {
-			String candidate = line.length() == 0 ? word : line + " " + word;
-			if (line.length() > 0 && g.getFontMetrics().stringWidth(candidate) > maxWidth) {
-				g.drawString(line.toString(), x, baseline);
-				baseline += lineHeight;
-				line.setLength(0);
-			}
-			if (line.length() > 0)
-				line.append(' ');
-			line.append(word);
-		}
-		if (line.length() > 0)
-			g.drawString(line.toString(), x, baseline);
-		return baseline;
 	}
 
 	public void reset() {

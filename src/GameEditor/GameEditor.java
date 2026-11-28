@@ -7,6 +7,7 @@ import java.awt.Font;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
@@ -89,6 +90,9 @@ public class GameEditor {
 			event -> refreshSceneHierarchy());
 	private JList<SceneEntry> sceneList;
 	private JLabel sceneInspector;
+	private JButton rotateLeftButton;
+	private JButton rotateRightButton;
+	private JButton resetRotationButton;
 	private SceneEntry selectedSceneEntry;
 	private int sceneDragOffsetX;
 	private int sceneDragOffsetY;
@@ -334,6 +338,17 @@ public class GameEditor {
 		JButton deleteButton = new JButton("Delete selected");
 		styleMenuButton(deleteButton);
 		deleteButton.addActionListener(event -> deleteSelectedSceneObject());
+		rotateLeftButton = new JButton("↶ 15°");
+		rotateRightButton = new JButton("↷ 15°");
+		resetRotationButton = new JButton("Reset");
+		for (JButton button : new JButton[] { rotateLeftButton, rotateRightButton, resetRotationButton }) {
+			styleMenuButton(button);
+			button.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 10));
+			button.setMargin(new java.awt.Insets(3, 4, 3, 4));
+		}
+		rotateLeftButton.addActionListener(event -> rotateSelectedDecoration(-15));
+		rotateRightButton.addActionListener(event -> rotateSelectedDecoration(15));
+		resetRotationButton.addActionListener(event -> setSelectedDecorationRotation(0));
 		sceneInspector = new JLabel("<html><b>Inspector</b><br>Select an object to view its position.</html>");
 		sceneInspector.setVerticalAlignment(JLabel.TOP);
 		sceneInspector.setBorder(BorderFactory.createCompoundBorder(
@@ -341,7 +356,16 @@ public class GameEditor {
 				BorderFactory.createEmptyBorder(9, 2, 6, 2)));
 		JPanel lower = new JPanel(new BorderLayout(4, 8));
 		lower.setOpaque(false);
-		lower.add(sceneInspector, BorderLayout.CENTER);
+		JPanel inspectorContent = new JPanel(new BorderLayout(3, 4));
+		inspectorContent.setOpaque(false);
+		inspectorContent.add(sceneInspector, BorderLayout.CENTER);
+		JPanel rotationControls = new JPanel(new GridLayout(1, 3, 3, 0));
+		rotationControls.setOpaque(false);
+		rotationControls.add(rotateLeftButton);
+		rotationControls.add(rotateRightButton);
+		rotationControls.add(resetRotationButton);
+		inspectorContent.add(rotationControls, BorderLayout.SOUTH);
+		lower.add(inspectorContent, BorderLayout.CENTER);
 		lower.add(deleteButton, BorderLayout.SOUTH);
 		panel.add(new JScrollPane(sceneList), BorderLayout.CENTER);
 		panel.add(lower, BorderLayout.SOUTH);
@@ -396,13 +420,48 @@ public class GameEditor {
 			return;
 		if (selectedSceneEntry == null) {
 			sceneInspector.setText("<html><b>Inspector</b><br>Select an object to view its position.</html>");
+			setRotationControlsEnabled(false);
 			return;
 		}
 		String position = selectedSceneEntry.channel == 3
 				? selectedSceneEntry.x + ", " + selectedSceneEntry.y + " px"
 				: selectedSceneEntry.x + ", " + selectedSceneEntry.y + " tiles";
+		String rotation = selectedSceneEntry.channel == 3
+				? "<br>Rotation: " + selectedSceneEntry.decoration.getRotationDegrees() + "°"
+				: "";
 		sceneInspector.setText("<html><b>Inspector</b><br>" + selectedSceneEntry.label + "<br>Position: "
-				+ position + "</html>");
+				+ position + rotation + "</html>");
+		setRotationControlsEnabled(selectedSceneEntry.channel == 3);
+	}
+
+	private void setRotationControlsEnabled(boolean enabled) {
+		if (rotateLeftButton != null) rotateLeftButton.setEnabled(enabled);
+		if (rotateRightButton != null) rotateRightButton.setEnabled(enabled);
+		if (resetRotationButton != null) resetRotationButton.setEnabled(enabled);
+	}
+
+	private void rotateSelectedDecoration(int degrees) {
+		if (selectedSceneEntry == null || selectedSceneEntry.channel != 3)
+			return;
+		setSelectedDecorationRotation(selectedSceneEntry.decoration.getRotationDegrees() + degrees);
+	}
+
+	private void setSelectedDecorationRotation(int degrees) {
+		if (selectedSceneEntry == null || selectedSceneEntry.channel != 3)
+			return;
+		LevelDecoration old = selectedSceneEntry.decoration;
+		int rotation = Math.floorMod(degrees, 360);
+		if (rotation == old.getRotationDegrees())
+			return;
+		recordHistory();
+		LevelDecoration rotated = new LevelDecoration(old.getX(), old.getY(), old.getWidth(), old.getHeight(),
+				rotation, old.getAssetPath(), old.getImage());
+		placedDecorations.set(placedDecorations.indexOf(old), rotated);
+		selectedSceneEntry = new SceneEntry(selectedSceneEntry.label, rotated.getX(), rotated.getY(), 3, rotated);
+		unsavedChanges = true;
+		updateSceneInspector();
+		canvas.repaint();
+		status.setText("Decoration rotated to " + rotation + "°.");
 	}
 
 	private void deleteSelectedSceneObject() {
@@ -433,8 +492,7 @@ public class GameEditor {
 			SceneEntry candidate = sceneModel.get(i);
 			if (candidate.channel == 3) {
 				LevelDecoration decoration = candidate.decoration;
-				if (px >= decoration.getX() && px < decoration.getX() + decoration.getWidth()
-						&& py >= decoration.getY() && py < decoration.getY() + decoration.getHeight()) {
+				if (containsDecorationPoint(decoration, px, py)) {
 					found = candidate;
 					break;
 				}
@@ -464,6 +522,18 @@ public class GameEditor {
 		sceneObjectMoved = false;
 	}
 
+	private boolean containsDecorationPoint(LevelDecoration decoration, int px, int py) {
+		double centerX = decoration.getX() + decoration.getWidth() / 2.0;
+		double centerY = decoration.getY() + decoration.getHeight() / 2.0;
+		double radians = Math.toRadians(-decoration.getRotationDegrees());
+		double dx = px - centerX;
+		double dy = py - centerY;
+		double localX = dx * Math.cos(radians) - dy * Math.sin(radians) + centerX;
+		double localY = dx * Math.sin(radians) + dy * Math.cos(radians) + centerY;
+		return localX >= decoration.getX() && localX < decoration.getX() + decoration.getWidth()
+				&& localY >= decoration.getY() && localY < decoration.getY() + decoration.getHeight();
+	}
+
 	private void moveSelectedSceneObject(MouseEvent event) {
 		if (selectedSceneEntry == null)
 			return;
@@ -483,7 +553,7 @@ public class GameEditor {
 				sceneObjectMoved = true;
 			}
 			LevelDecoration moved = new LevelDecoration(targetX, targetY, old.getWidth(), old.getHeight(),
-					old.getAssetPath(), old.getImage());
+					old.getRotationDegrees(), old.getAssetPath(), old.getImage());
 			int index = placedDecorations.indexOf(old);
 			placedDecorations.set(index, moved);
 			String name = current.label.substring(0, current.label.lastIndexOf("  •  "));
@@ -1205,7 +1275,7 @@ public class GameEditor {
 					newPixelHeight - Math.max(0, decorationY));
 			if (clippedWidth > 0 && clippedHeight > 0)
 				resizedDecorations.add(new LevelDecoration(decoration.getX(), Math.max(0, decorationY), clippedWidth,
-					clippedHeight, decoration.getAssetPath(), decoration.getImage()));
+					clippedHeight, decoration.getRotationDegrees(), decoration.getAssetPath(), decoration.getImage()));
 		}
 		placedDecorations.clear();
 		placedDecorations.addAll(resizedDecorations);
@@ -1400,15 +1470,16 @@ public class GameEditor {
 		for (String line : Files.readAllLines(sidecar)) {
 			if (line.isBlank())
 				continue;
-			String[] fields = line.split("\\t", 5);
-			if (fields.length != 5)
+			String[] fields = line.split("\\t", 6);
+			if (fields.length != 5 && fields.length != 6)
 				continue;
 			try {
 				int x = Integer.parseInt(fields[0]);
 				int y = Integer.parseInt(fields[1]);
 				int width = Integer.parseInt(fields[2]);
 				int height = Integer.parseInt(fields[3]);
-				Path asset = projectRoot.resolve(fields[4]).normalize();
+				int rotation = fields.length == 6 ? Integer.parseInt(fields[4]) : 0;
+				Path asset = projectRoot.resolve(fields[fields.length - 1]).normalize();
 				boolean validCategory = asset.startsWith(assetsRoot.resolve("Building"))
 						|| asset.startsWith(assetsRoot.resolve("Environment"));
 				if (x < 0 || y < 0 || x >= image.getWidth() * TILE_SIZE || y >= image.getHeight() * TILE_SIZE
@@ -1416,7 +1487,7 @@ public class GameEditor {
 					continue;
 				BufferedImage decorationImage = ImageIO.read(asset.toFile());
 				if (decorationImage != null)
-					decorations.add(new LevelDecoration(x, y, width, height, asset, decorationImage));
+					decorations.add(new LevelDecoration(x, y, width, height, rotation, asset, decorationImage));
 			} catch (NumberFormatException ignored) {
 				// Skip malformed entries and continue opening the map.
 			}
@@ -1515,6 +1586,7 @@ public class GameEditor {
 						throw new IOException("Decoration image is missing: " + asset);
 					decorationLines.add(decoration.getX() + "\t" + decoration.getY() + "\t"
 							+ decoration.getWidth() + "\t" + decoration.getHeight() + "\t"
+							+ decoration.getRotationDegrees() + "\t"
 							+ projectRoot.relativize(asset).toString().replace('\\', '/'));
 				}
 				Files.write(decorationsSidecar, decorationLines);
@@ -1785,9 +1857,7 @@ public class GameEditor {
 					drawMarkers(g, pixel, px, py);
 				}
 			for (LevelDecoration decoration : placedDecorations)
-				g.drawImage(decoration.getImage
-			(), decoration.getX(), decoration.getY(), decoration.getWidth(),
-						decoration.getHeight(), null);
+				drawDecoration(g, decoration);
 			if (decorationPreviewPosition != null && selectedDecoration != null && selectedDecoration.image != null) {
 				g.setComposite(java.awt.AlphaComposite.SrcOver.derive(0.65f));
 				g.drawImage(selectedDecoration.image, decorationPreviewPosition.x, decorationPreviewPosition.y,
@@ -1807,13 +1877,29 @@ public class GameEditor {
 				g.setStroke(new java.awt.BasicStroke(2));
 				if (selectedSceneEntry.channel == 3) {
 					LevelDecoration decoration = selectedSceneEntry.decoration;
+					g.rotate(Math.toRadians(decoration.getRotationDegrees()),
+							decoration.getX() + decoration.getWidth() / 2.0,
+							decoration.getY() + decoration.getHeight() / 2.0);
 					g.drawRect(decoration.getX(), decoration.getY(), decoration.getWidth(), decoration.getHeight());
+					g.rotate(Math.toRadians(-decoration.getRotationDegrees()),
+							decoration.getX() + decoration.getWidth() / 2.0,
+							decoration.getY() + decoration.getHeight() / 2.0);
 				} else {
 					g.drawRect(selectedSceneEntry.x * TILE_SIZE, selectedSceneEntry.y * TILE_SIZE,
 							TILE_SIZE, TILE_SIZE);
 				}
 			}
 			g.dispose();
+		}
+
+		private void drawDecoration(Graphics2D graphics, LevelDecoration decoration) {
+			double centerX = decoration.getX() + decoration.getWidth() / 2.0;
+			double centerY = decoration.getY() + decoration.getHeight() / 2.0;
+			Graphics2D rotated = (Graphics2D) graphics.create();
+			rotated.rotate(Math.toRadians(decoration.getRotationDegrees()), centerX, centerY);
+			rotated.drawImage(decoration.getImage(), decoration.getX(), decoration.getY(),
+					decoration.getWidth(), decoration.getHeight(), null);
+			rotated.dispose();
 		}
 
 		private void drawBackground(Graphics2D g) {
