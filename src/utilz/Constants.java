@@ -332,13 +332,16 @@ public class Constants {
 		public static final int ATTACK_CHAIN_GRACE_TICKS = 80;
 
 		public static final AttackDefinition ATTACK_HORIZONTAL = new AttackDefinition(
-				0, 5, 2, 4, continuationFrameTicks(ATTACK_HORIZONTAL_FRAME_SECONDS), 10, 32, 24, 10, 4, 3);
+				0, 7, 2, 4, continuationFrameTicks(0.055f), 10, 64, 32, 0, 8, 3);
 		public static final AttackDefinition ATTACK_VERTICAL = new AttackDefinition(
-				6, 12, 8, 10, continuationFrameTicks(ATTACK_VERTICAL_FRAME_SECONDS), 20, 44, 34, 8, 0, 7);
+				8, 15, 2, 4, continuationFrameTicks(0.055f), 20, 80, 40, 0, 4, 7);
 		public static final UltimateHitDefinition[] ULTIMATE_HITS = {
-				new UltimateHitDefinition(2, 10, 96, 64, 0, 0, false),
-				new UltimateHitDefinition(5, 10, 96, 64, 0, 0, false),
-				new UltimateHitDefinition(8, 20, 96, 64, 0, 0, true)
+				new UltimateHitDefinition(7, 10, 96, 96, 0, 0, false),
+				new UltimateHitDefinition(8, 10, 96, 96, 0, 0, false),
+				new UltimateHitDefinition(9, 10, 96, 96, 0, 0, false),
+				new UltimateHitDefinition(10, 10, 96, 96, 0, 0, false),
+				new UltimateHitDefinition(11, 10, 96, 96, 0, 0, false),
+				new UltimateHitDefinition(12, 20, 96, 96, 0, 0, true)
 		};
 
 		public static class AttackDefinition {

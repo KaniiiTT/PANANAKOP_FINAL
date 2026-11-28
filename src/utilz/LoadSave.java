@@ -26,6 +26,9 @@ public class LoadSave {
 	public static final String MALE_PLAYER_ATLAS = "male_spritesheet.png";
 	public static final String MALE_PLAYER_CONTINUATION_ATLAS = "male_spritesheet_continuation.png";
 	public static final String FEMALE_PLAYER_ATLAS = "female_spritesheet.png";
+	public static final String FEMALE_LAPULAPU_ATLAS = "female_lapulapu_spritesheet.png";
+	public static final String FEMALE_LAPULAPU_ATTACK_ATLAS = "fLapu_attack.png";
+	public static final String FEMALE_LAPULAPU_ULTIMATE_ATLAS = "fLapu_ult.png";
 	public static final String PLAYER_ATLAS = MALE_PLAYER_ATLAS;
 	public static final String LEVEL_ATLAS = "outside_sprites.png";
 	public static final String MENU_BUTTONS = "button_atlas.png";

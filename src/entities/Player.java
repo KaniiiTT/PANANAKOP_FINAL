@@ -226,11 +226,16 @@ public class Player extends Entity {
 			return;
 		}
 		if (usingUltimate) {
+			UltimateHitDefinition hit = getUltimateHitDefinition(aniIndex);
 			AnimationDefinition animation = animationDefinitions[ULTIMATE];
-			attackBox.width = animation.frameWidth * Game.SCALE;
-			attackBox.height = animation.frameHeight * Game.SCALE;
-			attackBox.x = hitbox.x + hitbox.width / 2f - attackBox.width / 2f;
-			attackBox.y = hitbox.y + hitbox.height + PLAYER_SPRITE_OFFSET_Y * Game.SCALE - attackBox.height;
+			attackBox.width = (hit == null ? animation.frameWidth : hit.hitboxWidth) * Game.SCALE;
+			attackBox.height = (hit == null ? animation.frameHeight : hit.hitboxHeight) * Game.SCALE;
+			float offsetX = (hit == null ? 0 : hit.hitboxOffsetX) * Game.SCALE;
+			attackBox.x = flipW > 0 ? hitbox.x + hitbox.width + offsetX
+					: hitbox.x - attackBox.width - offsetX;
+			float offsetY = (hit == null ? 0 : hit.hitboxOffsetY) * Game.SCALE;
+			attackBox.y = hitbox.y + hitbox.height + PLAYER_SPRITE_OFFSET_Y * Game.SCALE
+					- attackBox.height + offsetY;
 			return;
 		}
 		if (dashing) {
@@ -255,16 +260,23 @@ public class Player extends Entity {
 		AnimationDefinition animation = animationDefinitions[state];
 		int frameWidth = (int) (animation.frameWidth * Game.SCALE);
 		int frameHeight = (int) (animation.frameHeight * Game.SCALE);
-		int anchorX = (int) (hitbox.x + hitbox.width / 2f) - lvlOffset;
 		int groundY = (int) (hitbox.y + hitbox.height + PLAYER_SPRITE_OFFSET_Y * Game.SCALE);
-		int drawX = anchorX - frameWidth / 2;
+		int drawX;
+		if (animation.leftAnchored) {
+			drawX = (int) hitbox.x - lvlOffset;
+			if (flipW == -1)
+				drawX += frameWidth;
+		} else {
+			int anchorX = (int) (hitbox.x + hitbox.width / 2f) - lvlOffset;
+			drawX = anchorX - frameWidth / 2;
+			if (flipW == -1)
+				drawX += frameWidth;
+		}
 		int drawY = groundY - frameHeight;
 		Graphics2D graphics = (Graphics2D) g.create();
 		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
 				RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 		graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
-		if (flipW == -1)
-			drawX += frameWidth;
 		graphics.drawImage(animations[state][aniIndex], drawX, drawY, frameWidth * flipW, frameHeight, null);
 		if (flashTimer > 0)
 			graphics.drawImage(whiteAnimations[state][aniIndex], drawX, drawY, frameWidth * flipW, frameHeight, null);
@@ -630,7 +642,9 @@ public class Player extends Entity {
 
 	private void loadAnimations() {
 		boolean splitMaleSheet = LoadSave.MALE_PLAYER_ATLAS.equals(spriteSheet);
-		animationDefinitions = splitMaleSheet ? createMaleAnimationDefinitions() : createLegacyAnimationDefinitions();
+		boolean femaleSheet = LoadSave.FEMALE_PLAYER_ATLAS.equals(spriteSheet);
+		animationDefinitions = splitMaleSheet ? createMaleAnimationDefinitions()
+				: femaleSheet ? createFemaleAnimationDefinitions() : createLegacyAnimationDefinitions();
 		animations = new BufferedImage[animationDefinitions.length][];
 		whiteAnimations = new BufferedImage[animationDefinitions.length][];
 		for (int state = 0; state < animationDefinitions.length; state++) {
@@ -639,9 +653,14 @@ public class Player extends Entity {
 			validateSheet(animation, sheet);
 			animations[state] = new BufferedImage[animation.frameCount];
 			whiteAnimations[state] = new BufferedImage[animation.frameCount];
-			for (int frame = 0; frame < animation.frameCount; frame++)
-				animations[state][frame] = sheet.getSubimage(frame * animation.frameWidth,
-						animation.row * animation.frameHeight, animation.frameWidth, animation.frameHeight);
+			for (int frame = 0; frame < animation.frameCount; frame++) {
+				int sourceCell = animation.sourceStartCell + frame;
+				int sourceX = animation.sourceColumns > 0 ? (sourceCell % animation.sourceColumns) * animation.frameWidth
+						: frame * animation.frameWidth;
+				int sourceY = animation.sourceColumns > 0 ? (sourceCell / animation.sourceColumns) * animation.frameHeight
+						: animation.row * animation.frameHeight;
+				animations[state][frame] = sheet.getSubimage(sourceX, sourceY, animation.frameWidth, animation.frameHeight);
+			}
 			for (int frame = 0; frame < animation.frameCount; frame++)
 				whiteAnimations[state][frame] = HitEffects.whiteSilhouette(animations[state][frame]);
 		}
@@ -682,9 +701,42 @@ public class Player extends Entity {
 		return definitions;
 	}
 
+	private AnimationDefinition[] createFemaleAnimationDefinitions() {
+		String main = LoadSave.FEMALE_LAPULAPU_ATLAS;
+		String attack = LoadSave.FEMALE_LAPULAPU_ATTACK_ATLAS;
+		String ultimate = LoadSave.FEMALE_LAPULAPU_ULTIMATE_ATLAS;
+		return new AnimationDefinition[] {
+			new AnimationDefinition(main, 64, 64, 0, 8, 8, 30, true, false, true),
+			new AnimationDefinition(main, 64, 64, 8, 8, 8, 20, true, false, true),
+			new AnimationDefinition(main, 64, 64, 16, 8, 8, 14, true, false, true),
+			new AnimationDefinition(attack, 96, 64, 1, 5, 16, 11, false, false, true),
+			new AnimationDefinition(main, 64, 64, 40, 8, 8, 20, false, true, true),
+			new AnimationDefinition(main, 64, 64, 48, 8, 8, 12, false, false, true),
+			new AnimationDefinition(main, 64, 64, 32, 8, 8, 18, false, false, true),
+			new AnimationDefinition(main, 64, 64, 24, 8, 8, 20, false, true, true),
+			new AnimationDefinition(main, 64, 64, 24, 8, 8, 20, false, true, true),
+			new AnimationDefinition(main, 64, 64, 32, 8, 8, 18, true, false, true),
+			new AnimationDefinition(main, 64, 64, 24, 8, 8, 20, false, false, true),
+			new AnimationDefinition(main, 64, 64, 56, 8, 8, 24, false, true, true),
+			new AnimationDefinition(main, 64, 64, 56, 8, 8, 24, false, true, true),
+			// The new female sheets have no dedicated dash row; reuse the new run frames
+			// so dash never falls back to the legacy female sprite sheet.
+			new AnimationDefinition(main, 64, 64, 16, 8, 8, continuationFrameTicks(DASH_FRAME_SECONDS), true, false, true),
+			new AnimationDefinition(ultimate, 96, 96, 1, 5, 16, 14, false, false, true)
+		};
+	}
+
 	private void validateSheet(AnimationDefinition animation, BufferedImage sheet) {
-		int requiredWidth = animation.frameWidth * animation.frameCount;
-		int requiredHeight = animation.frameHeight * (animation.row + 1);
+		int requiredWidth;
+		int requiredHeight;
+		if (animation.sourceColumns > 0) {
+			int lastCell = animation.sourceStartCell + animation.frameCount - 1;
+			requiredWidth = animation.sourceColumns * animation.frameWidth;
+			requiredHeight = (lastCell / animation.sourceColumns + 1) * animation.frameHeight;
+		} else {
+			requiredWidth = animation.frameWidth * animation.frameCount;
+			requiredHeight = animation.frameHeight * (animation.row + 1);
+		}
 		if (sheet.getWidth() < requiredWidth || sheet.getHeight() < requiredHeight)
 			throw new IllegalStateException("Sprite sheet '" + animation.sheet + "' is too small for player animation row "
 					+ animation.row + ". Expected at least " + requiredWidth + "x" + requiredHeight + ".");
@@ -714,24 +766,45 @@ public class Player extends Entity {
 	private static class AnimationDefinition {
 		private final String sheet;
 		private final int frameWidth, frameHeight, row, frameCount;
+		private final int sourceStartCell, sourceColumns;
 		private final int introFrameDelay, frameDelay, initialFrame, introEndFrame;
 		private final int loopStartFrame, loopEndFrame;
 		private final boolean looping, holdFinalFrame;
+		private final boolean leftAnchored;
 
 		private AnimationDefinition(String sheet, int frameWidth, int frameHeight, int row, int frameCount,
 				int frameDelay, boolean looping, boolean holdFinalFrame) {
 			this(sheet, frameWidth, frameHeight, row, frameCount, frameDelay, frameDelay, looping ? RUN_START_FRAME : 0,
-					-1, looping ? RUN_START_FRAME : 0, looping ? frameCount - 1 : -1, looping, holdFinalFrame);
+					-1, looping ? RUN_START_FRAME : 0, looping ? frameCount - 1 : -1, looping, holdFinalFrame,
+					0, 0, false);
+		}
+
+		private AnimationDefinition(String sheet, int frameWidth, int frameHeight, int sourceStartCell,
+				int sourceColumns, int frameCount, int frameDelay, boolean looping, boolean holdFinalFrame,
+				boolean leftAnchored) {
+			this(sheet, frameWidth, frameHeight, 0, frameCount, frameDelay, frameDelay, 0, -1,
+					looping ? RUN_START_FRAME : 0, looping ? frameCount - 1 : -1, looping, holdFinalFrame,
+					sourceStartCell, sourceColumns, leftAnchored);
 		}
 
 		private AnimationDefinition(String sheet, int frameWidth, int frameHeight, int row, int frameCount,
 				int introFrameDelay, int frameDelay, int initialFrame, int introEndFrame, int loopStartFrame,
 				int loopEndFrame, boolean looping, boolean holdFinalFrame) {
+			this(sheet, frameWidth, frameHeight, row, frameCount, introFrameDelay, frameDelay, initialFrame,
+					introEndFrame, loopStartFrame, loopEndFrame, looping, holdFinalFrame, 0, 0, false);
+		}
+
+		private AnimationDefinition(String sheet, int frameWidth, int frameHeight, int row, int frameCount,
+				int introFrameDelay, int frameDelay, int initialFrame, int introEndFrame, int loopStartFrame,
+				int loopEndFrame, boolean looping, boolean holdFinalFrame, int sourceStartCell, int sourceColumns,
+				boolean leftAnchored) {
 			this.sheet = sheet;
 			this.frameWidth = frameWidth;
 			this.frameHeight = frameHeight;
 			this.row = row;
 			this.frameCount = frameCount;
+			this.sourceStartCell = sourceStartCell;
+			this.sourceColumns = sourceColumns;
 			this.introFrameDelay = introFrameDelay;
 			this.frameDelay = frameDelay;
 			this.initialFrame = initialFrame;
@@ -740,6 +813,7 @@ public class Player extends Entity {
 			this.loopEndFrame = loopEndFrame;
 			this.looping = looping;
 			this.holdFinalFrame = holdFinalFrame;
+			this.leftAnchored = leftAnchored;
 		}
 
 		private boolean hasIntro() {
@@ -779,7 +853,8 @@ public class Player extends Entity {
 		if (!attacking)
 			return;
 		if (attackPhase == AttackPhase.HORIZONTAL) {
-			attackQueued = true;
+			if (aniIndex >= ATTACK_HORIZONTAL.hitActiveEnd)
+				attackQueued = true;
 			return;
 		}
 		if (attackPhase == AttackPhase.VERTICAL) {
