@@ -53,6 +53,8 @@ public class GameEditor {
 	private static final int TILE_SIZE = 32;
 	private static final int EMPTY_TILE = 11;
 	private static final int NO_MARKER = 255;
+	private static final int MIN_MAP_HEIGHT = 1;
+	private static final int MAX_MAP_SIZE = 500;
 	private static final StageOption[] STAGES = {
 			new StageOption(1, "Stage 1: Tutorial"),
 			new StageOption(2, "Stage 2"),
@@ -360,6 +362,8 @@ public class GameEditor {
 		materialPicker = new JComboBox<>();
 		materialPicker.addItem("Classic tiles");
 		materialPicker.addItem("Platformer");
+		materialPicker.addItem("Ground");
+		materialPicker.addItem("Ground Beach");
 		materialPicker.addActionListener(event -> refreshTilePalette());
 
 		tileList = new JList<>();
@@ -637,7 +641,7 @@ public class GameEditor {
 							.forEach(path -> {
 								try {
 									BufferedImage image = ImageIO.read(path.toFile());
-									if (image == null)
+								if (image == null || !hasVisiblePixel(image))
 										return;
 									String relativePath = projectRoot.relativize(path).toString().replace('\\', '/');
 									String label = path.getFileName().toString().replaceFirst("(?i)\\.png$", "");
@@ -659,6 +663,16 @@ public class GameEditor {
 		tileList.setListData(options.toArray(new TileOption[0]));
 	}
 
+	private boolean hasVisiblePixel(BufferedImage image) {
+		if (!image.getColorModel().hasAlpha())
+			return true;
+		for (int y = 0; y < image.getHeight(); y++)
+			for (int x = 0; x < image.getWidth(); x++)
+				if ((image.getRGB(x, y) >>> 24) != 0)
+					return true;
+		return false;
+	}
+
 	private BufferedImage[] loadClassicTiles() {
 		BufferedImage atlas = LoadSave.GetSpriteAtlas(LoadSave.LEVEL_ATLAS);
 		BufferedImage[] tiles = new BufferedImage[48];
@@ -670,26 +684,33 @@ public class GameEditor {
 	private void createNewMap() {
 		if (!confirmDiscardChanges())
 			return;
-		String widthInput = JOptionPane.showInputDialog(frame, "Map width in tiles (height is fixed at 14):",
-				"50");
-		if (widthInput == null)
+		JPanel panel = new JPanel(new java.awt.GridLayout(2, 2, 8, 8));
+		JSpinner widthSpinner = new JSpinner(new SpinnerNumberModel(50, Game.TILES_IN_WIDTH, MAX_MAP_SIZE, 1));
+		JSpinner heightSpinner = new JSpinner(new SpinnerNumberModel(Game.TILES_IN_HEIGHT, MIN_MAP_HEIGHT,
+				MAX_MAP_SIZE, 1));
+		panel.add(new JLabel("Width in tiles:"));
+		panel.add(widthSpinner);
+		panel.add(new JLabel("Height in tiles:"));
+		panel.add(heightSpinner);
+		int answer = JOptionPane.showConfirmDialog(frame, panel, "New map",
+				JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+		if (answer != JOptionPane.OK_OPTION)
 			return;
 
 		try {
-			int width = Integer.parseInt(widthInput.trim());
-			if (width < Game.TILES_IN_WIDTH || width > 500)
-				throw new NumberFormatException();
+			int width = (Integer) widthSpinner.getValue();
+			int height = (Integer) heightSpinner.getValue();
 			int nextLevel = nextLevelNumber();
 			Path newMapPath = levelsDirectory.resolve(nextLevel + ".png");
 			if (Files.exists(newMapPath)) {
-				int answer = JOptionPane.showConfirmDialog(frame,
+				int replaceAnswer = JOptionPane.showConfirmDialog(frame,
 						newMapPath.getFileName() + " already exists. Replace it?",
 						"Confirm replace", JOptionPane.YES_NO_OPTION);
-				if (answer != JOptionPane.YES_OPTION)
+				if (replaceAnswer != JOptionPane.YES_OPTION)
 					return;
 			}
-			mapImage = new BufferedImage(width, Game.TILES_IN_HEIGHT, BufferedImage.TYPE_INT_RGB);
-			modernTilePaths = new String[Game.TILES_IN_HEIGHT][width];
+			mapImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+			modernTilePaths = new String[height][width];
 			placedDecorations.clear();
 			for (int y = 0; y < mapImage.getHeight(); y++)
 				for (int x = 0; x < mapImage.getWidth(); x++)
@@ -703,10 +724,11 @@ public class GameEditor {
 			syncStagePicker();
 			syncBackgroundSelection();
 			updateCanvas();
-			status.setText("New " + width + " × " + Game.TILES_IN_HEIGHT + " map.");
+			status.setText("New " + width + " x " + height + " map.");
 		} catch (NumberFormatException e) {
-			JOptionPane.showMessageDialog(frame, "Map width must be a whole number from "
-					+ Game.TILES_IN_WIDTH + " to 500.",
+			JOptionPane.showMessageDialog(frame, "Map width must be from " + Game.TILES_IN_WIDTH
+					+ " to " + MAX_MAP_SIZE + " and height must be from " + MIN_MAP_HEIGHT + " to "
+					+ MAX_MAP_SIZE + ".",
 					"Invalid map size", JOptionPane.ERROR_MESSAGE);
 		}
 	}
@@ -716,11 +738,16 @@ public class GameEditor {
 			return;
 
 		JPanel panel = new JPanel(new BorderLayout(8, 8));
+		JPanel sizePanel = new JPanel(new java.awt.GridLayout(2, 2, 8, 8));
 		JSpinner widthSpinner = new JSpinner(new SpinnerNumberModel(mapImage.getWidth(),
-				Game.TILES_IN_WIDTH, 500, 1));
-		panel.add(new JLabel("Width in tiles (height is fixed at " + Game.TILES_IN_HEIGHT + ")"),
-				BorderLayout.NORTH);
-		panel.add(widthSpinner, BorderLayout.CENTER);
+				Game.TILES_IN_WIDTH, MAX_MAP_SIZE, 1));
+		JSpinner heightSpinner = new JSpinner(new SpinnerNumberModel(mapImage.getHeight(),
+				MIN_MAP_HEIGHT, MAX_MAP_SIZE, 1));
+		sizePanel.add(new JLabel("Width in tiles:"));
+		sizePanel.add(widthSpinner);
+		sizePanel.add(new JLabel("Height in tiles:"));
+		sizePanel.add(heightSpinner);
+		panel.add(sizePanel, BorderLayout.CENTER);
 
 		int answer = JOptionPane.showConfirmDialog(frame, panel, "Resize map",
 				JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
@@ -728,13 +755,16 @@ public class GameEditor {
 			return;
 
 		int newWidth = (Integer) widthSpinner.getValue();
-		if (newWidth == mapImage.getWidth())
+		int newHeight = (Integer) heightSpinner.getValue();
+		if (newWidth == mapImage.getWidth() && newHeight == mapImage.getHeight())
 			return;
-		if (newWidth < mapImage.getWidth()) {
-			int removedColumns = mapImage.getWidth() - newWidth;
+		if (newWidth < mapImage.getWidth() || newHeight < mapImage.getHeight()) {
+			int removedColumns = Math.max(0, mapImage.getWidth() - newWidth);
+			int removedRows = Math.max(0, mapImage.getHeight() - newHeight);
 			int confirm = JOptionPane.showConfirmDialog(frame,
-					"This will remove the rightmost " + removedColumns + " column"
-							+ (removedColumns == 1 ? "" : "s") + " and anything placed there. Continue?",
+					"This will remove " + removedColumns + " column" + (removedColumns == 1 ? "" : "s")
+							+ " and " + removedRows + " row" + (removedRows == 1 ? "" : "s")
+							+ " from the top/right edges, including anything placed there. Continue?",
 					"Confirm resize", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 			if (confirm != JOptionPane.YES_OPTION)
 				return;
@@ -744,13 +774,16 @@ public class GameEditor {
 		BufferedImage oldImage = mapImage;
 		String[][] oldModernTilePaths = modernTilePaths;
 		int oldWidth = oldImage.getWidth();
-		mapImage = new BufferedImage(newWidth, oldImage.getHeight(), BufferedImage.TYPE_INT_RGB);
-		modernTilePaths = new String[oldImage.getHeight()][newWidth];
+		int oldHeight = oldImage.getHeight();
+		int verticalOffset = newHeight - oldHeight;
+		mapImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
+		modernTilePaths = new String[newHeight][newWidth];
 		for (int y = 0; y < mapImage.getHeight(); y++) {
 			for (int x = 0; x < newWidth; x++) {
-				if (x < oldWidth) {
-					mapImage.setRGB(x, y, oldImage.getRGB(x, y));
-					modernTilePaths[y][x] = oldModernTilePaths[y][x];
+				int oldY = y - verticalOffset;
+				if (x < oldWidth && oldY >= 0 && oldY < oldHeight) {
+					mapImage.setRGB(x, y, oldImage.getRGB(x, oldY));
+					modernTilePaths[y][x] = oldModernTilePaths[oldY][x];
 				} else {
 					setPixel(x, y, EMPTY_TILE, NO_MARKER, NO_MARKER);
 				}
@@ -759,12 +792,18 @@ public class GameEditor {
 
 		List<LevelDecoration> resizedDecorations = new ArrayList<>();
 		int newPixelWidth = newWidth * TILE_SIZE;
+		int newPixelHeight = newHeight * TILE_SIZE;
 		for (LevelDecoration decoration : placedDecorations) {
-			if (decoration.getX() >= newPixelWidth)
+			int decorationY = decoration.getY() + verticalOffset * TILE_SIZE;
+			if (decoration.getX() >= newPixelWidth || decorationY >= newPixelHeight)
 				continue;
 			int clippedWidth = Math.min(decoration.getWidth(), newPixelWidth - decoration.getX());
-			resizedDecorations.add(new LevelDecoration(decoration.getX(), decoration.getY(), clippedWidth,
-					decoration.getHeight(), decoration.getAssetPath(), decoration.getImage()));
+			int clippedTop = Math.max(0, -decorationY);
+			int clippedHeight = Math.min(decoration.getHeight() - clippedTop,
+					newPixelHeight - Math.max(0, decorationY));
+			if (clippedWidth > 0 && clippedHeight > 0)
+				resizedDecorations.add(new LevelDecoration(decoration.getX(), Math.max(0, decorationY), clippedWidth,
+					clippedHeight, decoration.getAssetPath(), decoration.getImage()));
 		}
 		placedDecorations.clear();
 		placedDecorations.addAll(resizedDecorations);
@@ -885,8 +924,10 @@ public class GameEditor {
 			BufferedImage loadedImage = ImageIO.read(path.toFile());
 			if (loadedImage == null)
 				throw new IOException("Unsupported or empty image: " + path);
-			if (loadedImage.getHeight() != Game.TILES_IN_HEIGHT)
-				throw new IOException("Level maps must be " + Game.TILES_IN_HEIGHT + " tiles high.");
+			if (loadedImage.getWidth() < Game.TILES_IN_WIDTH || loadedImage.getWidth() > MAX_MAP_SIZE
+					|| loadedImage.getHeight() < MIN_MAP_HEIGHT || loadedImage.getHeight() > MAX_MAP_SIZE)
+				throw new IOException("Level maps must be " + Game.TILES_IN_WIDTH + "-" + MAX_MAP_SIZE
+						+ " tiles wide and " + MIN_MAP_HEIGHT + "-" + MAX_MAP_SIZE + " tiles high.");
 
 			BufferedImage normalized = new BufferedImage(loadedImage.getWidth(), loadedImage.getHeight(),
 					BufferedImage.TYPE_INT_RGB);
