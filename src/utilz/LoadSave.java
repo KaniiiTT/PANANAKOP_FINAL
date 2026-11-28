@@ -292,7 +292,7 @@ public class LoadSave {
 				Path imagePath = projectRoot.resolve(fields[fields.length - 1]).normalize();
 				boolean allowedCategory = imagePath.startsWith(assetsRoot.resolve("Building"))
 						|| imagePath.startsWith(assetsRoot.resolve("Environment"));
-				if (x < 0 || y < 0 || width < 1 || height < 1 || !allowedCategory
+				if (width < 1 || height < 1 || !allowedCategory
 						|| !Files.isRegularFile(imagePath))
 					throw new IOException("Invalid decoration entry: " + line);
 				BufferedImage image = ImageIO.read(imagePath.toFile());
