@@ -18,6 +18,7 @@ public class Gorilla extends Enemy {
 	private static final float SPRITE_SCALE = 2f;
 	private static final int SIGHT_RANGE = 450;
 	private static final int SLAM_RANGE = 96;
+	private static final int LEAP_RANGE = 220;
 	private static final int VERTICAL_TOLERANCE = 64;
 	private static final int MAX_HEALTH = 80;
 	private static final int SLAM_DAMAGE = 25;
@@ -112,8 +113,10 @@ public class Gorilla extends Enemy {
 		if (canAttack()) {
 			if (distance <= SLAM_RANGE * Game.SCALE)
 				startAttack(AttackType.SLAM, player);
-			else
+			else if (distance >= LEAP_RANGE * Game.SCALE)
 				startAttack(AttackType.LEAP, player);
+			else
+				moveTowardPlayer(lvlData, player);
 			return;
 		}
 		if (distance > SLAM_RANGE * Game.SCALE)
