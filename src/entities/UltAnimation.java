@@ -14,8 +14,8 @@ import java.util.Random;
 /** Visual timing and impact effects for the male Lapulapu ultimate. */
 public class UltAnimation {
 	private static final int UPS = 200;
-	private static final int ULT_HOLD_FRAME = 10;
-	public static final int ULT_IMPACT_FRAME = 11;
+	private static final int ULT_HOLD_FRAME = 9;
+	public static final int ULT_IMPACT_FRAME = 10;
 
 	// ---- timings (seconds, converted to ticks with UPS) ----
 	private static final float HOLD_SECONDS = 0.33f;
