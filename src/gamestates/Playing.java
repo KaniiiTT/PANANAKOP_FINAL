@@ -96,7 +96,7 @@ public class Playing extends State implements Statemethods {
         player.setSpawn(levelManager.getCurrentLevel().getPlayerSpawn());
 
         calcLvlOffset();
-        xLvlOffset = 0;
+        focusCameraOnPlayer();
     }
 
     public void startLevel(int levelIndex) {
@@ -104,13 +104,15 @@ public class Playing extends State implements Statemethods {
         levelManager.loadLevel(levelIndex);
         player.setSpawn(levelManager.getCurrentLevel().getPlayerSpawn());
         calcLvlOffset();
-        xLvlOffset = 0;
+        focusCameraOnPlayer();
         areaTitle.showLevel(levelIndex + 1);
     }
 
     private void loadStartLevel() {
+        player.setSpawn(levelManager.getCurrentLevel().getPlayerSpawn());
         enemyManager.loadEnemies(levelManager.getCurrentLevel());
         objectManager.loadObjects(levelManager.getCurrentLevel());
+        focusCameraOnPlayer();
     }
 
     private void calcLvlOffset() {
@@ -230,6 +232,13 @@ public class Playing extends State implements Statemethods {
         if (Math.abs(targetOffset - xLvlOffset) < 0.5f) {
             xLvlOffset = targetOffset;
         }
+    }
+
+    /** Places the camera on the player's spawn immediately when a level starts. */
+    private void focusCameraOnPlayer() {
+        float playerCenterX = player.getHitbox().x + player.getHitbox().width / 2f;
+        float targetOffset = playerCenterX - Game.GAME_WIDTH / 2f;
+        xLvlOffset = Math.max(0, Math.min(targetOffset, maxLvlOffsetX));
     }
 
     @Override
