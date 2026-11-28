@@ -743,7 +743,8 @@ public class Player extends Entity {
 			new AnimationDefinition(main, 64, 64, 40, 8, 8, 20, false, true, false, 7),
 			new AnimationDefinition(main, 64, 64, 48, 8, 8, 12, false, false, false, 7),
 			new AnimationDefinition(main, 64, 64, 32, 8, 8, 18, false, false, false, 7),
-			new AnimationDefinition(main, 64, 64, 24, 8, 8, 20, false, true, false, 7),
+			new AnimationDefinition(main, 64, 64, 0, 8, 20, 20, 3, -1, 3, 7, false, true,
+					24, 8, false, 7),
 			new AnimationDefinition(main, 64, 64, 24, 8, 8, 20, false, true, false, 7),
 			new AnimationDefinition(main, 64, 64, 32, 8, 8, 18, true, false, false, 7),
 			new AnimationDefinition(main, 64, 64, 24, 8, 8, 20, false, false, false, 7),
@@ -916,8 +917,6 @@ public class Player extends Entity {
 	}
 
 	public void setRunning(boolean running) {
-		if (femaleSheet && usingUltimate && running)
-			return;
 		this.running = running;
 	}
 
@@ -984,8 +983,6 @@ public class Player extends Entity {
 	}
 
 	public void setLeft(boolean left) {
-		if (femaleSheet && usingUltimate && left)
-			return;
 		this.left = left;
 	}
 
@@ -994,8 +991,6 @@ public class Player extends Entity {
 	}
 
 	public void setRight(boolean right) {
-		if (femaleSheet && usingUltimate && right)
-			return;
 		this.right = right;
 	}
 
