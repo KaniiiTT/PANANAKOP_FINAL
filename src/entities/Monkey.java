@@ -48,6 +48,7 @@ public class Monkey extends Enemy {
 
 	public void update(int[][] lvlData, Player player) {
 		updateAttackCooldown();
+		updateAttackBox();
 		if (firstUpdate) {
 			tileY = (int) (hitbox.y / Game.TILES_SIZE);
 			firstUpdateCheck(lvlData);
