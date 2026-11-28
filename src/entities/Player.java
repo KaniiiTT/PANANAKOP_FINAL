@@ -632,6 +632,8 @@ public class Player extends Entity {
 	}
 
 	public void changeHealth(int value) {
+		if (dashing && value < 0)
+			return;
 		if (blocking && value < 0)
 			return;
 		if (value < 0)
