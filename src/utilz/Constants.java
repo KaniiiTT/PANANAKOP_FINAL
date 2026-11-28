@@ -97,6 +97,8 @@ public class Constants {
 		public static final int CONQUISTADOR = 3;
 		/** Green channel marker used by the editor and level loader for Espinosa. */
 		public static final int ESPINOSA = 4;
+		/** Green channel marker used by the editor and level loader for Monkey. */
+		public static final int MONKEY = 5;
 
 		public static final int IDLE = 0;
 		public static final int RUNNING = 1;
@@ -197,6 +199,8 @@ public class Constants {
 				case DEAD -> 8;
 				default -> 1;
 				};
+			case MONKEY:
+				return 8;
 			}
 
 			return 0;
@@ -213,6 +217,8 @@ public class Constants {
 				return 20;
 			case CONQUISTADOR:
 				return 30;
+			case MONKEY:
+				return 10;
 			default:
 				return 1;
 			}
@@ -228,6 +234,8 @@ public class Constants {
 				return 20;
 			case CONQUISTADOR:
 				return 25;
+			case MONKEY:
+				return 15;
 			default:
 				return 0;
 			}

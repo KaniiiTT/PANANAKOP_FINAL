@@ -1,6 +1,7 @@
 package utilz;
 
 import static utilz.Constants.EnemyConstants.ESPINOSA;
+import static utilz.Constants.EnemyConstants.MONKEY;
 import entities.Espinosa;
 import static utilz.Constants.EnemyConstants.CRABBY;
 import static utilz.Constants.EnemyConstants.MAGELLAN;
@@ -18,6 +19,7 @@ import entities.Crabby;
 import entities.Magellan;
 import entities.Boar;
 import entities.Conquistador;
+import entities.Monkey;
 import main.Game;
 import objects.Cannon;
 import objects.GameContainer;
@@ -197,6 +199,15 @@ public class HelpMethods {
 		for (int i = 0; i < img.getWidth(); i++)
 			if (new Color(img.getRGB(i, j)).getGreen() == ESPINOSA)
 					list.add(new Espinosa(i * Game.TILES_SIZE, j * Game.TILES_SIZE));
+		return list;
+	}
+
+	public static ArrayList<Monkey> GetMonkeys(BufferedImage img) {
+		ArrayList<Monkey> list = new ArrayList<>();
+		for (int j = 0; j < img.getHeight(); j++)
+			for (int i = 0; i < img.getWidth(); i++)
+				if (new Color(img.getRGB(i, j)).getGreen() == MONKEY)
+					list.add(new Monkey(i * Game.TILES_SIZE, j * Game.TILES_SIZE));
 		return list;
 	}
 

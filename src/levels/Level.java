@@ -10,6 +10,7 @@ import entities.Magellan;
 import entities.Boar;
 import entities.Conquistador;
 import entities.Espinosa;
+import entities.Monkey;
 import main.Game;
 import objects.Cannon;
 import objects.GameContainer;
@@ -33,6 +34,7 @@ public class Level {
 	private ArrayList<Boar> boars;
 	private ArrayList<Conquistador> conquistadors;
 	private ArrayList<Espinosa> espinosas;          // with the other enemy lists
+	private ArrayList<Monkey> monkeys;
 	private ArrayList<Potion> potions;
 	private ArrayList<Spike> spikes;
 	private ArrayList<Trap> traps;
@@ -108,6 +110,7 @@ public class Level {
 		boars = HelpMethods.GetBoars(img);
 		conquistadors = HelpMethods.GetConquistadors(img);
 		espinosas = HelpMethods.GetEspinosas(img);
+		monkeys = HelpMethods.GetMonkeys(img);
 	}
 
 	private void createLevelData() {
@@ -160,6 +163,10 @@ public class Level {
 	}
 	public ArrayList<Espinosa> getEspinosas() {
 		return espinosas;
+	}
+
+	public ArrayList<Monkey> getMonkeys() {
+		return monkeys;
 	}
 
 	public Point getPlayerSpawn() {

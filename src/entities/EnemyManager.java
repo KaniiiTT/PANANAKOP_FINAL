@@ -27,6 +27,7 @@ public class EnemyManager {
 	private ArrayList<Conquistador> conquistadors = new ArrayList<>();
 	private ArrayList<Magellan> magellans = new ArrayList<>();
 	private ArrayList<Espinosa> espinosas = new ArrayList<>();
+	private ArrayList<Monkey> monkeys = new ArrayList<>();
 
 	public EnemyManager(Playing playing) {
 		this.playing = playing;
@@ -39,6 +40,7 @@ public class EnemyManager {
 		conquistadors = level.getConquistadors();
 		magellans = level.getMagellans();
 		espinosas = level.getEspinosas();
+		monkeys = level.getMonkeys();
 	}
 
 	public void update(int[][] lvlData, Player player) {
@@ -70,6 +72,11 @@ public class EnemyManager {
 				if (!e.isDefeated())
 					isAnyActive = true;
 			}
+		for (Monkey monkey : monkeys)
+			if (monkey.isActive()) {
+				monkey.update(lvlData, player);
+				isAnyActive = true;
+			}
 		if (!isAnyActive)
 			playing.setLevelCompleted(true);
 	}
@@ -85,6 +92,8 @@ public class EnemyManager {
 			boss.updateFlash(dt);
 		for (Espinosa e : espinosas)
 			e.updateFlash(dt);
+		for (Monkey monkey : monkeys)
+			monkey.updateFlash(dt);
 	}
 
 	public void draw(Graphics g, int xLvlOffset) {
@@ -97,6 +106,9 @@ public class EnemyManager {
 		for (Espinosa e : espinosas)
 			if (e.isActive())
 				e.draw(g, xLvlOffset);
+		for (Monkey monkey : monkeys)
+			if (monkey.isActive())
+				monkey.draw(g, xLvlOffset);
 	}
 
 	private void drawBoars(Graphics g, int xLvlOffset) {
@@ -188,6 +200,9 @@ public class EnemyManager {
 		for (Espinosa e : espinosas)
 			if (hitEnemy(e, attackBox, damage, knockback, direction, hitTargets, heavy))
 				return true;
+		for (Monkey monkey : monkeys)
+			if (hitEnemy(monkey, attackBox, damage, knockback, direction, hitTargets, heavy))
+				return true;
 		return false;
 	}
 
@@ -271,6 +286,8 @@ public class EnemyManager {
 			boss.resetEnemy();
 		for (Espinosa e : espinosas)
 			e.resetEnemy();
+		for (Monkey monkey : monkeys)
+			monkey.resetEnemy();
 	}
 
 }
