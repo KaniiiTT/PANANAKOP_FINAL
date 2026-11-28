@@ -335,9 +335,9 @@ public class Constants {
 		public static final int ATTACK_CHAIN_GRACE_TICKS = 80;
 
 		public static final AttackDefinition ATTACK_HORIZONTAL = new AttackDefinition(
-				0, 7, 2, 4, continuationFrameTicks(0.055f), 10, 64, 32, 0, 8, 3);
+				0, 7, 2, 4, continuationFrameTicks(ATTACK_HORIZONTAL_FRAME_SECONDS), 10, 64, 32, 0, 8, 3);
 		public static final AttackDefinition ATTACK_VERTICAL = new AttackDefinition(
-				8, 15, 2, 4, continuationFrameTicks(0.055f), 20, 80, 40, 0, 4, 7);
+				8, 15, 2, 4, continuationFrameTicks(ATTACK_VERTICAL_FRAME_SECONDS), 20, 80, 40, 0, 4, 7);
 		public static final UltimateHitDefinition[] ULTIMATE_HITS = {
 				new UltimateHitDefinition(7, 10, 96, 96, 0, 0, false),
 				new UltimateHitDefinition(8, 10, 96, 96, 0, 0, false),

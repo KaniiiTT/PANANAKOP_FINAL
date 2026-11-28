@@ -28,6 +28,7 @@ public class Player extends Entity {
 	private BufferedImage[][] animations;
 	private BufferedImage[][] whiteAnimations;
 	private AnimationDefinition[] animationDefinitions;
+	private boolean femaleSheet;
 	private boolean moving = false, attacking = false, blocking = false;
 	private boolean left, right, jump, running;
 	private boolean jumpConsumed, dashing, usingUltimate, victory;
@@ -278,9 +279,10 @@ public class Player extends Entity {
 		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
 				RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 		graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
-		graphics.drawImage(animations[state][aniIndex], drawX, drawY, frameWidth * flipW, frameHeight, null);
+		int frameIndex = Math.min(aniIndex, animations[state].length - 1);
+		graphics.drawImage(animations[state][frameIndex], drawX, drawY, frameWidth * flipW, frameHeight, null);
 		if (flashTimer > 0)
-			graphics.drawImage(whiteAnimations[state][aniIndex], drawX, drawY, frameWidth * flipW, frameHeight, null);
+			graphics.drawImage(whiteAnimations[state][frameIndex], drawX, drawY, frameWidth * flipW, frameHeight, null);
 		graphics.dispose();
 //		drawHitbox(g, lvlOffset);
 //		drawAttackBox(g, lvlOffset);
@@ -442,8 +444,9 @@ public class Player extends Entity {
 	private void updatePos() {
 		moving = false;
 		lastAttackLungeStep = 0;
+		boolean femaleUltimate = femaleSheet && usingUltimate;
 
-		if (usingUltimate) {
+		if (femaleUltimate) {
 			dashing = false;
 			dashRemaining = 0;
 			horizontalMomentum = 0;
@@ -464,7 +467,7 @@ public class Player extends Entity {
 			jumpConsumed = false;
 
 		boolean attackMovementLocked = (LOCK_MOVEMENT_DURING_ATTACK && attackPhase != AttackPhase.NONE)
-				|| blocking || usingUltimate;
+				|| blocking || femaleUltimate;
 		int horizontalDirection = getEffectiveHorizontalDirection();
 		boolean hasHorizontalInput = horizontalDirection != 0;
 		boolean attackLungeActive = attackPhase != AttackPhase.NONE && !attackStartedInAir
@@ -517,7 +520,7 @@ public class Player extends Entity {
 
 		} else
 			updateXPos(xSpeed);
-		moving = !usingUltimate && hasHorizontalInput;
+		moving = !femaleUltimate && hasHorizontalInput;
 	}
 
 	private int getEffectiveHorizontalDirection() {
@@ -651,7 +654,7 @@ public class Player extends Entity {
 
 	private void loadAnimations() {
 		boolean splitMaleSheet = LoadSave.MALE_PLAYER_ATLAS.equals(spriteSheet);
-		boolean femaleSheet = LoadSave.FEMALE_PLAYER_ATLAS.equals(spriteSheet);
+		femaleSheet = LoadSave.FEMALE_PLAYER_ATLAS.equals(spriteSheet);
 		animationDefinitions = splitMaleSheet ? createMaleAnimationDefinitions()
 				: femaleSheet ? createFemaleAnimationDefinitions() : createLegacyAnimationDefinitions();
 		animations = new BufferedImage[animationDefinitions.length][];
@@ -697,8 +700,7 @@ public class Player extends Entity {
 			new AnimationDefinition(main, 64, 64, 9, 9, 18, false, true),
 			new AnimationDefinition(main, 64, 64, 10, 9, 18, false, true),
 			new AnimationDefinition(continuation, 96, 64, 2, 5, continuationFrameTicks(DASH_FRAME_SECONDS), false, true),
-			new AnimationDefinition("ULT_LAPULAPU.png", 96, 96, 1, 5, 16, continuationFrameTicks(0.07f),
-					false, false, false, 29.5f)
+			new AnimationDefinition(continuation, 96, 64, 3, 9, continuationFrameTicks(ULTIMATE_FRAME_SECONDS), false, false)
 		};
 	}
 
@@ -870,7 +872,7 @@ public class Player extends Entity {
 	}
 
 	public void setAttacking(boolean attacking) {
-		if (!attacking || usingUltimate)
+		if (!attacking || femaleSheet && usingUltimate)
 			return;
 		if (attackPhase == AttackPhase.HORIZONTAL) {
 			if (aniIndex >= ATTACK_HORIZONTAL.hitActiveEnd)
@@ -886,7 +888,7 @@ public class Player extends Entity {
 	}
 
 	public void setBlocking(boolean blocking) {
-		if (usingUltimate && blocking)
+		if (femaleSheet && usingUltimate && blocking)
 			return;
 		if (blocking && !canCancelAttack())
 			return;
@@ -896,7 +898,7 @@ public class Player extends Entity {
 	}
 
 	public void setRunning(boolean running) {
-		if (usingUltimate && running)
+		if (femaleSheet && usingUltimate && running)
 			return;
 		this.running = running;
 	}
@@ -904,7 +906,7 @@ public class Player extends Entity {
 	// Call this once per key press. The direction is locked to where the
 	// player is facing when the dash starts, no matter what keys are held.
 	public void setDash(boolean dash) {
-		if (!dash || usingUltimate || dashing || dashCooldownTicks > 0 || !canCancelAttack())
+		if (!dash || femaleSheet && usingUltimate || dashing || dashCooldownTicks > 0 || !canCancelAttack())
 			return;
 		if (inAir && airDashUsed)
 			return;
@@ -922,6 +924,8 @@ public class Player extends Entity {
 
 	public void setUltimate(boolean ultimate) {
 		if (ultimate && !usingUltimate) {
+			if (femaleSheet)
+				cancelAttackPhase();
 			usingUltimate = true;
 			ultimateHitTargets.clear();
 			aniTick = 0;
@@ -938,7 +942,7 @@ public class Player extends Entity {
 	}
 
 	public void setLeft(boolean left) {
-		if (usingUltimate && left)
+		if (femaleSheet && usingUltimate && left)
 			return;
 		this.left = left;
 	}
@@ -948,13 +952,13 @@ public class Player extends Entity {
 	}
 
 	public void setRight(boolean right) {
-		if (usingUltimate && right)
+		if (femaleSheet && usingUltimate && right)
 			return;
 		this.right = right;
 	}
 
 	public void setJump(boolean jump) {
-		if (usingUltimate && jump)
+		if (femaleSheet && usingUltimate && jump)
 			return;
 		if (jump && !canCancelAttack())
 			return;
