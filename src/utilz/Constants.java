@@ -288,6 +288,9 @@ public class Constants {
 	public static class PlayerConstants {
 		/** Vertical render adjustment for aligning the player's feet with the ground. */
 		public static final int PLAYER_SPRITE_OFFSET_Y = 2;
+		/** Shared collision dimensions for both male and female player sprites. */
+		public static final int PLAYER_HITBOX_WIDTH = 20;
+		public static final int PLAYER_HITBOX_HEIGHT = 27;
 		public static final int IDLE = 0;
 		public static final int WALKING = 1;
 		public static final int RUNNING = 2;

@@ -90,7 +90,7 @@ public class Player extends Entity {
 		this.currentHealth = 35;
 		this.walkSpeed = Game.SCALE * 1.0f;
 		loadAnimations();
-		initHitbox(20, 27);
+		initHitbox(PLAYER_HITBOX_WIDTH, PLAYER_HITBOX_HEIGHT);
 		initAttackBox();
 	}
 
@@ -719,9 +719,10 @@ public class Player extends Entity {
 			new AnimationDefinition(main, 64, 64, 24, 8, 8, 20, false, false, true),
 			new AnimationDefinition(main, 64, 64, 56, 8, 8, 24, false, true, true),
 			new AnimationDefinition(main, 64, 64, 56, 8, 8, 24, false, true, true),
-			// The new female sheets have no dedicated dash row; reuse the new run frames
-			// so dash never falls back to the legacy female sprite sheet.
-			new AnimationDefinition(main, 64, 64, 16, 8, 8, continuationFrameTicks(DASH_FRAME_SECONDS), true, false, true),
+			// Female dash: row 8 of the new 9-row sheet. Eight ticks per frame
+			// keeps the 8-frame animation aligned with the existing dash duration;
+			// the final frame is held if the dash has a fractional remainder.
+			new AnimationDefinition(main, 64, 64, 64, 8, 8, 8, false, true, true),
 			new AnimationDefinition(ultimate, 96, 96, 1, 5, 16, 14, false, false, true)
 		};
 	}
