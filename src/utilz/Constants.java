@@ -200,7 +200,7 @@ public class Constants {
 				default -> 1;
 				};
 			case MONKEY:
-				return 8;
+				return enemy_state == DEAD ? 9 : 8;
 			}
 
 			return 0;

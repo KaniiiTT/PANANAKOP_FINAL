@@ -22,6 +22,7 @@ public class Monkey extends Enemy {
 	private static final int ATTACK_COOLDOWN_TICKS = 300;
 	private static final int IDLE_FRAME_TICKS = 24; // 120 ms at 200 updates/second
 	private static final int ATTACK_FRAME_TICKS = 16; // 80 ms at 200 updates/second
+	private static final int DEATH_FRAME_TICKS = 20; // 100 ms at 200 updates/second
 	private static final float JUMP_SPEED = -1.25f * Game.SCALE;
 	private static final float LEAP_SPEED = 2.5f * Game.SCALE;
 	private static final float MAX_LEAP_SPEED = 5f * Game.SCALE;
@@ -30,8 +31,10 @@ public class Monkey extends Enemy {
 
 	private static BufferedImage[] idleFrames;
 	private static BufferedImage[] attackFrames;
+	private static BufferedImage[] deathFrames;
 	private static BufferedImage[] idleWhiteFrames;
 	private static BufferedImage[] attackWhiteFrames;
+	private static BufferedImage[] deathWhiteFrames;
 	private int attackDirection;
 	private boolean leaping;
 	private float leapSpeed = LEAP_SPEED;
@@ -48,11 +51,18 @@ public class Monkey extends Enemy {
 
 	public void update(int[][] lvlData, Player player) {
 		updateAttackCooldown();
-		updateAttackBox();
 		if (firstUpdate) {
 			tileY = (int) (hitbox.y / Game.TILES_SIZE);
 			firstUpdateCheck(lvlData);
 		}
+		if (state == DEAD) {
+			if (inAir)
+				fall(lvlData);
+			else
+				updateAnimationTick();
+			return;
+		}
+		updateAttackBox();
 		if (state == ATTACK)
 			updateAttack(lvlData, player);
 		else {
@@ -120,7 +130,7 @@ public class Monkey extends Enemy {
 			if (inAir)
 				fall(lvlData); // keep falling until the real floor
 		}
-		if (aniIndex >= 5 && aniIndex <= 6 && !attackChecked) {
+		if (!attackChecked) {
 			updateAttackBox();
 			checkPlayerHit(attackBox, player);
 		}
@@ -141,8 +151,20 @@ public class Monkey extends Enemy {
 	}
 
 	@Override
+	public void hurt(int amount) {
+		if (!active || state == DEAD)
+			return;
+		super.hurt(amount);
+		if (state == DEAD) {
+			attackChecked = true;
+			leaping = false;
+			attackCooldown = 0;
+		}
+	}
+
+	@Override
 	protected void checkPlayerHit(Rectangle2D.Float attackBox, Player player) {
-		if (attackBox.intersects(player.hitbox)) {
+		if (attackBox.intersects(player.hitbox) || hitbox.intersects(player.hitbox)) {
 			if (player.isBlocking()) {
 				float monkeyCenterX = hitbox.x + hitbox.width / 2;
 				if (player.isFacingSource(monkeyCenterX))
@@ -155,11 +177,24 @@ public class Monkey extends Enemy {
 
 	@Override
 	protected int getAnimationSpeed() {
+		if (state == DEAD)
+			return DEATH_FRAME_TICKS;
 		return state == ATTACK ? ATTACK_FRAME_TICKS : IDLE_FRAME_TICKS;
 	}
 
 	@Override
 	protected void updateAnimationTick() {
+		if (state == DEAD) {
+			if (aniIndex < 8) {
+				aniTick++;
+				if (aniTick >= DEATH_FRAME_TICKS) {
+					aniTick = 0;
+					aniIndex++;
+				}
+			} else
+				active = false;
+			return;
+		}
 		int previousState = state;
 		super.updateAnimationTick();
 		if (previousState == ATTACK && state == IDLE)
@@ -167,9 +202,13 @@ public class Monkey extends Enemy {
 	}
 
 	public void draw(Graphics g, int xLvlOffset) {
-		BufferedImage frame = state == ATTACK ? attackFrames[aniIndex] : idleFrames[aniIndex];
+		if (!active)
+			return;
+		BufferedImage frame = state == DEAD ? deathFrames[aniIndex]
+				: state == ATTACK ? attackFrames[aniIndex] : idleFrames[aniIndex];
 		if (getFlashTimer() > 0)
-			frame = state == ATTACK ? attackWhiteFrames[aniIndex] : idleWhiteFrames[aniIndex];
+			frame = state == DEAD ? deathWhiteFrames[aniIndex]
+					: state == ATTACK ? attackWhiteFrames[aniIndex] : idleWhiteFrames[aniIndex];
 		int size = (int) (CELL * Game.SCALE);
 		int drawX = (int) (hitbox.x + hitbox.width / 2f) - xLvlOffset - size / 2;
 		// Sprite bottom sits on the hitbox bottom, whatever the hitbox height is.
@@ -186,6 +225,7 @@ public class Monkey extends Enemy {
 		attackDirection = LEFT;
 		leaping = false;
 		leapSpeed = LEAP_SPEED;
+		attackChecked = false;
 	}
 
 	private static float centerX(Rectangle2D.Float box) {
@@ -198,12 +238,16 @@ public class Monkey extends Enemy {
 		BufferedImage sheet = LoadSave.GetSpriteAtlas(LoadSave.MONKEY_SPRITE);
 		idleFrames = new BufferedImage[8];
 		attackFrames = new BufferedImage[8];
+		deathFrames = new BufferedImage[9];
 		for (int i = 0; i < 8; i++) {
 			idleFrames[i] = sheet.getSubimage(i * CELL, 0, CELL, CELL);
 			attackFrames[i] = sheet.getSubimage(i * CELL, CELL, CELL, CELL);
 		}
+		for (int i = 0; i < 9; i++)
+			deathFrames[i] = sheet.getSubimage(i * CELL, 2 * CELL, CELL, CELL);
 		idleWhiteFrames = whiteFrames(idleFrames);
 		attackWhiteFrames = whiteFrames(attackFrames);
+		deathWhiteFrames = whiteFrames(deathFrames);
 	}
 
 	private static BufferedImage[] whiteFrames(BufferedImage[] source) {

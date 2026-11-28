@@ -107,7 +107,7 @@ public class EnemyManager {
 			if (e.isActive())
 				e.draw(g, xLvlOffset);
 		for (Monkey monkey : monkeys)
-			if (monkey.isActive())
+			if (monkey.isActive() || monkey.getState() == DEAD)
 				monkey.draw(g, xLvlOffset);
 	}
 
