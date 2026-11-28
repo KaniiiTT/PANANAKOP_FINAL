@@ -87,7 +87,7 @@ public final class SoundLibrary {
 						samples[i] = (short) ((bytes[2 * i] & 0xFF) | (bytes[2 * i + 1] << 8));
 					decodeCount++;
 					return new SoundData(entry.id, entry.kind, samples, in.getChannels(), (int) in.getSampleRate(),
-							entry.loop, entry.loopEndSec, gainDbFor(entry));
+							entry.loop, entry.loopEndSec, gainDbFor(entry, samples));
 				}
 			}
 		} catch (Exception e) { // unsupported format, truncated file, IO problem...
@@ -97,12 +97,37 @@ public final class SoundLibrary {
 	}
 
 	/**
-	 * Music is played at the level it was mastered (about -16 dBFS RMS). The pack's "suggested_volume_db" of -8
-	 * exists to balance music against sound effects; applied on top of the volume slider it made the music
-	 * about 30 dB below full scale, which is hard to hear. Other kinds keep their suggested level.
+	 * How loud a sound plays relative to its file.
+	 * <ul>
+	 * <li>Music plays at the level it was mastered (about -16 dBFS RMS). The pack's "suggested_volume_db" of -8
+	 * exists to balance music against effects; stacked on the volume slider it made the music hard to hear.</li>
+	 * <li>Ambience files differ by about 10 dB in loudness (a night shrine is far quieter than a beach), so one bus
+	 * level cannot balance them. Each is brought to a common loudness, without letting its peaks reach full scale.</li>
+	 * <li>Everything else keeps the pack's suggested level.</li>
+	 * </ul>
 	 */
-	private static float gainDbFor(AudioManifest.Entry entry) {
-		return entry.kind == Kind.MUSIC ? 0f : entry.volumeDb;
+	private static float gainDbFor(AudioManifest.Entry entry, short[] samples) {
+		if (entry.kind == Kind.MUSIC)
+			return 0f;
+		if (entry.kind == Kind.AMBIENCE)
+			return ambienceTrimDb(samples);
+		return entry.volumeDb;
+	}
+
+	static float ambienceTrimDb(short[] samples) {
+		double sum = 0;
+		int peak = 1;
+		for (short v : samples) {
+			sum += (double) v * v;
+			peak = Math.max(peak, Math.abs(v));
+		}
+		if (samples.length == 0)
+			return 0f;
+		double rmsDb = 20 * Math.log10(Math.max(1e-9, Math.sqrt(sum / samples.length) / 32768.0));
+		double peakDb = 20 * Math.log10(peak / 32768.0);
+		double trim = MixLevels.AMBIENCE_TARGET_RMS_DB - rmsDb;
+		trim = Math.min(trim, MixLevels.AMBIENCE_PEAK_CEILING_DB - peakDb);
+		return (float) Math.max(-12.0, Math.min(12.0, trim));
 	}
 
 	private void warnOnce(String id, String why) {

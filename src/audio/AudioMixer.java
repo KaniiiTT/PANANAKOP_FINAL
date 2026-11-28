@@ -25,7 +25,11 @@ public final class AudioMixer {
 	private float master = 1f;
 	private boolean masterMuted;
 
-	private float musicDuckTarget = 1f, musicDuckCurrent = 1f;
+	// Ducking: each bus can be turned down (1 = normal) over its own time, e.g. ambience under a boss fight.
+	private final float[] duckTarget = new float[Bus.VALUES.length];
+	private final float[] duckCurrent = new float[Bus.VALUES.length];
+	private final float[] duckSeconds = new float[Bus.VALUES.length];
+	private final float[] duckStart = new float[Bus.VALUES.length];
 	private boolean suspended;
 	private long framesRendered;
 	private float lastPeak;
@@ -36,6 +40,9 @@ public final class AudioMixer {
 		for (int i = 0; i < busVolume.length; i++) {
 			busVolume[i] = 1f;
 			busCurrent[i] = 1f;
+			duckTarget[i] = 1f;
+			duckCurrent[i] = 1f;
+			duckSeconds[i] = 0.25f;
 		}
 	}
 
@@ -47,11 +54,15 @@ public final class AudioMixer {
 
 	/** Starts a sound. Returns null (nothing plays) if the voice limit is hit. */
 	Voice start(SoundData data, float fadeInSeconds) {
+		return start(data, fadeInSeconds, 1f);
+	}
+
+	Voice start(SoundData data, float fadeInSeconds, float level) {
 		synchronized (lock) {
 			Voice v = pool.pollFirst();
 			if (v == null)
 				return null;
-			v.start(data, fadeInSeconds, SAMPLE_RATE);
+			v.start(data, fadeInSeconds, SAMPLE_RATE, level);
 			active.add(v);
 			return v;
 		}
@@ -65,8 +76,35 @@ public final class AudioMixer {
 		}
 	}
 
+	/** Fades a voice that was on its way out back in, so a track that is wanted again continues instead of restarting. */
+	void revive(Voice v, float seconds) {
+		if (v == null)
+			return;
+		synchronized (lock) {
+			v.revive(seconds, SAMPLE_RATE);
+		}
+	}
+
+	/** True while {@code v} is still the same sound it was when {@code generation} was read (not finished/recycled). */
+	boolean isAlive(Voice v, int generation) {
+		synchronized (lock) {
+			return v != null && v.active && v.generation == generation && v.data != null;
+		}
+	}
+
+	/** Safety net: any voice of this kind that is not {@code keep} and not already fading is faded out. */
+	void retireStrays(Kind kind, Voice keep, float seconds) {
+		synchronized (lock) {
+			for (int i = 0; i < active.size(); i++) {
+				Voice v = active.get(i);
+				if (v != keep && v.data.kind() == kind && !v.isFadingOut())
+					v.fadeOut(seconds, SAMPLE_RATE);
+			}
+		}
+	}
+
 	/**
-	 * Makes every music voice that is already fading out finish within {@code seconds} (never slower than before).
+	 * Makes every voice of this kind that is already fading out finish within {@code seconds} (never slower than before).
 	 * Keeps rapid track changes from leaving three tracks audible at once.
 	 */
 	void hurryFadeOuts(Kind kind, float seconds) {
@@ -151,11 +189,19 @@ public final class AudioMixer {
 		return busMuted[b.ordinal()];
 	}
 
-	/** Quietens the music bus (1 = normal), e.g. behind the pause menu. Changes are smoothed. */
-	public void setMusicDuck(float level) {
+	/**
+	 * Quietens a bus (1 = normal), e.g. music behind the pause menu or ambience under a boss fight. The change is
+	 * smoothed and takes roughly {@code seconds} to complete.
+	 */
+	public void setBusDuck(Bus b, float level, float seconds) {
 		synchronized (lock) {
-			musicDuckTarget = clamp01(level);
+			duckTarget[b.ordinal()] = clamp01(level);
+			duckSeconds[b.ordinal()] = Math.max(0.02f, seconds);
 		}
+	}
+
+	public float getBusDuck(Bus b) {
+		return duckTarget[b.ordinal()];
 	}
 
 	/** While suspended (window lost focus) every voice is frozen in place and silent. */
@@ -230,8 +276,12 @@ public final class AudioMixer {
 			}
 		}
 
-		float duckStart = musicDuckCurrent;
-		musicDuckCurrent += (musicDuckTarget - musicDuckCurrent) * Math.min(1f, n / (0.25f * SAMPLE_RATE));
+		for (int b = 0; b < duckCurrent.length; b++) {
+			duckStart[b] = duckCurrent[b];
+			// exponential approach; the time constant is a third of the requested time (95% of the way by then)
+			float k = 1f - (float) Math.exp(-n / (SAMPLE_RATE * duckSeconds[b] / 3f));
+			duckCurrent[b] += (duckTarget[b] - duckCurrent[b]) * k;
+		}
 		float peak = 0f;
 		for (int i = 0; i < n; i++) {
 			float t = (i + 1) / (float) n;
@@ -240,8 +290,7 @@ public final class AudioMixer {
 				float g0 = busCurrent[b];
 				float g1 = targetGain(b);
 				float g = g0 + (g1 - g0) * t;
-				if (b == Bus.MUSIC.ordinal())
-					g *= duckStart + (musicDuckCurrent - duckStart) * t;
+				g *= duckStart[b] + (duckCurrent[b] - duckStart[b]) * t;
 				l += busLeft[b][i] * g;
 				r += busRight[b][i] * g;
 			}

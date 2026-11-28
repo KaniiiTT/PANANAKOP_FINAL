@@ -12,8 +12,12 @@ final class Voice {
 	float fadeTarget;
 	float fadeStep;    // per output frame
 	boolean stopAtZero;
+	float level = 1f;  // extra per-playback gain (e.g. boss music is mixed a little louder than exploration music)
+	int generation;    // changes every time the voice is (re)used, so a holder can tell its voice is still its own
 
-	void start(SoundData d, float fadeInSeconds, int outRate) {
+	void start(SoundData d, float fadeInSeconds, int outRate, float playLevel) {
+		generation++;
+		level = playLevel;
 		data = d;
 		bus = d.kind().bus();
 		loop = d.isLoop();
@@ -41,6 +45,17 @@ final class Voice {
 			fadeStep = fade / (seconds * outRate);
 	}
 
+	/** Turns a fade-out around: the voice fades back up to full instead of stopping. */
+	void revive(float seconds, int outRate) {
+		stopAtZero = false;
+		fadeTarget = 1f;
+		if (seconds <= 0.001f) {
+			fade = 1f;
+			fadeStep = 0f;
+		} else
+			fadeStep = Math.max(1e-9f, 1f - fade) / (seconds * outRate);
+	}
+
 	boolean isFadingOut() {
 		return stopAtZero;
 	}
@@ -50,7 +65,7 @@ final class Voice {
 		final short[] s = data.samples();
 		final int ch = data.channels();
 		final int end = loop ? data.loopEndFrame() : data.frames();
-		final float base = data.baseGain() * (1f / 32768f);
+		final float base = data.baseGain() * level * (1f / 32768f);
 		for (int i = 0; i < n; i++) {
 			if (fade != fadeTarget) {
 				fade += fadeTarget > fade ? fadeStep : -fadeStep;

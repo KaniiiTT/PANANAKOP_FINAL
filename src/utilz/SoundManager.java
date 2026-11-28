@@ -2,6 +2,8 @@ package utilz;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -24,8 +26,19 @@ import audio.MusicZones;
 public final class SoundManager {
 	private static final int SAMPLE_RATE = 22050;
 	private static final Map<Effect, Clip> CLIPS = new EnumMap<>(Effect.class);
-	private static boolean muted;
-	private static float volume = 0.7f;
+	private static volatile boolean muted;
+	private static volatile float volume = 0.7f;
+
+	/*
+	 * Menu mouse events are delivered on Swing's Event Dispatch Thread. Opening a
+	 * Java Sound Clip can block while Windows searches for an audio device, so
+	 * legacy generated SFX must never be opened from the UI thread.
+	 */
+	private static final ExecutorService SFX_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+		Thread t = new Thread(r, "PANANAKOP-sfx");
+		t.setDaemon(true);
+		return t;
+	});
 
 	private static AudioEngine engine;
 	private static MusicDirector music;
@@ -42,6 +55,8 @@ public final class SoundManager {
 			engine = AudioEngine.createDefault();
 			engine.setMasterVolume(volume);
 			engine.setBusMuted(audio.Bus.MUSIC, musicMuted);
+			engine.setBusMuted(audio.Bus.AMBIENCE, muted);
+			engine.setBusMuted(audio.Bus.SFX, muted);
 			music = new MusicDirector(engine, MusicZones.defaultWorld());
 			if (!shutdownHookAdded) {
 				shutdownHookAdded = true;
@@ -98,6 +113,11 @@ public final class SoundManager {
 		return musicMuted;
 	}
 
+	/** The ambience that is audible right now (null = none). For diagnostics and tests. */
+	public static String currentAmbience() {
+		return engine == null ? null : engine.currentAmbience();
+	}
+
 	/** The track that is audible right now (null = none). For diagnostics and tests. */
 	public static String currentMusic() {
 		return engine == null ? null : engine.currentMusic();
@@ -120,7 +140,20 @@ public final class SoundManager {
 
 	public enum Effect { JUMP, ATTACK, HIT, PICKUP, BOUNCE, TRAP, MENU }
 
-	public static synchronized void play(Effect effect) {
+	public static void play(Effect effect) {
+		if (effect == null || muted)
+			return;
+
+		// Do not open or start a Clip on the Swing EDT (menu clicks run there).
+		// Audio device discovery can block on some Windows drivers.
+		try {
+			SFX_EXECUTOR.execute(() -> playNow(effect));
+		} catch (java.util.concurrent.RejectedExecutionException ignored) {
+			// The game is shutting down; dropping a short UI/gameplay sound is safe.
+		}
+	}
+
+	private static synchronized void playNow(Effect effect) {
 		if (muted)
 			return;
 		try {
@@ -171,8 +204,13 @@ public final class SoundManager {
 		return data;
 	}
 
+	/** The sound-effects button: mutes the effects and, as the old ambient sounds did, the environment ambience. */
 	public static synchronized void setMuted(boolean value) {
 		muted = value;
+		if (engine != null) {
+			engine.setBusMuted(audio.Bus.AMBIENCE, value);
+			engine.setBusMuted(audio.Bus.SFX, value);
+		}
 	}
 
 	/** Master volume (0..1) chosen in the audio options; the ambient sounds follow it too. */

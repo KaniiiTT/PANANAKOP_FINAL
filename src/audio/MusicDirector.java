@@ -1,25 +1,31 @@
 package audio;
 
 /**
- * Decides WHICH track should play from what is happening in the game (menu, position in the world, boss
- * fights, game over) and asks the {@link AudioEngine} for it. It contains the rules that stop the music from
- * flickering: an area must be entered for {@link #AREA_DWELL_SECONDS} before the music changes, and a
- * boss fight remembers the area so exploration music returns afterwards.
+ * Decides WHAT should be heard from what is happening in the game (menu, position in the world, boss fights,
+ * game over) and asks the {@link AudioEngine} for it. It owns two things:
+ *
+ * <p><b>Music, by priority.</b> Each {@link MusicPriority} can hold one wish ("claim") for a track. The highest
+ * claim is the one that plays; releasing it lets the next one down take over. So a boss claim silences the
+ * exploration music without ever stopping the exploration claim, and when the boss goes away the right area
+ * music is simply what is left, even if the player moved to another area in between.
+ *
+ * <p><b>Ambience, by area.</b> The ambience is the current area's environment sound, played on its own channel. It
+ * is absent in the menus, sinks under boss fights and is restored afterwards.
+ *
+ * <p>It also holds the rules that stop the audio from flickering: crossing a zone border inside a map only takes
+ * effect after {@link #AREA_DWELL_SECONDS}.
  */
 public final class MusicDirector {
 	public static final float AREA_DWELL_SECONDS = 1.5f;
-	public static final float AREA_CROSSFADE = 2.5f;
-	public static final float MENU_CROSSFADE = 1.2f;
-	public static final float BOSS_FADE = 0.6f;
-	public static final float STOP_FADE = 1.0f;
 
-	private enum Mode { MENU, EXPLORING, ENCOUNTER, SILENT }
+	private enum Mode { MENU, EXPLORING, SILENT }
 
 	private final AudioEngine engine;
 	private final MusicZones zones;
+	private final String[] claims = new String[MusicPriority.VALUES.length];
 
 	private Mode mode = Mode.SILENT;
-	private MusicArea currentArea;       // the area whose music is (or will be) playing
+	private MusicArea currentArea;       // the area whose music and ambience are (or will be) playing
 	private MusicArea pendingArea;       // candidate area that has not been inside long enough yet
 	private float pendingSeconds;
 	private int lastLevelIndex = Integer.MIN_VALUE;
@@ -30,7 +36,47 @@ public final class MusicDirector {
 		this.zones = zones;
 	}
 
-	/** Menu, character select and options screens. */
+	// ------------------------------------------------------------------ priority claims
+
+	/** Asks for a track at a priority. The track only plays if no higher priority has a claim. */
+	public void claim(MusicPriority priority, String musicId, float fadeSeconds) {
+		claims[priority.ordinal()] = musicId;
+		resolve(fadeSeconds);
+	}
+
+	/** Withdraws the claim of a priority; the next highest claim (if any) takes over. */
+	public void release(MusicPriority priority, float fadeSeconds) {
+		if (claims[priority.ordinal()] == null)
+			return;
+		claims[priority.ordinal()] = null;
+		resolve(fadeSeconds);
+	}
+
+	/** The priority that is deciding the music right now, or null if nothing is wanted. */
+	public MusicPriority activePriority() {
+		for (int i = claims.length - 1; i >= 0; i--)
+			if (claims[i] != null)
+				return MusicPriority.VALUES[i];
+		return null;
+	}
+
+	private void resolve(float fadeSeconds) {
+		MusicPriority top = activePriority();
+		if (top == null) {
+			engine.stopMusic(fadeSeconds);
+			return;
+		}
+		boolean boss = top == MusicPriority.MINI_BOSS || top == MusicPriority.FINAL_BOSS;
+		engine.playMusic(claims[top.ordinal()], fadeSeconds, boss ? MixLevels.BOSS_MUSIC_LEVEL : 1f);
+	}
+
+	private void clearClaims() {
+		java.util.Arrays.fill(claims, null);
+	}
+
+	// ------------------------------------------------------------------ game situations
+
+	/** Menu, character select and options screens: all gameplay music and ambience stops. */
 	public void enterMenu() {
 		if (mode == Mode.MENU)
 			return;
@@ -39,8 +85,10 @@ public final class MusicDirector {
 		currentArea = null;
 		pendingArea = null;
 		lastLevelIndex = Integer.MIN_VALUE;
+		clearClaims();
 		engine.setGamePaused(false);
-		engine.playMusic(MusicArea.MENU.musicId(), MENU_CROSSFADE);
+		engine.stopAmbience(MixLevels.MENU_CROSSFADE);
+		claim(MusicPriority.MENU, MusicArea.MENU.musicId(), MixLevels.MENU_CROSSFADE);
 	}
 
 	/**
@@ -51,6 +99,8 @@ public final class MusicDirector {
 		if (mode == Mode.SILENT || mode == Mode.MENU) {
 			mode = Mode.EXPLORING;
 			currentArea = null;
+			claims[MusicPriority.MENU.ordinal()] = null; // gameplay takes over from the menu
+			engine.setAmbienceEncounterLevel(1f, MixLevels.AMBIENCE_RESTORE_FADE);
 		}
 		MusicArea here = zones.areaAt(levelIndex, playerTileX);
 		boolean newMap = levelIndex != lastLevelIndex;
@@ -77,37 +127,42 @@ public final class MusicDirector {
 		}
 	}
 
+	/** The player is now in {@code area}: its music is claimed at EXPLORATION priority and its ambience starts. */
 	private void setArea(MusicArea area) {
 		currentArea = area;
-		if (mode == Mode.ENCOUNTER)
-			return; // remembered; restored when the encounter ends
-		engine.playMusic(area.musicId(), AREA_CROSSFADE);
+		claim(MusicPriority.EXPLORATION, area.musicId(), MixLevels.AREA_CROSSFADE); // a boss claim, if any, stays on top
+		if (area.ambienceId() == null)
+			engine.stopAmbience(MixLevels.AMBIENCE_CROSSFADE);
+		else
+			engine.playAmbience(area.ambienceId(), MixLevels.AMBIENCE_CROSSFADE);
 	}
 
-	/** A boss fight begins: the boss track replaces the exploration music. Repeated calls do nothing. */
+	/** A boss fight begins: the boss track replaces the exploration music and the ambience sinks. Repeats do nothing. */
 	public void beginEncounter(Encounter e) {
-		if (mode == Mode.ENCOUNTER && encounter == e)
+		if (mode != Mode.EXPLORING || encounter == e)
 			return;
+		if (encounter != null)
+			claims[encounter.priority().ordinal()] = null;
 		encounter = e;
-		mode = Mode.ENCOUNTER;
-		engine.playMusic(e.musicId(), BOSS_FADE);
+		claim(e.priority(), e.musicId(), MixLevels.BOSS_FADE_IN);
+		engine.setAmbienceEncounterLevel(e.ambienceLevel(), MixLevels.AMBIENCE_BOSS_FADE);
 	}
 
-	/** The boss is gone (defeated or the run was reset): exploration music of the current location returns. */
+	/** The boss is gone (defeated or the run was reset): exploration music and ambience of this location return. */
 	public void endEncounter() {
-		if (mode != Mode.ENCOUNTER)
+		if (encounter == null)
 			return;
+		MusicPriority p = encounter.priority();
 		encounter = null;
-		mode = Mode.EXPLORING;
-		if (currentArea != null)
-			engine.playMusic(currentArea.musicId(), AREA_CROSSFADE);
+		release(p, MixLevels.BOSS_FADE_OUT);
+		engine.setAmbienceEncounterLevel(1f, MixLevels.AMBIENCE_RESTORE_FADE);
 	}
 
 	public boolean isInEncounter() {
-		return mode == Mode.ENCOUNTER;
+		return encounter != null;
 	}
 
-	/** Player died: the music fades away. The next updateExploration (after the restart) starts the area music again. */
+	/** Player died: music and ambience fade away. The next updateExploration (after the restart) brings them back. */
 	public void gameOver() {
 		if (mode == Mode.SILENT)
 			return;
@@ -116,7 +171,9 @@ public final class MusicDirector {
 		currentArea = null;
 		pendingArea = null;
 		lastLevelIndex = Integer.MIN_VALUE;
-		engine.stopMusic(STOP_FADE);
+		clearClaims();
+		engine.stopMusic(MixLevels.STOP_FADE);
+		engine.stopAmbience(MixLevels.STOP_FADE);
 	}
 
 	/** Pause menu on/off. */

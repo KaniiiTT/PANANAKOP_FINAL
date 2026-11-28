@@ -46,7 +46,7 @@ public class Menu extends State implements Statemethods {
 
 	@Override
 	public void update() {
-		background.update(false);
+		background.update();
 		for (MenuButton button : buttons)
 			button.update();
 	}
