@@ -25,7 +25,11 @@ public class LoadSave {
 
 	public static final String MALE_PLAYER_ATLAS = "male_spritesheet.png";
 	public static final String MALE_PLAYER_CONTINUATION_ATLAS = "male_spritesheet_continuation.png";
+	public static final String MALE_LAPULAPU_ULTIMATE_ATLAS = "ULT_LAPULAPU.png";
 	public static final String FEMALE_PLAYER_ATLAS = "female_spritesheet.png";
+	public static final String FEMALE_LAPULAPU_ATLAS = "female_lapulapu_spritesheet.png";
+	public static final String FEMALE_LAPULAPU_ATTACK_ATLAS = "fLapu_attack.png";
+	public static final String FEMALE_LAPULAPU_ULTIMATE_ATLAS = "fLapu_ult.png";
 	public static final String PLAYER_ATLAS = MALE_PLAYER_ATLAS;
 	public static final String LEVEL_ATLAS = "outside_sprites.png";
 	public static final String MENU_BUTTONS = "button_atlas.png";
@@ -42,6 +46,8 @@ public class LoadSave {
 	public static final String BOAR_SPRITE = "boar_spritesheet.png";
 	public static final String CONQUISTADOR_SPRITE = "conquistador_spritesheet.png";
 	public static final String ESPINOSA_SPRITE = "espinosa_spritesheet.png";
+	public static final String MONKEY_SPRITE = "monkey_spritesheet.png";
+	public static final String GORILLA_SPRITE = "gorilla_spritesheet.png";
 	public static final String STATUS_BAR = "health_power_bar.png";
 	public static final String COMPLETED_IMG = "completed_sprite.png";
 	public static final String POTION_ATLAS = "potions_sprites.png";

@@ -12,9 +12,7 @@ import java.awt.RenderingHints;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.Map;
 import java.util.Set;
 
 import gamestates.Playing;
@@ -28,6 +26,7 @@ public class Player extends Entity {
 	private BufferedImage[][] animations;
 	private BufferedImage[][] whiteAnimations;
 	private AnimationDefinition[] animationDefinitions;
+	private boolean femaleSheet;
 	private boolean moving = false, attacking = false, blocking = false;
 	private boolean left, right, jump, running;
 	private boolean jumpConsumed, dashing, usingUltimate, victory;
@@ -76,7 +75,9 @@ public class Player extends Entity {
 	private boolean attackStartedInAir;
 	private static final int ATTACK_RECOIL = 17;
 	private final Set<Enemy> attackHitTargets = Collections.newSetFromMap(new IdentityHashMap<>());
-	private final Map<Integer, Set<Enemy>> ultimateHitTargets = new HashMap<>();
+	private final UltAnimation ultAnimation = new UltAnimation();
+	private boolean ultimateHitApplied;
+	private static final int ULT_DAMAGE_MULTIPLIER = 3;
 	private Playing playing;
 
 	private int tileY = 0;
@@ -90,7 +91,7 @@ public class Player extends Entity {
 		this.currentHealth = 35;
 		this.walkSpeed = Game.SCALE * 1.0f;
 		loadAnimations();
-		initHitbox(20, 27);
+		initHitbox(PLAYER_HITBOX_WIDTH, PLAYER_HITBOX_HEIGHT);
 		initAttackBox();
 	}
 
@@ -114,6 +115,8 @@ public class Player extends Entity {
 		updateHealthBar();
 
 		if (currentHealth <= 0) {
+			ultAnimation.reset();
+			usingUltimate = false;
 			if (state != DEAD) {
 				state = DEAD;
 				aniTick = 0;
@@ -151,6 +154,8 @@ public class Player extends Entity {
 		if (attackPhase != AttackPhase.NONE || usingUltimate)
 			checkAttack();
 
+		if (usingUltimate)
+			ultAnimation.update(aniIndex);
 		updateAnimationTick();
 		setAnimation();
 	}
@@ -167,12 +172,14 @@ public class Player extends Entity {
 	private void checkAttack() {
 		if (usingUltimate) {
 			UltimateHitDefinition hit = getUltimateHitDefinition(aniIndex);
-			if (hit == null)
+			if (hit == null || aniIndex != UltAnimation.ULT_IMPACT_FRAME || ultimateHitApplied)
 				return;
-			Set<Enemy> hitTargets = ultimateHitTargets.computeIfAbsent(hit.frame,
-					frame -> Collections.newSetFromMap(new IdentityHashMap<>()));
-			playing.checkEnemyHit(attackBox, hit.damage, 0, flipW, hitTargets, hit.heavy);
+			playing.checkAllEnemiesHit(attackBox, hit.damage * ULT_DAMAGE_MULTIPLIER,
+				(int) UltAnimation.KNOCKBACK, flipW,
+				attackHitTargets, hit.heavy);
 			playing.checkObjectHit(attackBox);
+			ultimateHitApplied = true;
+			ultAnimation.onImpact(attackBox.x + attackBox.width / 2f, attackBox.y + attackBox.height / 2f);
 			return;
 		}
 		if (attackPhase == AttackPhase.NONE) {
@@ -187,7 +194,8 @@ public class Player extends Entity {
 		}
 
 		AttackDefinition attack = getCurrentAttackDefinition();
-		if (aniIndex < attack.hitActiveStart || aniIndex > attack.hitActiveEnd)
+		int attackFrame = aniIndex - attack.startFrame;
+		if (attackFrame < attack.hitActiveStart || attackFrame > attack.hitActiveEnd)
 			return;
 		if (playing.checkEnemyHit(attackBox, attack.damage, attack.knockback, flipW, attackHitTargets,
 				attackPhase == AttackPhase.VERTICAL))
@@ -226,11 +234,16 @@ public class Player extends Entity {
 			return;
 		}
 		if (usingUltimate) {
+			UltimateHitDefinition hit = getUltimateHitDefinition(aniIndex);
 			AnimationDefinition animation = animationDefinitions[ULTIMATE];
-			attackBox.width = animation.frameWidth * Game.SCALE;
-			attackBox.height = animation.frameHeight * Game.SCALE;
-			attackBox.x = hitbox.x + hitbox.width / 2f - attackBox.width / 2f;
-			attackBox.y = hitbox.y + hitbox.height + PLAYER_SPRITE_OFFSET_Y * Game.SCALE - attackBox.height;
+			attackBox.width = (hit == null ? animation.frameWidth : hit.hitboxWidth) * Game.SCALE;
+			attackBox.height = (hit == null ? animation.frameHeight : hit.hitboxHeight) * Game.SCALE;
+			float offsetX = (hit == null ? 0 : hit.hitboxOffsetX) * Game.SCALE;
+			attackBox.x = flipW > 0 ? hitbox.x + hitbox.width + offsetX
+					: hitbox.x - attackBox.width - offsetX;
+			float offsetY = (hit == null ? 0 : hit.hitboxOffsetY) * Game.SCALE;
+			attackBox.y = hitbox.y + hitbox.height + PLAYER_SPRITE_OFFSET_Y * Game.SCALE
+					- attackBox.height + offsetY;
 			return;
 		}
 		if (dashing) {
@@ -252,22 +265,36 @@ public class Player extends Entity {
 	}
 
 	public void render(Graphics g, int lvlOffset) {
+		ultAnimation.setAnchor(hitbox.x + hitbox.width / 2f, hitbox.y + hitbox.height / 2f, lvlOffset);
 		AnimationDefinition animation = animationDefinitions[state];
 		int frameWidth = (int) (animation.frameWidth * Game.SCALE);
 		int frameHeight = (int) (animation.frameHeight * Game.SCALE);
-		int anchorX = (int) (hitbox.x + hitbox.width / 2f) - lvlOffset;
 		int groundY = (int) (hitbox.y + hitbox.height + PLAYER_SPRITE_OFFSET_Y * Game.SCALE);
-		int drawX = anchorX - frameWidth / 2;
+		int drawX;
+		if (animation.leftAnchored) {
+			drawX = (int) hitbox.x - lvlOffset;
+			if (flipW == -1)
+				drawX += frameWidth;
+		} else {
+			int anchorX = (int) (hitbox.x + hitbox.width / 2f) - lvlOffset;
+			int drawOffsetX = (int) (animation.drawOffsetX * Game.SCALE);
+			drawX = flipW == -1
+					? anchorX + frameWidth / 2 - drawOffsetX
+					: anchorX - frameWidth / 2 + drawOffsetX;
+		}
 		int drawY = groundY - frameHeight;
+		if (state == ULTIMATE && !femaleSheet)
+			drawY += (int) (4 * Game.SCALE);
 		Graphics2D graphics = (Graphics2D) g.create();
+		ultAnimation.renderBelowPlayer(graphics, Game.GAME_WIDTH, Game.GAME_HEIGHT);
 		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
 				RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 		graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
-		if (flipW == -1)
-			drawX += frameWidth;
-		graphics.drawImage(animations[state][aniIndex], drawX, drawY, frameWidth * flipW, frameHeight, null);
+		int frameIndex = Math.min(aniIndex, animations[state].length - 1);
+		graphics.drawImage(animations[state][frameIndex], drawX, drawY, frameWidth * flipW, frameHeight, null);
 		if (flashTimer > 0)
-			graphics.drawImage(whiteAnimations[state][aniIndex], drawX, drawY, frameWidth * flipW, frameHeight, null);
+			graphics.drawImage(whiteAnimations[state][frameIndex], drawX, drawY, frameWidth * flipW, frameHeight, null);
+		ultAnimation.renderAbovePlayer(graphics, Game.GAME_WIDTH, Game.GAME_HEIGHT);
 		graphics.dispose();
 //		drawHitbox(g, lvlOffset);
 //		drawAttackBox(g, lvlOffset);
@@ -287,6 +314,8 @@ public class Player extends Entity {
 		aniTick++;
 		int speed = attackPhase != AttackPhase.NONE ? getCurrentAttackDefinition().frameDuration
 				: getAnimationSpeed(state);
+		if (usingUltimate && ultAnimation.shouldHoldFrame())
+			return;
 		if (aniTick >= speed) {
 			aniTick = 0;
 			if (attackPhase != AttackPhase.NONE) {
@@ -314,8 +343,10 @@ public class Player extends Entity {
 				attacking = false;
 				attackCheckedFrame = -1;
 				// Dash now ends by distance (see updateDash), not by animation length.
-				if (state == ULTIMATE)
+				if (state == ULTIMATE) {
 					usingUltimate = false;
+					ultAnimation.finish();
+				}
 			}
 		}
 	}
@@ -417,7 +448,9 @@ public class Player extends Entity {
 	}
 
 	private AttackDefinition getCurrentAttackDefinition() {
-		return attackPhase == AttackPhase.VERTICAL ? ATTACK_VERTICAL : ATTACK_HORIZONTAL;
+		if (femaleSheet)
+			return attackPhase == AttackPhase.VERTICAL ? ATTACK_VERTICAL : ATTACK_HORIZONTAL;
+		return attackPhase == AttackPhase.VERTICAL ? MALE_ATTACK_VERTICAL : MALE_ATTACK_HORIZONTAL;
 	}
 
 	private boolean canCancelAttack() {
@@ -429,6 +462,13 @@ public class Player extends Entity {
 	private void updatePos() {
 		moving = false;
 		lastAttackLungeStep = 0;
+		if (usingUltimate) {
+			dashing = false;
+			dashRemaining = 0;
+			horizontalMomentum = 0;
+			attackLungeRemaining = 0;
+			jumpConsumed = jump;
+		}
 
 		// Dash overrides everything: fixed direction, fixed distance, no gravity.
 		if (dashing) {
@@ -443,7 +483,7 @@ public class Player extends Entity {
 			jumpConsumed = false;
 
 		boolean attackMovementLocked = (LOCK_MOVEMENT_DURING_ATTACK && attackPhase != AttackPhase.NONE)
-				|| blocking;
+				|| blocking || usingUltimate;
 		int horizontalDirection = getEffectiveHorizontalDirection();
 		boolean hasHorizontalInput = horizontalDirection != 0;
 		boolean attackLungeActive = attackPhase != AttackPhase.NONE && !attackStartedInAir
@@ -496,7 +536,7 @@ public class Player extends Entity {
 
 		} else
 			updateXPos(xSpeed);
-		moving = hasHorizontalInput;
+		moving = !usingUltimate && hasHorizontalInput;
 	}
 
 	private int getEffectiveHorizontalDirection() {
@@ -630,7 +670,9 @@ public class Player extends Entity {
 
 	private void loadAnimations() {
 		boolean splitMaleSheet = LoadSave.MALE_PLAYER_ATLAS.equals(spriteSheet);
-		animationDefinitions = splitMaleSheet ? createMaleAnimationDefinitions() : createLegacyAnimationDefinitions();
+		femaleSheet = LoadSave.FEMALE_PLAYER_ATLAS.equals(spriteSheet);
+		animationDefinitions = splitMaleSheet ? createMaleAnimationDefinitions()
+				: femaleSheet ? createFemaleAnimationDefinitions() : createLegacyAnimationDefinitions();
 		animations = new BufferedImage[animationDefinitions.length][];
 		whiteAnimations = new BufferedImage[animationDefinitions.length][];
 		for (int state = 0; state < animationDefinitions.length; state++) {
@@ -639,9 +681,14 @@ public class Player extends Entity {
 			validateSheet(animation, sheet);
 			animations[state] = new BufferedImage[animation.frameCount];
 			whiteAnimations[state] = new BufferedImage[animation.frameCount];
-			for (int frame = 0; frame < animation.frameCount; frame++)
-				animations[state][frame] = sheet.getSubimage(frame * animation.frameWidth,
-						animation.row * animation.frameHeight, animation.frameWidth, animation.frameHeight);
+			for (int frame = 0; frame < animation.frameCount; frame++) {
+				int sourceCell = animation.sourceStartCell + frame;
+				int sourceX = animation.sourceColumns > 0 ? (sourceCell % animation.sourceColumns) * animation.frameWidth
+						: frame * animation.frameWidth;
+				int sourceY = animation.sourceColumns > 0 ? (sourceCell / animation.sourceColumns) * animation.frameHeight
+						: animation.row * animation.frameHeight;
+				animations[state][frame] = sheet.getSubimage(sourceX, sourceY, animation.frameWidth, animation.frameHeight);
+			}
 			for (int frame = 0; frame < animation.frameCount; frame++)
 				whiteAnimations[state][frame] = HitEffects.whiteSilhouette(animations[state][frame]);
 		}
@@ -652,6 +699,7 @@ public class Player extends Entity {
 	private AnimationDefinition[] createMaleAnimationDefinitions() {
 		String main = LoadSave.MALE_PLAYER_ATLAS;
 		String continuation = LoadSave.MALE_PLAYER_CONTINUATION_ATLAS;
+		String ultimate = LoadSave.MALE_LAPULAPU_ULTIMATE_ATLAS;
 		return new AnimationDefinition[] {
 			new AnimationDefinition(main, 64, 64, 0, 9, 17, true, false),
 			new AnimationDefinition(main, 64, 64, 1, 9, 17, true, false),
@@ -669,7 +717,8 @@ public class Player extends Entity {
 			new AnimationDefinition(main, 64, 64, 9, 9, 18, false, true),
 			new AnimationDefinition(main, 64, 64, 10, 9, 18, false, true),
 			new AnimationDefinition(continuation, 96, 64, 2, 5, continuationFrameTicks(DASH_FRAME_SECONDS), false, true),
-			new AnimationDefinition(continuation, 96, 64, 3, 9, continuationFrameTicks(ULTIMATE_FRAME_SECONDS), false, false)
+			new AnimationDefinition(ultimate, 96, 96, 1, 5, 16,
+					continuationFrameTicks(ULTIMATE_FRAME_SECONDS), false, false, false, 23)
 		};
 	}
 
@@ -682,9 +731,44 @@ public class Player extends Entity {
 		return definitions;
 	}
 
+	private AnimationDefinition[] createFemaleAnimationDefinitions() {
+		String main = LoadSave.FEMALE_LAPULAPU_ATLAS;
+		String attack = LoadSave.FEMALE_LAPULAPU_ATTACK_ATLAS;
+		String ultimate = LoadSave.FEMALE_LAPULAPU_ULTIMATE_ATLAS;
+		return new AnimationDefinition[] {
+			new AnimationDefinition(main, 64, 64, 0, 8, 8, 30, true, false, false, 7),
+			new AnimationDefinition(main, 64, 64, 8, 8, 8, 20, true, false, false, 7),
+			new AnimationDefinition(main, 64, 64, 16, 8, 8, 14, true, false, false, 7),
+			new AnimationDefinition(attack, 96, 64, 1, 5, 16, 11, false, false, false, 21.5f),
+			new AnimationDefinition(main, 64, 64, 40, 8, 8, 20, false, true, false, 7),
+			new AnimationDefinition(main, 64, 64, 48, 8, 8, 12, false, false, false, 7),
+			new AnimationDefinition(main, 64, 64, 32, 8, 8, 18, false, false, false, 7),
+			new AnimationDefinition(main, 64, 64, 0, 8, 20, 20, 3, -1, 3, 7, false, true,
+					24, 8, false, 7),
+			new AnimationDefinition(main, 64, 64, 24, 8, 8, 20, false, true, false, 7),
+			new AnimationDefinition(main, 64, 64, 32, 8, 8, 18, true, false, false, 7),
+			new AnimationDefinition(main, 64, 64, 24, 8, 8, 20, false, false, false, 7),
+			new AnimationDefinition(main, 64, 64, 56, 8, 8, 24, false, true, false, 7),
+			new AnimationDefinition(main, 64, 64, 56, 8, 8, 24, false, true, false, 7),
+			// Female dash: row 8 of the new 9-row sheet. Eight ticks per frame
+			// keeps the 8-frame animation aligned with the existing dash duration;
+			// the final frame is held if the dash has a fractional remainder.
+			new AnimationDefinition(main, 64, 64, 64, 8, 8, 8, false, true, false, 7),
+			new AnimationDefinition(ultimate, 96, 96, 1, 5, 16, 14, false, false, false, 22)
+		};
+	}
+
 	private void validateSheet(AnimationDefinition animation, BufferedImage sheet) {
-		int requiredWidth = animation.frameWidth * animation.frameCount;
-		int requiredHeight = animation.frameHeight * (animation.row + 1);
+		int requiredWidth;
+		int requiredHeight;
+		if (animation.sourceColumns > 0) {
+			int lastCell = animation.sourceStartCell + animation.frameCount - 1;
+			requiredWidth = animation.sourceColumns * animation.frameWidth;
+			requiredHeight = (lastCell / animation.sourceColumns + 1) * animation.frameHeight;
+		} else {
+			requiredWidth = animation.frameWidth * animation.frameCount;
+			requiredHeight = animation.frameHeight * (animation.row + 1);
+		}
 		if (sheet.getWidth() < requiredWidth || sheet.getHeight() < requiredHeight)
 			throw new IllegalStateException("Sprite sheet '" + animation.sheet + "' is too small for player animation row "
 					+ animation.row + ". Expected at least " + requiredWidth + "x" + requiredHeight + ".");
@@ -714,24 +798,53 @@ public class Player extends Entity {
 	private static class AnimationDefinition {
 		private final String sheet;
 		private final int frameWidth, frameHeight, row, frameCount;
+		private final int sourceStartCell, sourceColumns;
 		private final int introFrameDelay, frameDelay, initialFrame, introEndFrame;
 		private final int loopStartFrame, loopEndFrame;
 		private final boolean looping, holdFinalFrame;
+		private final boolean leftAnchored;
+		private final float drawOffsetX;
 
 		private AnimationDefinition(String sheet, int frameWidth, int frameHeight, int row, int frameCount,
 				int frameDelay, boolean looping, boolean holdFinalFrame) {
 			this(sheet, frameWidth, frameHeight, row, frameCount, frameDelay, frameDelay, looping ? RUN_START_FRAME : 0,
-					-1, looping ? RUN_START_FRAME : 0, looping ? frameCount - 1 : -1, looping, holdFinalFrame);
+					-1, looping ? RUN_START_FRAME : 0, looping ? frameCount - 1 : -1, looping, holdFinalFrame,
+					0, 0, false, 0);
+		}
+
+		private AnimationDefinition(String sheet, int frameWidth, int frameHeight, int sourceStartCell,
+				int sourceColumns, int frameCount, int frameDelay, boolean looping, boolean holdFinalFrame,
+				boolean leftAnchored) {
+			this(sheet, frameWidth, frameHeight, sourceStartCell, sourceColumns, frameCount, frameDelay, looping,
+					holdFinalFrame, leftAnchored, 0);
+		}
+
+		private AnimationDefinition(String sheet, int frameWidth, int frameHeight, int sourceStartCell,
+				int sourceColumns, int frameCount, int frameDelay, boolean looping, boolean holdFinalFrame,
+				boolean leftAnchored, float drawOffsetX) {
+			this(sheet, frameWidth, frameHeight, 0, frameCount, frameDelay, frameDelay, 0, -1,
+					looping ? RUN_START_FRAME : 0, looping ? frameCount - 1 : -1, looping, holdFinalFrame,
+					sourceStartCell, sourceColumns, leftAnchored, drawOffsetX);
 		}
 
 		private AnimationDefinition(String sheet, int frameWidth, int frameHeight, int row, int frameCount,
 				int introFrameDelay, int frameDelay, int initialFrame, int introEndFrame, int loopStartFrame,
 				int loopEndFrame, boolean looping, boolean holdFinalFrame) {
+			this(sheet, frameWidth, frameHeight, row, frameCount, introFrameDelay, frameDelay, initialFrame,
+					introEndFrame, loopStartFrame, loopEndFrame, looping, holdFinalFrame, 0, 0, false, 0);
+		}
+
+		private AnimationDefinition(String sheet, int frameWidth, int frameHeight, int row, int frameCount,
+				int introFrameDelay, int frameDelay, int initialFrame, int introEndFrame, int loopStartFrame,
+				int loopEndFrame, boolean looping, boolean holdFinalFrame, int sourceStartCell, int sourceColumns,
+				boolean leftAnchored, float drawOffsetX) {
 			this.sheet = sheet;
 			this.frameWidth = frameWidth;
 			this.frameHeight = frameHeight;
 			this.row = row;
 			this.frameCount = frameCount;
+			this.sourceStartCell = sourceStartCell;
+			this.sourceColumns = sourceColumns;
 			this.introFrameDelay = introFrameDelay;
 			this.frameDelay = frameDelay;
 			this.initialFrame = initialFrame;
@@ -740,6 +853,8 @@ public class Player extends Entity {
 			this.loopEndFrame = loopEndFrame;
 			this.looping = looping;
 			this.holdFinalFrame = holdFinalFrame;
+			this.leftAnchored = leftAnchored;
+			this.drawOffsetX = drawOffsetX;
 		}
 
 		private boolean hasIntro() {
@@ -776,14 +891,15 @@ public class Player extends Entity {
 	}
 
 	public void setAttacking(boolean attacking) {
-		if (!attacking)
+		if (!attacking || usingUltimate)
 			return;
 		if (attackPhase == AttackPhase.HORIZONTAL) {
-			attackQueued = true;
+			if (aniIndex >= getCurrentAttackDefinition().hitActiveEnd)
+				attackQueued = true;
 			return;
 		}
 		if (attackPhase == AttackPhase.VERTICAL) {
-			if (aniIndex >= ATTACK_VERTICAL.endFrame - 1)
+			if (aniIndex >= getCurrentAttackDefinition().endFrame - 1)
 				attackQueued = true;
 			return;
 		}
@@ -791,6 +907,8 @@ public class Player extends Entity {
 	}
 
 	public void setBlocking(boolean blocking) {
+		if (usingUltimate && blocking)
+			return;
 		if (blocking && !canCancelAttack())
 			return;
 		if (blocking)
@@ -805,7 +923,7 @@ public class Player extends Entity {
 	// Call this once per key press. The direction is locked to where the
 	// player is facing when the dash starts, no matter what keys are held.
 	public void setDash(boolean dash) {
-		if (!dash || dashing || dashCooldownTicks > 0 || !canCancelAttack())
+		if (!dash || usingUltimate || dashing || dashCooldownTicks > 0 || !canCancelAttack())
 			return;
 		if (inAir && airDashUsed)
 			return;
@@ -823,11 +941,37 @@ public class Player extends Entity {
 
 	public void setUltimate(boolean ultimate) {
 		if (ultimate && !usingUltimate) {
+			if (femaleSheet) {
+				cancelAttackPhase();
+			} else {
+				cancelAttackPhase();
+				blocking = false;
+				dashing = false;
+				horizontalMomentum = 0;
+			}
 			usingUltimate = true;
-			ultimateHitTargets.clear();
+			ultimateHitApplied = false;
+			attackHitTargets.clear();
+			ultAnimation.start(flipW > 0);
 			aniTick = 0;
 			aniIndex = 0;
 		}
+	}
+
+	public void updateUltimateEffect(float dt) {
+		ultAnimation.updateTimers(dt);
+	}
+
+	public boolean isUltimateWorldFrozen() {
+		return ultAnimation.isWorldFrozen();
+	}
+
+	public boolean isUltimateEffectActive() {
+		return usingUltimate || ultAnimation.isActive();
+	}
+
+	public BufferedImage applyUltimateImpactFrame(BufferedImage scene) {
+		return ultAnimation.applyImpactFrame(scene);
 	}
 
 	public void setVictory(boolean victory) {
@@ -851,6 +995,8 @@ public class Player extends Entity {
 	}
 
 	public void setJump(boolean jump) {
+		if (usingUltimate && jump)
+			return;
 		if (jump && !canCancelAttack())
 			return;
 		if (jump)
@@ -873,7 +1019,8 @@ public class Player extends Entity {
 		dashCooldownTicks = 0;
 		airDashUsed = false;
 		usingUltimate = false;
-		ultimateHitTargets.clear();
+		ultimateHitApplied = false;
+		ultAnimation.reset();
 		victory = false;
 		moving = false;
 		jumpsUsed = 0;

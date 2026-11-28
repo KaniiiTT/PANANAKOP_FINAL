@@ -27,6 +27,8 @@ public class EnemyManager {
 	private ArrayList<Conquistador> conquistadors = new ArrayList<>();
 	private ArrayList<Magellan> magellans = new ArrayList<>();
 	private ArrayList<Espinosa> espinosas = new ArrayList<>();
+	private ArrayList<Monkey> monkeys = new ArrayList<>();
+	private ArrayList<Gorilla> gorillas = new ArrayList<>();
 
 	public EnemyManager(Playing playing) {
 		this.playing = playing;
@@ -39,6 +41,8 @@ public class EnemyManager {
 		conquistadors = level.getConquistadors();
 		magellans = level.getMagellans();
 		espinosas = level.getEspinosas();
+		monkeys = level.getMonkeys();
+		gorillas = level.getGorillas();
 	}
 
 	public void update(int[][] lvlData, Player player) {
@@ -70,6 +74,16 @@ public class EnemyManager {
 				if (!e.isDefeated())
 					isAnyActive = true;
 			}
+		for (Monkey monkey : monkeys)
+			if (monkey.isActive()) {
+				monkey.update(lvlData, player);
+				isAnyActive = true;
+			}
+		for (Gorilla gorilla : gorillas)
+			if (gorilla.isActive()) {
+				gorilla.update(lvlData, player);
+				isAnyActive = true;
+			}
 		if (!isAnyActive)
 			playing.setLevelCompleted(true);
 	}
@@ -85,6 +99,10 @@ public class EnemyManager {
 			boss.updateFlash(dt);
 		for (Espinosa e : espinosas)
 			e.updateFlash(dt);
+		for (Monkey monkey : monkeys)
+			monkey.updateFlash(dt);
+		for (Gorilla gorilla : gorillas)
+			gorilla.updateFlash(dt);
 	}
 
 	public void draw(Graphics g, int xLvlOffset) {
@@ -97,6 +115,12 @@ public class EnemyManager {
 		for (Espinosa e : espinosas)
 			if (e.isActive())
 				e.draw(g, xLvlOffset);
+		for (Monkey monkey : monkeys)
+			if (monkey.isActive() || monkey.getState() == DEAD)
+				monkey.draw(g, xLvlOffset);
+		for (Gorilla gorilla : gorillas)
+			if (gorilla.isActive() || gorilla.getState() == DEAD)
+				gorilla.draw(g, xLvlOffset);
 	}
 
 	private void drawBoars(Graphics g, int xLvlOffset) {
@@ -121,7 +145,7 @@ public class EnemyManager {
 	}
 
 	/**
-	 * A living boss (Magellan or the Espinosa mini-boss) within {@code range} pixels of the player, or null.
+	 * A living boss (Magellan, Espinosa, or Gorilla) within {@code range} pixels of the player, or null.
 	 * Used by the music system to start boss music.
 	 */
 	public Enemy findBossNear(Player player, float range) {
@@ -133,6 +157,9 @@ public class EnemyManager {
 		for (Espinosa e : espinosas)
 			if (e.isActive() && !e.isDefeated() && e.getState() != DEAD && isNear(e, px, py, range))
 				return e;
+		for (Gorilla gorilla : gorillas)
+			if (gorilla.isActive() && gorilla.getState() != DEAD && isNear(gorilla, px, py, range))
+				return gorilla;
 		return null;
 	}
 
@@ -188,7 +215,33 @@ public class EnemyManager {
 		for (Espinosa e : espinosas)
 			if (hitEnemy(e, attackBox, damage, knockback, direction, hitTargets, heavy))
 				return true;
+		for (Monkey monkey : monkeys)
+			if (hitEnemy(monkey, attackBox, damage, knockback, direction, hitTargets, heavy))
+				return true;
+		for (Gorilla gorilla : gorillas)
+			if (hitEnemy(gorilla, attackBox, damage, knockback, direction, hitTargets, heavy))
+				return true;
 		return false;
+	}
+
+	public boolean checkAllEnemiesHit(Rectangle2D.Float attackBox, int damage, int knockback, int direction,
+			Set<Enemy> hitTargets, boolean heavy) {
+		boolean hitAny = false;
+		for (Crabby c : crabbies)
+			hitAny |= hitEnemy(c, attackBox, damage, knockback, direction, hitTargets, heavy);
+		for (Boar boar : boars)
+			hitAny |= hitEnemy(boar, attackBox, damage, knockback, direction, hitTargets, heavy);
+		for (Conquistador conquistador : conquistadors)
+			hitAny |= hitEnemy(conquistador, attackBox, damage, knockback, direction, hitTargets, heavy);
+		for (Magellan boss : magellans)
+			hitAny |= hitEnemy(boss, attackBox, damage, knockback, direction, hitTargets, heavy);
+		for (Espinosa e : espinosas)
+			hitAny |= hitEnemy(e, attackBox, damage, knockback, direction, hitTargets, heavy);
+		for (Monkey monkey : monkeys)
+			hitAny |= hitEnemy(monkey, attackBox, damage, knockback, direction, hitTargets, heavy);
+		for (Gorilla gorilla : gorillas)
+			hitAny |= hitEnemy(gorilla, attackBox, damage, knockback, direction, hitTargets, heavy);
+		return hitAny;
 	}
 
 	private boolean hitEnemy(Enemy enemy, Rectangle2D.Float attackBox, int damage, int knockback, int direction,
@@ -271,6 +324,10 @@ public class EnemyManager {
 			boss.resetEnemy();
 		for (Espinosa e : espinosas)
 			e.resetEnemy();
+		for (Monkey monkey : monkeys)
+			monkey.resetEnemy();
+		for (Gorilla gorilla : gorillas)
+			gorilla.resetEnemy();
 	}
 
 }

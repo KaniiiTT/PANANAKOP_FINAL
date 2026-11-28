@@ -97,6 +97,10 @@ public class Constants {
 		public static final int CONQUISTADOR = 3;
 		/** Green channel marker used by the editor and level loader for Espinosa. */
 		public static final int ESPINOSA = 4;
+		/** Green channel marker used by the editor and level loader for Monkey. */
+		public static final int MONKEY = 5;
+		/** Green channel marker used by the editor and level loader for Gorilla. */
+		public static final int GORILLA = 6;
 
 		public static final int IDLE = 0;
 		public static final int RUNNING = 1;
@@ -197,6 +201,17 @@ public class Constants {
 				case DEAD -> 8;
 				default -> 1;
 				};
+			case MONKEY:
+				return enemy_state == DEAD ? 9 : 8;
+			case GORILLA:
+				return switch (enemy_state) {
+				case IDLE -> 6;
+				case RUNNING -> 8;
+				case ATTACK -> 8;
+				case HIT -> 6;
+				case DEAD -> 9;
+				default -> 1;
+				};
 			}
 
 			return 0;
@@ -213,6 +228,10 @@ public class Constants {
 				return 20;
 			case CONQUISTADOR:
 				return 30;
+			case MONKEY:
+				return 10;
+			case GORILLA:
+				return 80;
 			default:
 				return 1;
 			}
@@ -227,6 +246,10 @@ public class Constants {
 			case BOAR:
 				return 20;
 			case CONQUISTADOR:
+				return 25;
+			case MONKEY:
+				return 15;
+			case GORILLA:
 				return 25;
 			default:
 				return 0;
@@ -288,6 +311,9 @@ public class Constants {
 	public static class PlayerConstants {
 		/** Vertical render adjustment for aligning the player's feet with the ground. */
 		public static final int PLAYER_SPRITE_OFFSET_Y = 2;
+		/** Shared collision dimensions for both male and female player sprites. */
+		public static final int PLAYER_HITBOX_WIDTH = 20;
+		public static final int PLAYER_HITBOX_HEIGHT = 27;
 		public static final int IDLE = 0;
 		public static final int WALKING = 1;
 		public static final int RUNNING = 2;
@@ -316,7 +342,7 @@ public class Constants {
 		public static final float ATTACK_VERTICAL_FRAME_SECONDS = 0.08f;
 		public static final float RUNNING_FRAME_SECONDS = 0.08f;
 		public static final float DASH_FRAME_SECONDS = 0.05f;
-		public static final float ULTIMATE_FRAME_SECONDS = 0.09f;
+		public static final float ULTIMATE_FRAME_SECONDS = 0.07f;
 
 		public static int continuationFrameTicks(float seconds) {
 			return Math.max(1, Math.round(seconds * PLAYER_UPDATES_PER_SECOND / CONTINUATION_SPEED_MULTIPLIER));
@@ -332,13 +358,20 @@ public class Constants {
 		public static final int ATTACK_CHAIN_GRACE_TICKS = 80;
 
 		public static final AttackDefinition ATTACK_HORIZONTAL = new AttackDefinition(
-				0, 5, 2, 4, continuationFrameTicks(ATTACK_HORIZONTAL_FRAME_SECONDS), 10, 32, 24, 10, 4, 3);
+				0, 7, 2, 4, continuationFrameTicks(ATTACK_HORIZONTAL_FRAME_SECONDS), 10, 64, 32, 0, 8, 3);
 		public static final AttackDefinition ATTACK_VERTICAL = new AttackDefinition(
-				6, 12, 8, 10, continuationFrameTicks(ATTACK_VERTICAL_FRAME_SECONDS), 20, 44, 34, 8, 0, 7);
+				8, 15, 2, 4, continuationFrameTicks(ATTACK_VERTICAL_FRAME_SECONDS), 20, 80, 40, 0, 4, 7);
+		public static final AttackDefinition MALE_ATTACK_HORIZONTAL = new AttackDefinition(
+				0, 5, 2, 4, continuationFrameTicks(ATTACK_HORIZONTAL_FRAME_SECONDS), 10, 64, 32, 0, 8, 3);
+		public static final AttackDefinition MALE_ATTACK_VERTICAL = new AttackDefinition(
+				6, 12, 2, 4, continuationFrameTicks(ATTACK_VERTICAL_FRAME_SECONDS), 20, 80, 40, 0, 4, 7);
 		public static final UltimateHitDefinition[] ULTIMATE_HITS = {
-				new UltimateHitDefinition(2, 10, 96, 64, 0, 0, false),
-				new UltimateHitDefinition(5, 10, 96, 64, 0, 0, false),
-				new UltimateHitDefinition(8, 20, 96, 64, 0, 0, true)
+				new UltimateHitDefinition(7, 10, 96, 96, 0, 0, false),
+				new UltimateHitDefinition(8, 10, 96, 96, 0, 0, false),
+				new UltimateHitDefinition(9, 10, 96, 96, 0, 0, false),
+				new UltimateHitDefinition(10, 10, 96, 96, 0, 0, false),
+				new UltimateHitDefinition(11, 10, 96, 96, 0, 0, false),
+				new UltimateHitDefinition(12, 20, 96, 96, 0, 0, true)
 		};
 
 		public static class AttackDefinition {
