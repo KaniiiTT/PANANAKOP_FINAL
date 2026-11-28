@@ -4,12 +4,15 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -26,20 +29,24 @@ import java.util.TreeMap;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JCheckBox;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JSlider;
 import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -66,6 +73,10 @@ public class GameEditor {
 	private final Path projectRoot = LoadSave.GetProjectRoot();
 	private final Path levelsDirectory = projectRoot.resolve("res").resolve("lvls");
 	private final BufferedImage[] classicTiles = loadClassicTiles();
+	private final BufferedImage menuBackground = loadMenuImage("menu/menu_background.png");
+	private final BufferedImage menuPanel = loadMenuImage("menu/panel_main.png");
+	private final BufferedImage menuDivider = loadMenuImage("menu/divider.png");
+	private final BufferedImage menuLogo = loadMenuImage("menu/title_logo.png");
 	private final JFrame frame = new JFrame("Pananakop Map Editor");
 	private final Map<String, BufferedImage> previewCache = new TreeMap<>();
 	private final List<BackgroundOption> backgroundOptions = new ArrayList<>();
@@ -73,6 +84,18 @@ public class GameEditor {
 	private final Deque<MapSnapshot> undoHistory = new ArrayDeque<>();
 	private final Deque<MapSnapshot> redoHistory = new ArrayDeque<>();
 	private final EditorCanvas canvas = new EditorCanvas();
+	private final DefaultListModel<SceneEntry> sceneModel = new DefaultListModel<>();
+	private final javax.swing.Timer sceneRefreshTimer = new javax.swing.Timer(120,
+			event -> refreshSceneHierarchy());
+	private JList<SceneEntry> sceneList;
+	private JLabel sceneInspector;
+	private SceneEntry selectedSceneEntry;
+	private int sceneDragOffsetX;
+	private int sceneDragOffsetY;
+	private boolean sceneObjectMoved;
+	private double zoom = 1.0;
+	private boolean showGrid = true;
+	private JLabel zoomLabel;
 	private final JLabel status = new JLabel("Select a block, then click or drag on the map.");
 	private final JLabel currentMapLabel = new JLabel();
 	private BufferedImage mapImage;
@@ -109,6 +132,7 @@ public class GameEditor {
 	}
 
 	private GameEditor() {
+		sceneRefreshTimer.setRepeats(false);
 		if (!loadLevel(levelsDirectory.resolve("1.png")))
 			throw new IllegalStateException("Unable to load the first level map.");
 		buildWindow();
@@ -127,20 +151,73 @@ public class GameEditor {
 					frame.dispose();
 			}
 		});
-		frame.setLayout(new BorderLayout(8, 8));
-		frame.add(createToolbar(), BorderLayout.NORTH);
-		frame.add(createPalette(), BorderLayout.WEST);
-		frame.add(new JScrollPane(canvas), BorderLayout.CENTER);
-		status.setBorder(BorderFactory.createEmptyBorder(4, 8, 8, 8));
-		frame.add(status, BorderLayout.SOUTH);
+		JPanel root = new JPanel(new BorderLayout(10, 10)) {
+			private static final long serialVersionUID = 1L;
+			@Override protected void paintComponent(Graphics graphics) {
+				super.paintComponent(graphics);
+				if (menuBackground != null)
+					graphics.drawImage(menuBackground, 0, 0, getWidth(), getHeight(), null);
+				else {
+					graphics.setColor(new Color(29, 37, 53));
+					graphics.fillRect(0, 0, getWidth(), getHeight());
+				}
+			}
+		};
+		root.setBorder(BorderFactory.createEmptyBorder(10, 12, 8, 12));
+		root.setOpaque(false);
+		root.add(createToolbar(), BorderLayout.NORTH);
+		root.add(createPalette(), BorderLayout.WEST);
+		JScrollPane mapScroll = new JScrollPane(canvas);
+		mapScroll.setBorder(BorderFactory.createLineBorder(new Color(31, 42, 61), 3));
+		mapScroll.getViewport().setBackground(new Color(22, 29, 42));
+		mapScroll.setBackground(new Color(22, 29, 42));
+		JSplitPane workspace = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mapScroll, createScenePanel());
+		workspace.setResizeWeight(1.0);
+		workspace.setDividerLocation(0.78);
+		workspace.setBorder(null);
+		root.add(workspace, BorderLayout.CENTER);
+		status.setForeground(new Color(247, 240, 222));
+		status.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+		status.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
+		root.add(status, BorderLayout.SOUTH);
+		frame.setContentPane(root);
+		installKeyboardShortcuts();
 		frame.setMinimumSize(new Dimension(1000, 650));
 		frame.setSize(1380, 850);
 		frame.setLocationRelativeTo(null);
 	}
 
 	private JPanel createToolbar() {
-		JPanel toolbar = new JPanel();
+		JPanel toolbar = new JPanel(new BorderLayout(8, 5));
+		toolbar.setOpaque(false);
+		JPanel header = new JPanel(new BorderLayout(12, 0));
+		header.setOpaque(false);
+		if (menuLogo != null) {
+			JLabel logo = new JLabel(new javax.swing.ImageIcon(menuLogo.getScaledInstance(210, 66,
+					java.awt.Image.SCALE_SMOOTH)));
+			logo.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 8));
+			header.add(logo, BorderLayout.WEST);
+		}
+		JLabel editorTitle = new JLabel("WORLD BUILDER");
+		editorTitle.setForeground(new Color(30, 43, 64));
+		editorTitle.setFont(new Font(Font.SERIF, Font.BOLD, 20));
+		header.add(editorTitle, BorderLayout.CENTER);
+		JPanel stageRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 6));
+		stageRow.setOpaque(false);
+		stageRow.add(new JLabel("STAGE"));
+		stageRow.add(currentMapLabel);
+		stageRow.add(stagePicker = new JComboBox<>(STAGES));
+		stagePicker.addActionListener(event -> {
+			if (!updatingStagePicker)
+				selectStage((StageOption) stagePicker.getSelectedItem());
+		});
+		syncStagePicker();
+		header.add(stageRow, BorderLayout.EAST);
+		toolbar.add(header, BorderLayout.NORTH);
+		JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
+		actions.setOpaque(false);
 		JButton newButton = new JButton("New map");
+		JButton selectButton = new JButton("Select");
 		JButton resizeButton = new JButton("Resize map");
 		JButton undoButton = new JButton("Undo");
 		JButton redoButton = new JButton("Redo");
@@ -151,12 +228,6 @@ public class GameEditor {
 		JButton testButton = new JButton("Test map");
 		JButton arenaPreviewButton = new JButton("Boss arena view");
 		JButton buildArenaButton = new JButton("Build boss arena");
-		stagePicker = new JComboBox<>(STAGES);
-		stagePicker.addActionListener(event -> {
-			if (!updatingStagePicker)
-				selectStage((StageOption) stagePicker.getSelectedItem());
-		});
-		syncStagePicker();
 
 		newButton.addActionListener(event -> createNewMap());
 		resizeButton.addActionListener(event -> resizeCurrentMap());
@@ -171,20 +242,326 @@ public class GameEditor {
 		arenaPreviewButton.addActionListener(event -> showBossArenaPreview());
 		buildArenaButton.addActionListener(event -> buildBossArena());
 
-		toolbar.add(newButton);
-		toolbar.add(resizeButton);
-		toolbar.add(undoButton);
-		toolbar.add(redoButton);
-		toolbar.add(resetButton);
-		toolbar.add(openButton);
-		toolbar.add(saveButton);
-		toolbar.add(saveAsButton);
-		toolbar.add(testButton);
-		toolbar.add(arenaPreviewButton);
-		toolbar.add(buildArenaButton);
-		toolbar.add(stagePicker);
-		toolbar.add(currentMapLabel);
+		selectButton.setToolTipText("Select and move objects in the viewport.");
+		selectButton.addActionListener(event -> {
+			selectedTool = Tool.select();
+			status.setText("Select mode: click an object, then drag to move it.");
+		});
+		for (JButton button : new JButton[] { selectButton, newButton, resizeButton, undoButton, redoButton, resetButton,
+				openButton, saveButton, saveAsButton, testButton, arenaPreviewButton, buildArenaButton })
+			styleMenuButton(button);
+		for (JButton button : new JButton[] { selectButton, newButton, resizeButton, undoButton, redoButton, resetButton,
+				openButton, saveButton, saveAsButton, testButton, arenaPreviewButton, buildArenaButton })
+			actions.add(button);
+		styleMenuControl(stagePicker);
+		styleMenuControl(currentMapLabel);
+		JCheckBox gridToggle = new JCheckBox("Grid", showGrid);
+		gridToggle.setOpaque(false);
+		gridToggle.setForeground(new Color(34, 47, 69));
+		gridToggle.addActionListener(event -> {
+			showGrid = gridToggle.isSelected();
+			canvas.repaint();
+		});
+		stageRow.add(gridToggle);
+		JButton zoomOut = new JButton("−");
+		JButton zoomIn = new JButton("+");
+		zoomOut.addActionListener(event -> setZoom(zoom - 0.1));
+		zoomIn.addActionListener(event -> setZoom(zoom + 0.1));
+		styleMenuButton(zoomOut);
+		styleMenuButton(zoomIn);
+		zoomLabel = new JLabel("100%");
+		styleMenuControl(zoomLabel);
+		stageRow.add(zoomOut);
+		stageRow.add(zoomLabel);
+		stageRow.add(zoomIn);
+		toolbar.add(actions, BorderLayout.SOUTH);
+		toolbar.setBorder(BorderFactory.createEmptyBorder(3, 4, 7, 4));
 		return toolbar;
+	}
+
+	private static BufferedImage loadMenuImage(String path) {
+		try {
+			return LoadSave.GetSpriteAtlas(path);
+		} catch (RuntimeException exception) {
+			return null;
+		}
+	}
+
+	private static void styleMenuButton(JButton button) {
+		button.setFont(new Font(Font.SERIF, Font.BOLD, 13));
+		button.setForeground(new Color(36, 48, 68));
+		button.setBackground(new Color(244, 238, 221));
+		button.setFocusPainted(false);
+		button.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(new Color(78, 91, 112), 1),
+				BorderFactory.createEmptyBorder(6, 9, 6, 9)));
+		button.setOpaque(true);
+	}
+
+	private static void styleMenuControl(JLabel label) {
+		label.setForeground(new Color(34, 47, 69));
+		label.setFont(new Font(Font.SERIF, Font.BOLD, 13));
+	}
+
+	private static void styleMenuControl(JComboBox<?> combo) {
+		combo.setFont(new Font(Font.SERIF, Font.BOLD, 13));
+		combo.setForeground(new Color(36, 48, 68));
+		combo.setBackground(new Color(244, 238, 221));
+	}
+
+	private JPanel createScenePanel() {
+		JPanel panel = new JPanel(new BorderLayout(6, 8));
+		panel.setPreferredSize(new Dimension(245, 0));
+		panel.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(new Color(39, 51, 72), 2),
+				BorderFactory.createEmptyBorder(10, 10, 10, 10)));
+		panel.setBackground(new Color(239, 233, 216));
+		JLabel title = new JLabel("HIERARCHY");
+		title.setFont(new Font(Font.SERIF, Font.BOLD, 15));
+		title.setForeground(new Color(36, 48, 68));
+		panel.add(title, BorderLayout.NORTH);
+		sceneList = new JList<>(sceneModel);
+		sceneList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		sceneList.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+		sceneList.setBackground(new Color(250, 247, 237));
+		sceneList.addListSelectionListener(event -> {
+			if (event.getValueIsAdjusting())
+				return;
+			selectedSceneEntry = sceneList.getSelectedValue();
+			updateSceneInspector();
+			canvas.repaint();
+		});
+		JButton deleteButton = new JButton("Delete selected");
+		styleMenuButton(deleteButton);
+		deleteButton.addActionListener(event -> deleteSelectedSceneObject());
+		sceneInspector = new JLabel("<html><b>Inspector</b><br>Select an object to view its position.</html>");
+		sceneInspector.setVerticalAlignment(JLabel.TOP);
+		sceneInspector.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(170, 158, 132)),
+				BorderFactory.createEmptyBorder(9, 2, 6, 2)));
+		JPanel lower = new JPanel(new BorderLayout(4, 8));
+		lower.setOpaque(false);
+		lower.add(sceneInspector, BorderLayout.CENTER);
+		lower.add(deleteButton, BorderLayout.SOUTH);
+		panel.add(new JScrollPane(sceneList), BorderLayout.CENTER);
+		panel.add(lower, BorderLayout.SOUTH);
+		return panel;
+	}
+
+	private void refreshSceneHierarchy() {
+		if (sceneModel == null)
+			return;
+		SceneEntry previous = selectedSceneEntry;
+		sceneModel.clear();
+		if (mapImage == null)
+			return;
+		String[] markerNames = { "Crabby", "Magellan", "Boar", "Conquistador", "Espinosa", "Monkey", "Gorilla" };
+		String[] objectNames = { "Red potion", "Blue potion", "Barrel", "Crate", "Spike", "Cannon left", "Cannon right" };
+		for (int y = 0; y < mapImage.getHeight(); y++)
+			for (int x = 0; x < mapImage.getWidth(); x++) {
+				Color pixel = new Color(mapImage.getRGB(x, y));
+				int green = pixel.getGreen();
+				if (green == 100)
+					sceneModel.addElement(new SceneEntry("Player Start", x, y, 1, null));
+				else if (green >= 0 && green < markerNames.length)
+					sceneModel.addElement(new SceneEntry(markerNames[green] + "  •  " + x + ", " + y, x, y, 1, null));
+				int blue = pixel.getBlue();
+				if (blue >= 0 && blue < objectNames.length)
+					sceneModel.addElement(new SceneEntry(objectNames[blue] + "  •  " + x + ", " + y, x, y, 2, null));
+				else if (Trap.getType(blue).isPresent())
+					sceneModel.addElement(new SceneEntry(Trap.getType(blue).get().label + "  •  " + x + ", " + y,
+							x, y, 2, null));
+			}
+		for (LevelDecoration decoration : placedDecorations) {
+			Path asset = decoration.getAssetPath();
+			String name = asset == null ? "Decoration" : asset.getFileName().toString();
+			sceneModel.addElement(new SceneEntry(name + "  •  " + decoration.getX() + ", " + decoration.getY(),
+					decoration.getX(), decoration.getY(), 3, decoration));
+		}
+		if (sceneList != null && previous != null) {
+			for (int i = 0; i < sceneModel.size(); i++) {
+				SceneEntry entry = sceneModel.get(i);
+				if (entry.sameObject(previous)) {
+					sceneList.setSelectedIndex(i);
+					return;
+				}
+			}
+			sceneList.clearSelection();
+		}
+		updateSceneInspector();
+	}
+
+	private void updateSceneInspector() {
+		if (sceneInspector == null)
+			return;
+		if (selectedSceneEntry == null) {
+			sceneInspector.setText("<html><b>Inspector</b><br>Select an object to view its position.</html>");
+			return;
+		}
+		String position = selectedSceneEntry.channel == 3
+				? selectedSceneEntry.x + ", " + selectedSceneEntry.y + " px"
+				: selectedSceneEntry.x + ", " + selectedSceneEntry.y + " tiles";
+		sceneInspector.setText("<html><b>Inspector</b><br>" + selectedSceneEntry.label + "<br>Position: "
+				+ position + "</html>");
+	}
+
+	private void deleteSelectedSceneObject() {
+		if (selectedSceneEntry == null)
+			return;
+		recordHistory();
+		if (selectedSceneEntry.channel == 3) {
+			placedDecorations.remove(selectedSceneEntry.decoration);
+		} else {
+			Color pixel = new Color(mapImage.getRGB(selectedSceneEntry.x, selectedSceneEntry.y));
+			if (selectedSceneEntry.channel == 1)
+				setPixel(selectedSceneEntry.x, selectedSceneEntry.y, pixel.getRed(), NO_MARKER, pixel.getBlue());
+			else
+				setPixel(selectedSceneEntry.x, selectedSceneEntry.y, pixel.getRed(), pixel.getGreen(), NO_MARKER);
+		}
+		selectedSceneEntry = null;
+		unsavedChanges = true;
+		refreshSceneHierarchy();
+		canvas.repaint();
+		status.setText("Deleted selected scene object.");
+	}
+
+	private void selectSceneObjectAt(MouseEvent event) {
+		int px = (int) (event.getX() / zoom);
+		int py = (int) (event.getY() / zoom);
+		SceneEntry found = null;
+		for (int i = sceneModel.size() - 1; i >= 0; i--) {
+			SceneEntry candidate = sceneModel.get(i);
+			if (candidate.channel == 3) {
+				LevelDecoration decoration = candidate.decoration;
+				if (px >= decoration.getX() && px < decoration.getX() + decoration.getWidth()
+						&& py >= decoration.getY() && py < decoration.getY() + decoration.getHeight()) {
+					found = candidate;
+					break;
+				}
+			} else if (candidate.x == px / TILE_SIZE && candidate.y == py / TILE_SIZE) {
+				found = candidate;
+				break;
+			}
+		}
+		selectedSceneEntry = found;
+		if (sceneList != null && found != null)
+			sceneList.setSelectedValue(found, true);
+		else if (sceneList != null)
+			sceneList.clearSelection();
+		updateSceneInspector();
+		canvas.repaint();
+		if (found == null) {
+			sceneObjectMoved = false;
+			return;
+		}
+		if (found.channel == 3) {
+			sceneDragOffsetX = px - found.x;
+			sceneDragOffsetY = py - found.y;
+		} else {
+			sceneDragOffsetX = px / TILE_SIZE - found.x;
+			sceneDragOffsetY = py / TILE_SIZE - found.y;
+		}
+		sceneObjectMoved = false;
+	}
+
+	private void moveSelectedSceneObject(MouseEvent event) {
+		if (selectedSceneEntry == null)
+			return;
+		int px = (int) (event.getX() / zoom);
+		int py = (int) (event.getY() / zoom);
+		SceneEntry current = selectedSceneEntry;
+		int targetX;
+		int targetY;
+		if (current.channel == 3) {
+			LevelDecoration old = current.decoration;
+			targetX = Math.max(0, Math.min(mapImage.getWidth() * TILE_SIZE - old.getWidth(), px - sceneDragOffsetX));
+			targetY = Math.max(0, Math.min(mapImage.getHeight() * TILE_SIZE - old.getHeight(), py - sceneDragOffsetY));
+			if (targetX == old.getX() && targetY == old.getY())
+				return;
+			if (!sceneObjectMoved) {
+				recordHistory();
+				sceneObjectMoved = true;
+			}
+			LevelDecoration moved = new LevelDecoration(targetX, targetY, old.getWidth(), old.getHeight(),
+					old.getAssetPath(), old.getImage());
+			int index = placedDecorations.indexOf(old);
+			placedDecorations.set(index, moved);
+			String name = current.label.substring(0, current.label.lastIndexOf("  •  "));
+			selectedSceneEntry = new SceneEntry(name + "  •  " + targetX + ", " + targetY,
+					targetX, targetY, 3, moved);
+		} else {
+			targetX = Math.max(0, Math.min(mapImage.getWidth() - 1, px / TILE_SIZE - sceneDragOffsetX));
+			targetY = Math.max(0, Math.min(mapImage.getHeight() - 1, py / TILE_SIZE - sceneDragOffsetY));
+			if (targetX == current.x && targetY == current.y)
+				return;
+			Color target = new Color(mapImage.getRGB(targetX, targetY));
+			if ((current.channel == 1 && target.getGreen() != NO_MARKER)
+					|| (current.channel == 2 && target.getBlue() != NO_MARKER))
+				return;
+			if (!sceneObjectMoved) {
+				recordHistory();
+				sceneObjectMoved = true;
+			}
+			Color source = new Color(mapImage.getRGB(current.x, current.y));
+			String name = current.label.substring(0, current.label.lastIndexOf("  •  "));
+			if (current.channel == 1) {
+				setPixel(current.x, current.y, source.getRed(), NO_MARKER, source.getBlue());
+				setPixel(targetX, targetY, target.getRed(), source.getGreen(), target.getBlue());
+			} else {
+				setPixel(current.x, current.y, source.getRed(), source.getGreen(), NO_MARKER);
+				setPixel(targetX, targetY, target.getRed(), target.getGreen(), source.getBlue());
+			}
+			selectedSceneEntry = new SceneEntry(name + "  •  " + targetX + ", " + targetY,
+					targetX, targetY, current.channel, null);
+		}
+		unsavedChanges = true;
+		updateSceneInspector();
+		canvas.repaint();
+	}
+
+	private void installKeyboardShortcuts() {
+		javax.swing.JComponent root = frame.getRootPane();
+		root.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+				KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK), "undo");
+		root.getActionMap().put("undo", new javax.swing.AbstractAction() {
+			private static final long serialVersionUID = 1L;
+			@Override public void actionPerformed(java.awt.event.ActionEvent event) { undo(); }
+		});
+		root.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+				KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_DOWN_MASK), "redo");
+		root.getActionMap().put("redo", new javax.swing.AbstractAction() {
+			private static final long serialVersionUID = 1L;
+			@Override public void actionPerformed(java.awt.event.ActionEvent event) { redo(); }
+		});
+		root.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+				KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), "save");
+		root.getActionMap().put("save", new javax.swing.AbstractAction() {
+			private static final long serialVersionUID = 1L;
+			@Override public void actionPerformed(java.awt.event.ActionEvent event) { saveMap(currentMapPath); }
+		});
+		root.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+				KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK), "open");
+		root.getActionMap().put("open", new javax.swing.AbstractAction() {
+			private static final long serialVersionUID = 1L;
+			@Override public void actionPerformed(java.awt.event.ActionEvent event) { openMap(); }
+		});
+		root.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+				KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "deleteSelection");
+		root.getActionMap().put("deleteSelection", new javax.swing.AbstractAction() {
+			private static final long serialVersionUID = 1L;
+			@Override public void actionPerformed(java.awt.event.ActionEvent event) { deleteSelectedSceneObject(); }
+		});
+	}
+
+	private void setZoom(double value) {
+		zoom = Math.max(0.5, Math.min(2.0, Math.round(value * 10.0) / 10.0));
+		if (zoomLabel != null)
+			zoomLabel.setText((int) Math.round(zoom * 100) + "%");
+		updateCanvas();
+	}
+
+	private void scheduleSceneHierarchyRefresh() {
+		sceneRefreshTimer.restart();
 	}
 
 	private void selectStage(StageOption stage) {
@@ -356,9 +733,30 @@ public class GameEditor {
 	}
 
 	private JPanel createPalette() {
-		JPanel palette = new JPanel(new BorderLayout(4, 4));
+		JPanel palette = new JPanel(new BorderLayout(4, 6)) {
+			private static final long serialVersionUID = 1L;
+			@Override protected void paintComponent(Graphics graphics) {
+				super.paintComponent(graphics);
+				if (menuPanel != null)
+					graphics.drawImage(menuPanel, 0, 0, getWidth(), getHeight(), null);
+				else {
+					graphics.setColor(new Color(241, 235, 217));
+					graphics.fillRect(0, 0, getWidth(), getHeight());
+				}
+			}
+		};
 		palette.setPreferredSize(new Dimension(260, 0));
-		palette.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 2));
+		palette.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
+		JPanel paletteHeading = new JPanel(new BorderLayout(0, 3));
+		paletteHeading.setOpaque(false);
+		JLabel heading = new JLabel("ASSET LIBRARY");
+		heading.setFont(new Font(Font.SERIF, Font.BOLD, 16));
+		heading.setForeground(new Color(36, 48, 68));
+		paletteHeading.add(heading, BorderLayout.NORTH);
+		if (menuDivider != null)
+			paletteHeading.add(new JLabel(new javax.swing.ImageIcon(menuDivider.getScaledInstance(220, 14,
+					java.awt.Image.SCALE_SMOOTH))), BorderLayout.SOUTH);
+		palette.add(paletteHeading, BorderLayout.NORTH);
 		materialPicker = new JComboBox<>();
 		materialPicker.addItem("Classic tiles");
 		materialPicker.addItem("Platformer");
@@ -387,6 +785,7 @@ public class GameEditor {
 		tabs.addTab("Decorations", createDecorationPalette());
 		tabs.addTab("Mobs & objects", createEntityPalette());
 		tabs.addTab("Background", createBackgroundPalette());
+		tabs.setFont(new Font(Font.SERIF, Font.BOLD, 12));
 		palette.add(tabs, BorderLayout.CENTER);
 		return palette;
 	}
@@ -1141,11 +1540,13 @@ public class GameEditor {
 		if (erase) {
 			if (removeDecorationAt(x * TILE_SIZE, y * TILE_SIZE)) {
 				unsavedChanges = true;
+				refreshSceneHierarchy();
 				canvas.repaint();
 				return;
 			}
 			clearCell(x, y);
 			unsavedChanges = true;
+			refreshSceneHierarchy();
 			canvas.repaint();
 			return;
 		}
@@ -1172,19 +1573,14 @@ public class GameEditor {
 			break;
 		case DECORATION:
 			break;
+		case SELECT:
+			break;
 		}
 		unsavedChanges = true;
+		if (selectedTool.kind == ToolKind.MARKER || selectedTool.kind == ToolKind.OBJECT
+				|| selectedTool.kind == ToolKind.ERASE)
+			scheduleSceneHierarchyRefresh();
 		canvas.repaint();
-	}
-
-	/** Returns the first solid row in this column, then puts a marker above it. */
-	private int getSurfaceMarkerY(int x, boolean bossMarker) {
-		for (int y = 0; y < mapImage.getHeight(); y++) {
-			Color pixel = new Color(mapImage.getRGB(x, y));
-			if (pixel.getRed() >= 48 || modernTilePaths[y][x] != null)
-				return Math.max(0, y - (bossMarker ? 3 : 1));
-		}
-		return Math.max(0, mapImage.getHeight() - (bossMarker ? 4 : 2));
 	}
 
 	private void clearCell(int x, int y) {
@@ -1215,8 +1611,8 @@ public class GameEditor {
 	private void updateDecorationPreview(MouseEvent event) {
 		if (selectedDecoration == null || selectedDecoration.image == null)
 			return;
-		int x = event.getX() - getSelectedDecorationWidth() / 2;
-		int y = event.getY() - getSelectedDecorationHeight() / 2;
+		int x = (int) (event.getX() / zoom) - getSelectedDecorationWidth() / 2;
+		int y = (int) (event.getY() / zoom) - getSelectedDecorationHeight() / 2;
 		decorationPreviewPosition = new Point(x, y);
 		canvas.repaint();
 	}
@@ -1230,6 +1626,7 @@ public class GameEditor {
 				selectedDecoration.image));
 		decorationPreviewPosition = null;
 		unsavedChanges = true;
+		refreshSceneHierarchy();
 		canvas.repaint();
 	}
 
@@ -1256,9 +1653,11 @@ public class GameEditor {
 	}
 
 	private void updateCanvas() {
-		canvas.setPreferredSize(new Dimension(mapImage.getWidth() * TILE_SIZE, mapImage.getHeight() * TILE_SIZE));
+		canvas.setPreferredSize(new Dimension((int) Math.ceil(mapImage.getWidth() * TILE_SIZE * zoom),
+				(int) Math.ceil(mapImage.getHeight() * TILE_SIZE * zoom)));
 		canvas.revalidate();
 		canvas.repaint();
+		refreshSceneHierarchy();
 	}
 
 	private void showError(String message, Exception exception) {
@@ -1288,6 +1687,10 @@ public class GameEditor {
 			addMouseListener(new MouseAdapter() {
 				@Override
 				public void mousePressed(MouseEvent event) {
+					if (SwingUtilities.isLeftMouseButton(event) && selectedTool.kind == ToolKind.SELECT) {
+						selectSceneObjectAt(event);
+						return;
+					}
 					if (SwingUtilities.isLeftMouseButton(event) && selectedTool.kind == ToolKind.DECORATION) {
 						updateDecorationPreview(event);
 						return;
@@ -1300,6 +1703,12 @@ public class GameEditor {
 
 				@Override
 				public void mouseReleased(MouseEvent event) {
+					if (SwingUtilities.isLeftMouseButton(event) && selectedTool.kind == ToolKind.SELECT) {
+						if (sceneObjectMoved)
+							refreshSceneHierarchy();
+						sceneObjectMoved = false;
+						return;
+					}
 					if (SwingUtilities.isLeftMouseButton(event) && selectedTool.kind == ToolKind.DECORATION)
 						placeSelectedDecoration();
 				}
@@ -1307,6 +1716,11 @@ public class GameEditor {
 			addMouseMotionListener(new MouseAdapter() {
 				@Override
 				public void mouseDragged(MouseEvent event) {
+					if (selectedTool.kind == ToolKind.SELECT
+							&& (event.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) != 0) {
+						moveSelectedSceneObject(event);
+						return;
+					}
 					if (selectedTool.kind == ToolKind.DECORATION
 							&& (event.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) != 0) {
 						updateDecorationPreview(event);
@@ -1318,10 +1732,17 @@ public class GameEditor {
 						paintAt(event, true);
 				}
 			});
+			addMouseWheelListener(event -> {
+				if (event.isControlDown()) {
+					setZoom(zoom - event.getPreciseWheelRotation() * 0.1);
+					event.consume();
+				}
+			});
 		}
 
 		private void paintAt(MouseEvent event, boolean erase) {
-			paintCell(event.getX() / TILE_SIZE, event.getY() / TILE_SIZE, erase);
+			paintCell((int) (event.getX() / (TILE_SIZE * zoom)),
+					(int) (event.getY() / (TILE_SIZE * zoom)), erase);
 		}
 
 		@Override
@@ -1331,6 +1752,7 @@ public class GameEditor {
 				return;
 			Graphics2D g = (Graphics2D) graphics.create();
 			g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+			g.scale(zoom, zoom);
 			drawBackground(g);
 			for (int y = 0; y < mapImage.getHeight(); y++)
 				for (int x = 0; x < mapImage.getWidth(); x++) {
@@ -1373,11 +1795,24 @@ public class GameEditor {
 				g.setComposite(java.awt.AlphaComposite.SrcOver);
 			}
 
-			g.setColor(new Color(15, 18, 24, 105));
-			for (int x = 0; x <= mapImage.getWidth(); x++)
-				g.drawLine(x * TILE_SIZE, 0, x * TILE_SIZE, mapImage.getHeight() * TILE_SIZE);
-			for (int y = 0; y <= mapImage.getHeight(); y++)
-				g.drawLine(0, y * TILE_SIZE, mapImage.getWidth() * TILE_SIZE, y * TILE_SIZE);
+			if (showGrid) {
+				g.setColor(new Color(15, 18, 24, 105));
+				for (int x = 0; x <= mapImage.getWidth(); x++)
+					g.drawLine(x * TILE_SIZE, 0, x * TILE_SIZE, mapImage.getHeight() * TILE_SIZE);
+				for (int y = 0; y <= mapImage.getHeight(); y++)
+					g.drawLine(0, y * TILE_SIZE, mapImage.getWidth() * TILE_SIZE, y * TILE_SIZE);
+			}
+			if (selectedSceneEntry != null) {
+				g.setColor(new Color(255, 202, 66));
+				g.setStroke(new java.awt.BasicStroke(2));
+				if (selectedSceneEntry.channel == 3) {
+					LevelDecoration decoration = selectedSceneEntry.decoration;
+					g.drawRect(decoration.getX(), decoration.getY(), decoration.getWidth(), decoration.getHeight());
+				} else {
+					g.drawRect(selectedSceneEntry.x * TILE_SIZE, selectedSceneEntry.y * TILE_SIZE,
+							TILE_SIZE, TILE_SIZE);
+				}
+			}
 			g.dispose();
 		}
 
@@ -1436,6 +1871,29 @@ public class GameEditor {
 				g.drawString(label, x + (label.length() > 1 ? 9 : 13), y + 20);
 			}
 		}
+	}
+
+	private static class SceneEntry {
+		private final String label;
+		private final int x;
+		private final int y;
+		private final int channel;
+		private final LevelDecoration decoration;
+
+		private SceneEntry(String label, int x, int y, int channel, LevelDecoration decoration) {
+			this.label = label;
+			this.x = x;
+			this.y = y;
+			this.channel = channel;
+			this.decoration = decoration;
+		}
+
+		private boolean sameObject(SceneEntry other) {
+			return channel == other.channel && x == other.x && y == other.y
+					&& (decoration == null ? other.decoration == null : decoration == other.decoration);
+		}
+
+		@Override public String toString() { return label; }
 	}
 
 	private static class MapSnapshot {
@@ -1567,7 +2025,7 @@ public class GameEditor {
 	}
 
 	private enum ToolKind {
-		TILE, ERASE, MARKER, OBJECT, DECORATION
+		TILE, ERASE, MARKER, OBJECT, DECORATION, SELECT
 	}
 
 	private static class Tool {
@@ -1603,6 +2061,10 @@ public class GameEditor {
 
 		private static Tool decoration() {
 			return new Tool(ToolKind.DECORATION, EMPTY_TILE, null, NO_MARKER, NO_MARKER);
+		}
+
+		private static Tool select() {
+			return new Tool(ToolKind.SELECT, EMPTY_TILE, null, NO_MARKER, NO_MARKER);
 		}
 	}
 }

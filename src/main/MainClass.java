@@ -2,10 +2,15 @@ package main;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import GameEditor.GameEditor;
 
 public class MainClass {
 
 	public static void main(String[] args) {
+		if (args.length > 0 && "--editor".equalsIgnoreCase(args[0])) {
+			GameEditor.main(args);
+			return;
+		}
 		SwingUtilities.invokeLater(() -> {
 			try {
 				new Game();
@@ -16,4 +21,4 @@ public class MainClass {
 			}
 		});
 	}
-}	
+}
