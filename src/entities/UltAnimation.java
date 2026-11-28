@@ -14,8 +14,8 @@ import java.util.Random;
 /** Visual timing and impact effects for the male Lapulapu ultimate. */
 public class UltAnimation {
 	private static final int UPS = 200;
-	private static final int ULT_HOLD_FRAME = 9;
-	public static final int ULT_IMPACT_FRAME = 10;
+	private static final int ULT_HOLD_FRAME = 8;
+	public static final int ULT_IMPACT_FRAME = 9;
 
 	// ---- timings (seconds, converted to ticks with UPS) ----
 	private static final float HOLD_SECONDS = 0.33f;
@@ -25,8 +25,7 @@ public class UltAnimation {
 	private static final float SLASH_TRAIL_FADE_SECONDS = 0.17f;
 	private static final float GROUND_CRACK_SPREAD_SECONDS = 0.10f;
 	private static final float CRACK_LIFE_SECONDS = 0.8f;
-	private static final float SPARK_ADD_INTERVAL_SECONDS = 0.033f;
-	private static final float JITTER_SECONDS = 1f / 60f; // how often sparks/shake re-roll
+	private static final float JITTER_SECONDS = 1f / 60f; // how often the shake re-rolls
 
 	// ---- hold look ----
 	private static final int DIM_MAX_ALPHA = 115;
@@ -37,7 +36,20 @@ public class UltAnimation {
 	private static final int GLOW_LENGTH = 64;
 	private static final int GLOW_WIDTH = 16;
 	private static final Color GLOW_COLOR = new Color(255, 255, 255, 64);
-	private static final int MAX_SPARKS = 13;
+
+	// ---- gather particles (frames before the impact frame, including the hold) ----
+	private static final int GATHER_START_FRAME = 6; // first overhead frame
+	private static final int MAX_PARTICLES = 48;
+	private static final float GATHER_SPAWN_START_PER_SEC = 40f;
+	private static final float GATHER_SPAWN_END_PER_SEC = 160f;
+	private static final float GATHER_RAMP_SECONDS = 0.6f; // how long the spawn rate takes to build up
+	private static final float GATHER_LIFE_MIN_SECONDS = 0.22f;
+	private static final float GATHER_LIFE_MAX_SECONDS = 0.40f;
+	private static final float GATHER_RADIUS_MIN = 45f; // spawn distance from the sword
+	private static final float GATHER_RADIUS_MAX = 95f;
+	private static final float GATHER_SWIRL = 1.2f; // radians the particle curves while flying in
+	private static final float GATHER_TARGET_DIST = 40f; // pivot -> point on the blade they fly to
+	private static final Color TAIL_COLOR = new Color(255, 255, 255, 140);
 
 	// ---- impact look ----
 	private static final double SLASH_ANGLE = 1.45; // near vertical
@@ -69,17 +81,23 @@ public class UltAnimation {
 	private final int trailTicks = Math.round(SLASH_TRAIL_FADE_SECONDS * UPS);
 	private final int crackTicks = Math.round(GROUND_CRACK_SPREAD_SECONDS * UPS);
 	private final int crackLifeTicks = Math.round(CRACK_LIFE_SECONDS * UPS);
-	private final int sparkIntervalTicks = Math.max(1, Math.round(SPARK_ADD_INTERVAL_SECONDS * UPS));
 	private final int jitterTicks = Math.max(1, Math.round(JITTER_SECONDS * UPS));
+	private final float gatherLifeMinTicks = GATHER_LIFE_MIN_SECONDS * UPS;
+	private final float gatherLifeMaxTicks = GATHER_LIFE_MAX_SECONDS * UPS;
+	private final float gatherRampTicks = GATHER_RAMP_SECONDS * UPS;
 
 	private final Random rng = new Random();
 	private final Point2D.Float shakeOffset = new Point2D.Float();
 	private final Point2D.Float trembleOffset = new Point2D.Float();
-	private final float[] sparkX = new float[MAX_SPARKS];
-	private final float[] sparkY = new float[MAX_SPARKS];
+	// particle pool: a particle is alive while pAge < pLife
+	private final float[] pAngle = new float[MAX_PARTICLES];
+	private final float[] pRadius = new float[MAX_PARTICLES];
+	private final float[] pAge = new float[MAX_PARTICLES];
+	private final float[] pLife = new float[MAX_PARTICLES];
 	private BufferedImage impactImage;
 	private boolean active;
 	private boolean facingRight;
+	private boolean gathering;
 	private boolean holdStarted;
 	private boolean impactTriggered;
 	private boolean finished;
@@ -89,8 +107,9 @@ public class UltAnimation {
 	private float trailTimer;
 	private float crackLifeTimer;
 	private float shakeTimer;
-	private float sparkTimer;
 	private float jitterTimer;
+	private float gatherElapsed;
+	private float spawnAccum;
 	private float knockback;
 	private float anchorX, anchorY;
 	private float targetX, targetY, targetWorldX;
@@ -101,18 +120,21 @@ public class UltAnimation {
 		active = true;
 		finished = false;
 		this.facingRight = facingRight;
-		rerollSparks();
 	}
 
 	public void update(int currentAnimFrame) {
 		if (!active || finished)
 			return;
+		if (!gathering && !impactTriggered && currentAnimFrame >= GATHER_START_FRAME
+				&& currentAnimFrame < ULT_IMPACT_FRAME) {
+			gathering = true;
+			gatherElapsed = 0;
+			spawnAccum = 0;
+		}
 		if (currentAnimFrame == ULT_HOLD_FRAME && !holdStarted && !impactTriggered) {
 			holdStarted = true;
 			holdTimer = holdTicks;
 			holdElapsed = 0;
-			sparkTimer = 0;
-			rerollSparks();
 		}
 	}
 
@@ -135,12 +157,11 @@ public class UltAnimation {
 			reroll = true;
 		}
 
+		updateGather(ticks);
+
 		if (holdTimer > 0) {
 			holdTimer = Math.max(0, holdTimer - ticks);
 			holdElapsed += ticks;
-			sparkTimer += ticks;
-			if (reroll)
-				rerollSparks();
 			if (holdTimer > 0)
 				trembleOffset.setLocation(Math.round(Math.cos(holdElapsed * TREMBLE_SPEED * 0.8f)),
 						Math.round(Math.sin(holdElapsed * TREMBLE_SPEED) * 1.5f));
@@ -173,6 +194,42 @@ public class UltAnimation {
 			active = false;
 	}
 
+	/** Spawns new gather particles (rate builds up over time) and ages the live ones. */
+	private void updateGather(float ticks) {
+		if (gathering) {
+			gatherElapsed += ticks;
+			float ramp = Math.min(1f, gatherElapsed / gatherRampTicks);
+			float rate = GATHER_SPAWN_START_PER_SEC + (GATHER_SPAWN_END_PER_SEC - GATHER_SPAWN_START_PER_SEC) * ramp;
+			spawnAccum += rate * ticks / UPS;
+			while (spawnAccum >= 1f) {
+				spawnAccum -= 1f;
+				spawnParticle();
+			}
+		}
+		for (int i = 0; i < MAX_PARTICLES; i++)
+			if (pAge[i] < pLife[i])
+				pAge[i] += ticks;
+	}
+
+	private void spawnParticle() {
+		for (int i = 0; i < MAX_PARTICLES; i++) {
+			if (pAge[i] >= pLife[i]) {
+				pAngle[i] = rng.nextFloat() * (float) (Math.PI * 2);
+				pRadius[i] = GATHER_RADIUS_MIN + rng.nextFloat() * (GATHER_RADIUS_MAX - GATHER_RADIUS_MIN);
+				pAge[i] = 0;
+				pLife[i] = gatherLifeMinTicks + rng.nextFloat() * (gatherLifeMaxTicks - gatherLifeMinTicks);
+				return;
+			}
+		}
+	}
+
+	private void clearParticles() {
+		for (int i = 0; i < MAX_PARTICLES; i++) {
+			pAge[i] = 0;
+			pLife[i] = 0;
+		}
+	}
+
 	public boolean shouldHoldFrame() {
 		return holdTimer > 0;
 	}
@@ -185,6 +242,8 @@ public class UltAnimation {
 		if (!active || impactTriggered)
 			return;
 		impactTriggered = true;
+		gathering = false;
+		clearParticles();
 		this.targetWorldX = targetX;
 		this.targetX = targetX - cameraOffset;
 		this.targetY = targetY;
@@ -199,6 +258,8 @@ public class UltAnimation {
 		holdTimer = 0;
 		holdStarted = false;
 		impactTriggered = false;
+		gathering = false;
+		clearParticles();
 		finished = true;
 		knockback = 0;
 		trembleOffset.setLocation(0, 0);
@@ -228,25 +289,15 @@ public class UltAnimation {
 		g.setTransform(old);
 	}
 
-	/** Charge sparks, slash trail, and ground crack. Draw after the player. */
+	/** Gather particles, slash trail, and ground crack. Draw after the player. */
 	public void renderAbovePlayer(Graphics2D g, int w, int h) {
 		if (!active)
 			return;
-		int dir = facingRight ? 1 : -1;
 
-		if (holdTimer > 0) {
-			int count = Math.min(MAX_SPARKS, 3 + (int) (sparkTimer / sparkIntervalTicks));
-			float pivotX = anchorX + dir * HAND_X + trembleOffset.x;
-			float pivotY = anchorY - HAND_Y + trembleOffset.y;
-			g.setColor(Color.WHITE);
-			for (int i = 0; i < count; i++)
-				g.fillRect(Math.round(pivotX + dir * sparkX[i]), Math.round(pivotY + sparkY[i]), 3, 3);
-		}
-
-		// The trail and crack only appear after the hit-stop (the freeze shows the
-		// inverted frame instead).
 		if (impactTimer > 0)
-			return;
+			return; // the freeze shows the inverted frame instead
+
+		drawGather(g);
 
 		if (crackLifeTimer > 0)
 			drawCrack(g);
@@ -257,6 +308,35 @@ public class UltAnimation {
 			fillBar(g, targetX, targetY, facingRight ? SLASH_ANGLE : -SLASH_ANGLE, (int) Math.hypot(w, h),
 					thickness);
 		}
+	}
+
+	/** Particles spawn on a ring around the raised sword and curve inward, accelerating into the blade. */
+	private void drawGather(Graphics2D g) {
+		int dir = facingRight ? 1 : -1;
+		double a = facingRight ? SWORD_ANGLE : -Math.PI - SWORD_ANGLE;
+		float cx = anchorX + dir * HAND_X + trembleOffset.x + (float) (Math.cos(a) * GATHER_TARGET_DIST);
+		float cy = anchorY - HAND_Y + trembleOffset.y + (float) (Math.sin(a) * GATHER_TARGET_DIST);
+		for (int i = 0; i < MAX_PARTICLES; i++) {
+			if (pAge[i] >= pLife[i])
+				continue;
+			float p = pAge[i] / pLife[i];
+			float tail = Math.max(0f, p - 0.12f);
+			g.setColor(TAIL_COLOR);
+			g.fillRect(particleX(cx, i, tail, dir), particleY(cy, i, tail, dir), 2, 2);
+			int size = p > 0.7f ? 2 : 3;
+			g.setColor(Color.WHITE);
+			g.fillRect(particleX(cx, i, p, dir), particleY(cy, i, p, dir), size, size);
+		}
+	}
+
+	private int particleX(float cx, int i, float p, int dir) {
+		float e = p * p; // accelerates inward
+		return Math.round(cx + (float) Math.cos(pAngle[i] + dir * GATHER_SWIRL * e) * pRadius[i] * (1f - e));
+	}
+
+	private int particleY(float cy, int i, float p, int dir) {
+		float e = p * p;
+		return Math.round(cy + (float) Math.sin(pAngle[i] + dir * GATHER_SWIRL * e) * pRadius[i] * (1f - e));
 	}
 
 	/** Returns the inverted scene with the slash drawn on it, for the hit-stop frames. */
@@ -314,14 +394,6 @@ public class UltAnimation {
 					gx + Math.round(pts[i + 1][0] * CRACK_SCALE), gy + Math.round(pts[i + 1][1] * CRACK_SCALE));
 	}
 
-	/** Random sparks around the raised sword, relative to the sword pivot (mirrored when facing left). */
-	private void rerollSparks() {
-		for (int i = 0; i < MAX_SPARKS; i++) {
-			sparkX[i] = -20 + rng.nextFloat() * 70;
-			sparkY[i] = -100 + rng.nextFloat() * 80;
-		}
-	}
-
 	public Point2D getShakeOffset() {
 		return shakeOffset;
 	}
@@ -351,6 +423,7 @@ public class UltAnimation {
 	public void reset() {
 		active = false;
 		finished = false;
+		gathering = false;
 		holdStarted = false;
 		impactTriggered = false;
 		holdTimer = 0;
@@ -359,9 +432,11 @@ public class UltAnimation {
 		trailTimer = 0;
 		crackLifeTimer = 0;
 		shakeTimer = 0;
-		sparkTimer = 0;
 		jitterTimer = 0;
+		gatherElapsed = 0;
+		spawnAccum = 0;
 		knockback = 0;
+		clearParticles();
 		shakeOffset.setLocation(0, 0);
 		trembleOffset.setLocation(0, 0);
 	}
