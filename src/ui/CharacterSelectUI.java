@@ -37,8 +37,9 @@ public class CharacterSelectUI {
 		cards[1] = LoadSave.GetSpriteAtlas("charselect/card_selected.png");
 		heroes[0][0] = LoadSave.GetSpriteAtlas("charselect/hero_male_dim.png");
 		heroes[0][1] = LoadSave.GetSpriteAtlas("charselect/hero_male.png");
-		heroes[1][0] = LoadSave.GetSpriteAtlas("charselect/hero_female_dim.png");
-		heroes[1][1] = LoadSave.GetSpriteAtlas("charselect/hero_female.png");
+		BufferedImage femalePortrait = LoadSave.GetSpriteAtlas(LoadSave.FEMALE_LAPULAPU_ATLAS).getSubimage(0, 0, 64, 64);
+		heroes[1][0] = femalePortrait;
+		heroes[1][1] = femalePortrait;
 		labels[0][0] = LoadSave.GetSpriteAtlas("charselect/label_male_normal.png");
 		labels[0][1] = LoadSave.GetSpriteAtlas("charselect/label_male_selected.png");
 		labels[1][0] = LoadSave.GetSpriteAtlas("charselect/label_female_normal.png");
@@ -87,6 +88,8 @@ public class CharacterSelectUI {
 
 		int heroWidth = sx(heroIndex == 0 ? 240 : 180);
 		int heroHeight = sy(heroIndex == 0 ? 286 : 226);
+		if (heroIndex == 1)
+			heroWidth = heroHeight;
 		int heroX = box.x + (box.width - heroWidth) / 2;
 		int heroY = box.y + sy(heroIndex == 0 ? 18 : 83);
 		Object oldInterpolation = g.getRenderingHint(RenderingHints.KEY_INTERPOLATION);

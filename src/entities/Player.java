@@ -188,7 +188,8 @@ public class Player extends Entity {
 		}
 
 		AttackDefinition attack = getCurrentAttackDefinition();
-		if (aniIndex < attack.hitActiveStart || aniIndex > attack.hitActiveEnd)
+		int attackFrame = aniIndex - attack.startFrame;
+		if (attackFrame < attack.hitActiveStart || attackFrame > attack.hitActiveEnd)
 			return;
 		if (playing.checkEnemyHit(attackBox, attack.damage, attack.knockback, flipW, attackHitTargets,
 				attackPhase == AttackPhase.VERTICAL))
@@ -432,7 +433,9 @@ public class Player extends Entity {
 	}
 
 	private AttackDefinition getCurrentAttackDefinition() {
-		return attackPhase == AttackPhase.VERTICAL ? ATTACK_VERTICAL : ATTACK_HORIZONTAL;
+		if (femaleSheet)
+			return attackPhase == AttackPhase.VERTICAL ? ATTACK_VERTICAL : ATTACK_HORIZONTAL;
+		return attackPhase == AttackPhase.VERTICAL ? MALE_ATTACK_VERTICAL : MALE_ATTACK_HORIZONTAL;
 	}
 
 	private boolean canCancelAttack() {
@@ -444,9 +447,7 @@ public class Player extends Entity {
 	private void updatePos() {
 		moving = false;
 		lastAttackLungeStep = 0;
-		boolean femaleUltimate = femaleSheet && usingUltimate;
-
-		if (femaleUltimate) {
+		if (usingUltimate) {
 			dashing = false;
 			dashRemaining = 0;
 			horizontalMomentum = 0;
@@ -467,7 +468,7 @@ public class Player extends Entity {
 			jumpConsumed = false;
 
 		boolean attackMovementLocked = (LOCK_MOVEMENT_DURING_ATTACK && attackPhase != AttackPhase.NONE)
-				|| blocking || femaleUltimate;
+				|| blocking || usingUltimate;
 		int horizontalDirection = getEffectiveHorizontalDirection();
 		boolean hasHorizontalInput = horizontalDirection != 0;
 		boolean attackLungeActive = attackPhase != AttackPhase.NONE && !attackStartedInAir
@@ -520,7 +521,7 @@ public class Player extends Entity {
 
 		} else
 			updateXPos(xSpeed);
-		moving = !femaleUltimate && hasHorizontalInput;
+		moving = !usingUltimate && hasHorizontalInput;
 	}
 
 	private int getEffectiveHorizontalDirection() {
@@ -875,12 +876,12 @@ public class Player extends Entity {
 		if (!attacking || femaleSheet && usingUltimate)
 			return;
 		if (attackPhase == AttackPhase.HORIZONTAL) {
-			if (aniIndex >= ATTACK_HORIZONTAL.hitActiveEnd)
+			if (aniIndex >= getCurrentAttackDefinition().hitActiveEnd)
 				attackQueued = true;
 			return;
 		}
 		if (attackPhase == AttackPhase.VERTICAL) {
-			if (aniIndex >= ATTACK_VERTICAL.endFrame - 1)
+			if (aniIndex >= getCurrentAttackDefinition().endFrame - 1)
 				attackQueued = true;
 			return;
 		}

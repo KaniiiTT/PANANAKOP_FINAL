@@ -338,6 +338,10 @@ public class Constants {
 				0, 7, 2, 4, continuationFrameTicks(ATTACK_HORIZONTAL_FRAME_SECONDS), 10, 64, 32, 0, 8, 3);
 		public static final AttackDefinition ATTACK_VERTICAL = new AttackDefinition(
 				8, 15, 2, 4, continuationFrameTicks(ATTACK_VERTICAL_FRAME_SECONDS), 20, 80, 40, 0, 4, 7);
+		public static final AttackDefinition MALE_ATTACK_HORIZONTAL = new AttackDefinition(
+				0, 5, 2, 4, continuationFrameTicks(ATTACK_HORIZONTAL_FRAME_SECONDS), 10, 64, 32, 0, 8, 3);
+		public static final AttackDefinition MALE_ATTACK_VERTICAL = new AttackDefinition(
+				6, 12, 2, 4, continuationFrameTicks(ATTACK_VERTICAL_FRAME_SECONDS), 20, 80, 40, 0, 4, 7);
 		public static final UltimateHitDefinition[] ULTIMATE_HITS = {
 				new UltimateHitDefinition(7, 10, 96, 96, 0, 0, false),
 				new UltimateHitDefinition(8, 10, 96, 96, 0, 0, false),
