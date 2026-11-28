@@ -154,7 +154,7 @@ public class Player extends Entity {
 		if (attackPhase != AttackPhase.NONE || usingUltimate)
 			checkAttack();
 
-		if (usingUltimate && !femaleSheet)
+		if (usingUltimate)
 			ultAnimation.update(aniIndex);
 		updateAnimationTick();
 		setAnimation();
@@ -170,7 +170,7 @@ public class Player extends Entity {
 	}
 
 	private void checkAttack() {
-		if (usingUltimate && !femaleSheet) {
+		if (usingUltimate) {
 			UltimateHitDefinition hit = getUltimateHitDefinition(aniIndex);
 			if (hit == null || aniIndex != UltAnimation.ULT_IMPACT_FRAME || ultimateHitApplied)
 				return;
@@ -314,7 +314,7 @@ public class Player extends Entity {
 		aniTick++;
 		int speed = attackPhase != AttackPhase.NONE ? getCurrentAttackDefinition().frameDuration
 				: getAnimationSpeed(state);
-		if (usingUltimate && !femaleSheet && ultAnimation.shouldHoldFrame())
+		if (usingUltimate && ultAnimation.shouldHoldFrame())
 			return;
 		if (aniTick >= speed) {
 			aniTick = 0;
@@ -953,24 +953,22 @@ public class Player extends Entity {
 			usingUltimate = true;
 			ultimateHitApplied = false;
 			attackHitTargets.clear();
-			if (!femaleSheet)
-				ultAnimation.start(flipW > 0);
+			ultAnimation.start(flipW > 0);
 			aniTick = 0;
 			aniIndex = 0;
 		}
 	}
 
 	public void updateUltimateEffect(float dt) {
-		if (!femaleSheet)
-			ultAnimation.updateTimers(dt);
+		ultAnimation.updateTimers(dt);
 	}
 
 	public boolean isUltimateWorldFrozen() {
-		return !femaleSheet && ultAnimation.isWorldFrozen();
+		return ultAnimation.isWorldFrozen();
 	}
 
 	public boolean isUltimateEffectActive() {
-		return !femaleSheet && (usingUltimate || ultAnimation.isActive());
+		return usingUltimate || ultAnimation.isActive();
 	}
 
 	public BufferedImage applyUltimateImpactFrame(BufferedImage scene) {
