@@ -48,6 +48,7 @@ public class Playing extends State implements Statemethods {
     private BossUI bossUI;
     private final AreaTitleOverlay areaTitle = new AreaTitleOverlay();
     private final HitEffects hitEffects = new HitEffects();
+    private BufferedImage ultimateScene;
 
     private boolean paused = false;
 
@@ -147,7 +148,8 @@ public class Playing extends State implements Statemethods {
         hitEffects.update(dt);
         player.updateFlash(dt);
         enemyManager.updateFlash(dt);
-        if (hitEffects.isFrozen())
+        player.updateUltimateEffect(dt);
+        if (hitEffects.isFrozen() || player.isUltimateWorldFrozen())
             return;
         if (paused) {
             pauseOverlay.update();
@@ -233,7 +235,14 @@ public class Playing extends State implements Statemethods {
     @Override
     public void draw(Graphics g) {
 
-        int cameraX = Math.round(xLvlOffset);
+		int cameraX = Math.round(xLvlOffset);
+		if (player.isUltimateEffectActive()) {
+			BufferedImage scene = renderUltimateScene(cameraX);
+			g.drawImage(player.applyUltimateImpactFrame(scene), 0, 0, null);
+			player.renderUI(g);
+			bossUI.draw(g, enemyManager.getActiveBoss());
+			return;
+		}
 		Graphics2D world = (Graphics2D) g.create();
 		hitEffects.applyShake(world);
 
@@ -264,7 +273,27 @@ public class Playing extends State implements Statemethods {
         } else if (lvlCompleted) {
             levelCompletedOverlay.draw(g);
         }
-    }
+	}
+
+	private BufferedImage renderUltimateScene(int cameraX) {
+		if (ultimateScene == null || ultimateScene.getWidth() != Game.GAME_WIDTH
+				|| ultimateScene.getHeight() != Game.GAME_HEIGHT)
+			ultimateScene = new BufferedImage(Game.GAME_WIDTH, Game.GAME_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D scene = ultimateScene.createGraphics();
+		scene.setComposite(java.awt.AlphaComposite.Clear);
+		scene.fillRect(0, 0, ultimateScene.getWidth(), ultimateScene.getHeight());
+		scene.setComposite(java.awt.AlphaComposite.SrcOver);
+		hitEffects.applyShake(scene);
+		parallaxBackground.draw(scene, cameraX, levelManager.getCurrentLevel().getLevelData());
+		levelManager.draw(scene, cameraX);
+		groundLife.draw(scene, cameraX);
+		enemyManager.draw(scene, cameraX);
+		objectManager.draw(scene, cameraX);
+		player.render(scene, cameraX);
+		hitEffects.removeShake(scene);
+		scene.dispose();
+		return ultimateScene;
+	}
 
     private void drawClouds(Graphics g) {
         for (int i = 0; i < 3; i++)
@@ -312,6 +341,11 @@ public class Playing extends State implements Statemethods {
     public boolean checkEnemyHit(Rectangle2D.Float attackBox, int damage, int knockback, int direction,
             Set<Enemy> hitTargets, boolean heavy) {
         return enemyManager.checkEnemyHit(attackBox, damage, knockback, direction, hitTargets, heavy);
+    }
+
+    public boolean checkAllEnemiesHit(Rectangle2D.Float attackBox, int damage, int knockback, int direction,
+            Set<Enemy> hitTargets, boolean heavy) {
+        return enemyManager.checkAllEnemiesHit(attackBox, damage, knockback, direction, hitTargets, heavy);
     }
 
     public HitEffects getHitEffects() {

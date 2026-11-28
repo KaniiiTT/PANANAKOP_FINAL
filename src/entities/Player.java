@@ -12,9 +12,7 @@ import java.awt.RenderingHints;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.Map;
 import java.util.Set;
 
 import gamestates.Playing;
@@ -77,7 +75,9 @@ public class Player extends Entity {
 	private boolean attackStartedInAir;
 	private static final int ATTACK_RECOIL = 17;
 	private final Set<Enemy> attackHitTargets = Collections.newSetFromMap(new IdentityHashMap<>());
-	private final Map<Integer, Set<Enemy>> ultimateHitTargets = new HashMap<>();
+	private final UltAnimation ultAnimation = new UltAnimation();
+	private boolean ultimateHitApplied;
+	private static final int ULT_DAMAGE_MULTIPLIER = 3;
 	private Playing playing;
 
 	private int tileY = 0;
@@ -115,6 +115,8 @@ public class Player extends Entity {
 		updateHealthBar();
 
 		if (currentHealth <= 0) {
+			ultAnimation.reset();
+			usingUltimate = false;
 			if (state != DEAD) {
 				state = DEAD;
 				aniTick = 0;
@@ -152,6 +154,8 @@ public class Player extends Entity {
 		if (attackPhase != AttackPhase.NONE || usingUltimate)
 			checkAttack();
 
+		if (usingUltimate && !femaleSheet)
+			ultAnimation.update(aniIndex);
 		updateAnimationTick();
 		setAnimation();
 	}
@@ -166,14 +170,16 @@ public class Player extends Entity {
 	}
 
 	private void checkAttack() {
-		if (usingUltimate) {
+		if (usingUltimate && !femaleSheet) {
 			UltimateHitDefinition hit = getUltimateHitDefinition(aniIndex);
-			if (hit == null)
+			if (hit == null || aniIndex != UltAnimation.ULT_IMPACT_FRAME || ultimateHitApplied)
 				return;
-			Set<Enemy> hitTargets = ultimateHitTargets.computeIfAbsent(hit.frame,
-					frame -> Collections.newSetFromMap(new IdentityHashMap<>()));
-			playing.checkEnemyHit(attackBox, hit.damage, 0, flipW, hitTargets, hit.heavy);
+			playing.checkAllEnemiesHit(attackBox, hit.damage * ULT_DAMAGE_MULTIPLIER,
+				(int) UltAnimation.KNOCKBACK, flipW,
+				attackHitTargets, hit.heavy);
 			playing.checkObjectHit(attackBox);
+			ultimateHitApplied = true;
+			ultAnimation.onImpact(attackBox.x + attackBox.width / 2f, attackBox.y + attackBox.height / 2f);
 			return;
 		}
 		if (attackPhase == AttackPhase.NONE) {
@@ -259,6 +265,7 @@ public class Player extends Entity {
 	}
 
 	public void render(Graphics g, int lvlOffset) {
+		ultAnimation.setAnchor(hitbox.x + hitbox.width / 2f, hitbox.y + hitbox.height / 2f, lvlOffset);
 		AnimationDefinition animation = animationDefinitions[state];
 		int frameWidth = (int) (animation.frameWidth * Game.SCALE);
 		int frameHeight = (int) (animation.frameHeight * Game.SCALE);
@@ -279,6 +286,7 @@ public class Player extends Entity {
 		if (state == ULTIMATE && !femaleSheet)
 			drawY += (int) (4 * Game.SCALE);
 		Graphics2D graphics = (Graphics2D) g.create();
+		ultAnimation.renderBelowPlayer(graphics, Game.GAME_WIDTH, Game.GAME_HEIGHT);
 		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
 				RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 		graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
@@ -286,6 +294,7 @@ public class Player extends Entity {
 		graphics.drawImage(animations[state][frameIndex], drawX, drawY, frameWidth * flipW, frameHeight, null);
 		if (flashTimer > 0)
 			graphics.drawImage(whiteAnimations[state][frameIndex], drawX, drawY, frameWidth * flipW, frameHeight, null);
+		ultAnimation.renderAbovePlayer(graphics, Game.GAME_WIDTH, Game.GAME_HEIGHT);
 		graphics.dispose();
 //		drawHitbox(g, lvlOffset);
 //		drawAttackBox(g, lvlOffset);
@@ -305,6 +314,8 @@ public class Player extends Entity {
 		aniTick++;
 		int speed = attackPhase != AttackPhase.NONE ? getCurrentAttackDefinition().frameDuration
 				: getAnimationSpeed(state);
+		if (usingUltimate && !femaleSheet && ultAnimation.shouldHoldFrame())
+			return;
 		if (aniTick >= speed) {
 			aniTick = 0;
 			if (attackPhase != AttackPhase.NONE) {
@@ -332,8 +343,10 @@ public class Player extends Entity {
 				attacking = false;
 				attackCheckedFrame = -1;
 				// Dash now ends by distance (see updateDash), not by animation length.
-				if (state == ULTIMATE)
+				if (state == ULTIMATE) {
 					usingUltimate = false;
+					ultAnimation.finish();
+				}
 			}
 		}
 	}
@@ -938,10 +951,30 @@ public class Player extends Entity {
 				horizontalMomentum = 0;
 			}
 			usingUltimate = true;
-			ultimateHitTargets.clear();
+			ultimateHitApplied = false;
+			attackHitTargets.clear();
+			if (!femaleSheet)
+				ultAnimation.start(flipW > 0);
 			aniTick = 0;
 			aniIndex = 0;
 		}
+	}
+
+	public void updateUltimateEffect(float dt) {
+		if (!femaleSheet)
+			ultAnimation.updateTimers(dt);
+	}
+
+	public boolean isUltimateWorldFrozen() {
+		return !femaleSheet && ultAnimation.isWorldFrozen();
+	}
+
+	public boolean isUltimateEffectActive() {
+		return !femaleSheet && (usingUltimate || ultAnimation.isActive());
+	}
+
+	public BufferedImage applyUltimateImpactFrame(BufferedImage scene) {
+		return ultAnimation.applyImpactFrame(scene);
 	}
 
 	public void setVictory(boolean victory) {
@@ -993,7 +1026,8 @@ public class Player extends Entity {
 		dashCooldownTicks = 0;
 		airDashUsed = false;
 		usingUltimate = false;
-		ultimateHitTargets.clear();
+		ultimateHitApplied = false;
+		ultAnimation.reset();
 		victory = false;
 		moving = false;
 		jumpsUsed = 0;

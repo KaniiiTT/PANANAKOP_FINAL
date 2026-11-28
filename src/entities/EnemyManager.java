@@ -224,6 +224,26 @@ public class EnemyManager {
 		return false;
 	}
 
+	public boolean checkAllEnemiesHit(Rectangle2D.Float attackBox, int damage, int knockback, int direction,
+			Set<Enemy> hitTargets, boolean heavy) {
+		boolean hitAny = false;
+		for (Crabby c : crabbies)
+			hitAny |= hitEnemy(c, attackBox, damage, knockback, direction, hitTargets, heavy);
+		for (Boar boar : boars)
+			hitAny |= hitEnemy(boar, attackBox, damage, knockback, direction, hitTargets, heavy);
+		for (Conquistador conquistador : conquistadors)
+			hitAny |= hitEnemy(conquistador, attackBox, damage, knockback, direction, hitTargets, heavy);
+		for (Magellan boss : magellans)
+			hitAny |= hitEnemy(boss, attackBox, damage, knockback, direction, hitTargets, heavy);
+		for (Espinosa e : espinosas)
+			hitAny |= hitEnemy(e, attackBox, damage, knockback, direction, hitTargets, heavy);
+		for (Monkey monkey : monkeys)
+			hitAny |= hitEnemy(monkey, attackBox, damage, knockback, direction, hitTargets, heavy);
+		for (Gorilla gorilla : gorillas)
+			hitAny |= hitEnemy(gorilla, attackBox, damage, knockback, direction, hitTargets, heavy);
+		return hitAny;
+	}
+
 	private boolean hitEnemy(Enemy enemy, Rectangle2D.Float attackBox, int damage, int knockback, int direction,
 			Set<Enemy> hitTargets, boolean heavy) {
 		if (!enemy.isActive() || enemy.getState() == DEAD || hitTargets.contains(enemy)
