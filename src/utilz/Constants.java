@@ -319,7 +319,7 @@ public class Constants {
 		public static final float ATTACK_VERTICAL_FRAME_SECONDS = 0.08f;
 		public static final float RUNNING_FRAME_SECONDS = 0.08f;
 		public static final float DASH_FRAME_SECONDS = 0.05f;
-		public static final float ULTIMATE_FRAME_SECONDS = 0.09f;
+		public static final float ULTIMATE_FRAME_SECONDS = 0.07f;
 
 		public static int continuationFrameTicks(float seconds) {
 			return Math.max(1, Math.round(seconds * PLAYER_UPDATES_PER_SECOND / CONTINUATION_SPEED_MULTIPLIER));

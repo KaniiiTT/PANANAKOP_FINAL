@@ -276,6 +276,8 @@ public class Player extends Entity {
 					: anchorX - frameWidth / 2 + drawOffsetX;
 		}
 		int drawY = groundY - frameHeight;
+		if (state == ULTIMATE && !femaleSheet)
+			drawY += (int) (4 * Game.SCALE);
 		Graphics2D graphics = (Graphics2D) g.create();
 		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
 				RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
@@ -684,6 +686,7 @@ public class Player extends Entity {
 	private AnimationDefinition[] createMaleAnimationDefinitions() {
 		String main = LoadSave.MALE_PLAYER_ATLAS;
 		String continuation = LoadSave.MALE_PLAYER_CONTINUATION_ATLAS;
+		String ultimate = LoadSave.MALE_LAPULAPU_ULTIMATE_ATLAS;
 		return new AnimationDefinition[] {
 			new AnimationDefinition(main, 64, 64, 0, 9, 17, true, false),
 			new AnimationDefinition(main, 64, 64, 1, 9, 17, true, false),
@@ -701,7 +704,8 @@ public class Player extends Entity {
 			new AnimationDefinition(main, 64, 64, 9, 9, 18, false, true),
 			new AnimationDefinition(main, 64, 64, 10, 9, 18, false, true),
 			new AnimationDefinition(continuation, 96, 64, 2, 5, continuationFrameTicks(DASH_FRAME_SECONDS), false, true),
-			new AnimationDefinition(continuation, 96, 64, 3, 9, continuationFrameTicks(ULTIMATE_FRAME_SECONDS), false, false)
+			new AnimationDefinition(ultimate, 96, 96, 1, 5, 16,
+					continuationFrameTicks(ULTIMATE_FRAME_SECONDS), false, false, false, 23)
 		};
 	}
 
@@ -873,7 +877,7 @@ public class Player extends Entity {
 	}
 
 	public void setAttacking(boolean attacking) {
-		if (!attacking || femaleSheet && usingUltimate)
+		if (!attacking || usingUltimate)
 			return;
 		if (attackPhase == AttackPhase.HORIZONTAL) {
 			if (aniIndex >= getCurrentAttackDefinition().hitActiveEnd)
@@ -889,7 +893,7 @@ public class Player extends Entity {
 	}
 
 	public void setBlocking(boolean blocking) {
-		if (femaleSheet && usingUltimate && blocking)
+		if (usingUltimate && blocking)
 			return;
 		if (blocking && !canCancelAttack())
 			return;
@@ -907,7 +911,7 @@ public class Player extends Entity {
 	// Call this once per key press. The direction is locked to where the
 	// player is facing when the dash starts, no matter what keys are held.
 	public void setDash(boolean dash) {
-		if (!dash || femaleSheet && usingUltimate || dashing || dashCooldownTicks > 0 || !canCancelAttack())
+		if (!dash || usingUltimate || dashing || dashCooldownTicks > 0 || !canCancelAttack())
 			return;
 		if (inAir && airDashUsed)
 			return;
@@ -925,8 +929,14 @@ public class Player extends Entity {
 
 	public void setUltimate(boolean ultimate) {
 		if (ultimate && !usingUltimate) {
-			if (femaleSheet)
+			if (femaleSheet) {
 				cancelAttackPhase();
+			} else {
+				cancelAttackPhase();
+				blocking = false;
+				dashing = false;
+				horizontalMomentum = 0;
+			}
 			usingUltimate = true;
 			ultimateHitTargets.clear();
 			aniTick = 0;
@@ -959,7 +969,7 @@ public class Player extends Entity {
 	}
 
 	public void setJump(boolean jump) {
-		if (femaleSheet && usingUltimate && jump)
+		if (usingUltimate && jump)
 			return;
 		if (jump && !canCancelAttack())
 			return;
