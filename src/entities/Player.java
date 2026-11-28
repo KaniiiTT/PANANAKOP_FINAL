@@ -268,9 +268,10 @@ public class Player extends Entity {
 				drawX += frameWidth;
 		} else {
 			int anchorX = (int) (hitbox.x + hitbox.width / 2f) - lvlOffset;
-			drawX = anchorX - frameWidth / 2;
-			if (flipW == -1)
-				drawX += frameWidth;
+			int drawOffsetX = (int) (animation.drawOffsetX * Game.SCALE);
+			drawX = flipW == -1
+					? anchorX + frameWidth / 2 - drawOffsetX
+					: anchorX - frameWidth / 2 + drawOffsetX;
 		}
 		int drawY = groundY - frameHeight;
 		Graphics2D graphics = (Graphics2D) g.create();
@@ -442,6 +443,14 @@ public class Player extends Entity {
 		moving = false;
 		lastAttackLungeStep = 0;
 
+		if (usingUltimate) {
+			dashing = false;
+			dashRemaining = 0;
+			horizontalMomentum = 0;
+			attackLungeRemaining = 0;
+			jumpConsumed = jump;
+		}
+
 		// Dash overrides everything: fixed direction, fixed distance, no gravity.
 		if (dashing) {
 			updateDash();
@@ -455,7 +464,7 @@ public class Player extends Entity {
 			jumpConsumed = false;
 
 		boolean attackMovementLocked = (LOCK_MOVEMENT_DURING_ATTACK && attackPhase != AttackPhase.NONE)
-				|| blocking;
+				|| blocking || usingUltimate;
 		int horizontalDirection = getEffectiveHorizontalDirection();
 		boolean hasHorizontalInput = horizontalDirection != 0;
 		boolean attackLungeActive = attackPhase != AttackPhase.NONE && !attackStartedInAir
@@ -508,7 +517,7 @@ public class Player extends Entity {
 
 		} else
 			updateXPos(xSpeed);
-		moving = hasHorizontalInput;
+		moving = !usingUltimate && hasHorizontalInput;
 	}
 
 	private int getEffectiveHorizontalDirection() {
@@ -688,7 +697,8 @@ public class Player extends Entity {
 			new AnimationDefinition(main, 64, 64, 9, 9, 18, false, true),
 			new AnimationDefinition(main, 64, 64, 10, 9, 18, false, true),
 			new AnimationDefinition(continuation, 96, 64, 2, 5, continuationFrameTicks(DASH_FRAME_SECONDS), false, true),
-			new AnimationDefinition(continuation, 96, 64, 3, 9, continuationFrameTicks(ULTIMATE_FRAME_SECONDS), false, false)
+			new AnimationDefinition("ULT_LAPULAPU.png", 96, 96, 1, 5, 16, continuationFrameTicks(0.07f),
+					false, false, false, 29.5f)
 		};
 	}
 
@@ -706,24 +716,24 @@ public class Player extends Entity {
 		String attack = LoadSave.FEMALE_LAPULAPU_ATTACK_ATLAS;
 		String ultimate = LoadSave.FEMALE_LAPULAPU_ULTIMATE_ATLAS;
 		return new AnimationDefinition[] {
-			new AnimationDefinition(main, 64, 64, 0, 8, 8, 30, true, false, true),
-			new AnimationDefinition(main, 64, 64, 8, 8, 8, 20, true, false, true),
-			new AnimationDefinition(main, 64, 64, 16, 8, 8, 14, true, false, true),
-			new AnimationDefinition(attack, 96, 64, 1, 5, 16, 11, false, false, true),
-			new AnimationDefinition(main, 64, 64, 40, 8, 8, 20, false, true, true),
-			new AnimationDefinition(main, 64, 64, 48, 8, 8, 12, false, false, true),
-			new AnimationDefinition(main, 64, 64, 32, 8, 8, 18, false, false, true),
-			new AnimationDefinition(main, 64, 64, 24, 8, 8, 20, false, true, true),
-			new AnimationDefinition(main, 64, 64, 24, 8, 8, 20, false, true, true),
-			new AnimationDefinition(main, 64, 64, 32, 8, 8, 18, true, false, true),
-			new AnimationDefinition(main, 64, 64, 24, 8, 8, 20, false, false, true),
-			new AnimationDefinition(main, 64, 64, 56, 8, 8, 24, false, true, true),
-			new AnimationDefinition(main, 64, 64, 56, 8, 8, 24, false, true, true),
+			new AnimationDefinition(main, 64, 64, 0, 8, 8, 30, true, false, false, 7),
+			new AnimationDefinition(main, 64, 64, 8, 8, 8, 20, true, false, false, 7),
+			new AnimationDefinition(main, 64, 64, 16, 8, 8, 14, true, false, false, 7),
+			new AnimationDefinition(attack, 96, 64, 1, 5, 16, 11, false, false, false, 21.5f),
+			new AnimationDefinition(main, 64, 64, 40, 8, 8, 20, false, true, false, 7),
+			new AnimationDefinition(main, 64, 64, 48, 8, 8, 12, false, false, false, 7),
+			new AnimationDefinition(main, 64, 64, 32, 8, 8, 18, false, false, false, 7),
+			new AnimationDefinition(main, 64, 64, 24, 8, 8, 20, false, true, false, 7),
+			new AnimationDefinition(main, 64, 64, 24, 8, 8, 20, false, true, false, 7),
+			new AnimationDefinition(main, 64, 64, 32, 8, 8, 18, true, false, false, 7),
+			new AnimationDefinition(main, 64, 64, 24, 8, 8, 20, false, false, false, 7),
+			new AnimationDefinition(main, 64, 64, 56, 8, 8, 24, false, true, false, 7),
+			new AnimationDefinition(main, 64, 64, 56, 8, 8, 24, false, true, false, 7),
 			// Female dash: row 8 of the new 9-row sheet. Eight ticks per frame
 			// keeps the 8-frame animation aligned with the existing dash duration;
 			// the final frame is held if the dash has a fractional remainder.
-			new AnimationDefinition(main, 64, 64, 64, 8, 8, 8, false, true, true),
-			new AnimationDefinition(ultimate, 96, 96, 1, 5, 16, 14, false, false, true)
+			new AnimationDefinition(main, 64, 64, 64, 8, 8, 8, false, true, false, 7),
+			new AnimationDefinition(ultimate, 96, 96, 1, 5, 16, 14, false, false, false, 22)
 		};
 	}
 
@@ -772,33 +782,41 @@ public class Player extends Entity {
 		private final int loopStartFrame, loopEndFrame;
 		private final boolean looping, holdFinalFrame;
 		private final boolean leftAnchored;
+		private final float drawOffsetX;
 
 		private AnimationDefinition(String sheet, int frameWidth, int frameHeight, int row, int frameCount,
 				int frameDelay, boolean looping, boolean holdFinalFrame) {
 			this(sheet, frameWidth, frameHeight, row, frameCount, frameDelay, frameDelay, looping ? RUN_START_FRAME : 0,
 					-1, looping ? RUN_START_FRAME : 0, looping ? frameCount - 1 : -1, looping, holdFinalFrame,
-					0, 0, false);
+					0, 0, false, 0);
 		}
 
 		private AnimationDefinition(String sheet, int frameWidth, int frameHeight, int sourceStartCell,
 				int sourceColumns, int frameCount, int frameDelay, boolean looping, boolean holdFinalFrame,
 				boolean leftAnchored) {
+			this(sheet, frameWidth, frameHeight, sourceStartCell, sourceColumns, frameCount, frameDelay, looping,
+					holdFinalFrame, leftAnchored, 0);
+		}
+
+		private AnimationDefinition(String sheet, int frameWidth, int frameHeight, int sourceStartCell,
+				int sourceColumns, int frameCount, int frameDelay, boolean looping, boolean holdFinalFrame,
+				boolean leftAnchored, float drawOffsetX) {
 			this(sheet, frameWidth, frameHeight, 0, frameCount, frameDelay, frameDelay, 0, -1,
 					looping ? RUN_START_FRAME : 0, looping ? frameCount - 1 : -1, looping, holdFinalFrame,
-					sourceStartCell, sourceColumns, leftAnchored);
+					sourceStartCell, sourceColumns, leftAnchored, drawOffsetX);
 		}
 
 		private AnimationDefinition(String sheet, int frameWidth, int frameHeight, int row, int frameCount,
 				int introFrameDelay, int frameDelay, int initialFrame, int introEndFrame, int loopStartFrame,
 				int loopEndFrame, boolean looping, boolean holdFinalFrame) {
 			this(sheet, frameWidth, frameHeight, row, frameCount, introFrameDelay, frameDelay, initialFrame,
-					introEndFrame, loopStartFrame, loopEndFrame, looping, holdFinalFrame, 0, 0, false);
+					introEndFrame, loopStartFrame, loopEndFrame, looping, holdFinalFrame, 0, 0, false, 0);
 		}
 
 		private AnimationDefinition(String sheet, int frameWidth, int frameHeight, int row, int frameCount,
 				int introFrameDelay, int frameDelay, int initialFrame, int introEndFrame, int loopStartFrame,
 				int loopEndFrame, boolean looping, boolean holdFinalFrame, int sourceStartCell, int sourceColumns,
-				boolean leftAnchored) {
+				boolean leftAnchored, float drawOffsetX) {
 			this.sheet = sheet;
 			this.frameWidth = frameWidth;
 			this.frameHeight = frameHeight;
@@ -815,6 +833,7 @@ public class Player extends Entity {
 			this.looping = looping;
 			this.holdFinalFrame = holdFinalFrame;
 			this.leftAnchored = leftAnchored;
+			this.drawOffsetX = drawOffsetX;
 		}
 
 		private boolean hasIntro() {
@@ -851,7 +870,7 @@ public class Player extends Entity {
 	}
 
 	public void setAttacking(boolean attacking) {
-		if (!attacking)
+		if (!attacking || usingUltimate)
 			return;
 		if (attackPhase == AttackPhase.HORIZONTAL) {
 			if (aniIndex >= ATTACK_HORIZONTAL.hitActiveEnd)
@@ -867,6 +886,8 @@ public class Player extends Entity {
 	}
 
 	public void setBlocking(boolean blocking) {
+		if (usingUltimate && blocking)
+			return;
 		if (blocking && !canCancelAttack())
 			return;
 		if (blocking)
@@ -875,13 +896,15 @@ public class Player extends Entity {
 	}
 
 	public void setRunning(boolean running) {
+		if (usingUltimate && running)
+			return;
 		this.running = running;
 	}
 
 	// Call this once per key press. The direction is locked to where the
 	// player is facing when the dash starts, no matter what keys are held.
 	public void setDash(boolean dash) {
-		if (!dash || dashing || dashCooldownTicks > 0 || !canCancelAttack())
+		if (!dash || usingUltimate || dashing || dashCooldownTicks > 0 || !canCancelAttack())
 			return;
 		if (inAir && airDashUsed)
 			return;
@@ -915,6 +938,8 @@ public class Player extends Entity {
 	}
 
 	public void setLeft(boolean left) {
+		if (usingUltimate && left)
+			return;
 		this.left = left;
 	}
 
@@ -923,10 +948,14 @@ public class Player extends Entity {
 	}
 
 	public void setRight(boolean right) {
+		if (usingUltimate && right)
+			return;
 		this.right = right;
 	}
 
 	public void setJump(boolean jump) {
+		if (usingUltimate && jump)
+			return;
 		if (jump && !canCancelAttack())
 			return;
 		if (jump)
